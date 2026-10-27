@@ -800,3 +800,6 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
  .layer-color-row { grid-template-columns:1fr 1fr; }
  .site-weather-particle { font-size:9px; }
 }
+
+/* Match uploaded logo preview to the selected parent mask. */
+#logoPreview img { border-radius:0; }
