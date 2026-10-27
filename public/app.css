@@ -828,3 +828,47 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
  .settings-tab { font-size:9px; padding:7px 2px; }
  .preset-card { min-height:49px; }
 }
+
+
+/* Low-cost viewport-wide seasonal ambience and lighter editor texture. */
+.site-noise { display:none !important; background-image:none !important; }
+.site-weather-layer {
+  position:fixed;
+  inset:0;
+  z-index:5;
+  overflow:hidden;
+  pointer-events:none;
+  contain:layout paint style;
+}
+.site-weather-particle {
+  position:absolute;
+  top:-8vh;
+  left:0;
+  display:block;
+  line-height:1;
+  user-select:none;
+  pointer-events:none;
+  color:#eef5ff;
+  text-shadow:0 0 3px rgba(198,223,255,.22);
+  animation:siteWeatherFall linear infinite;
+  will-change:transform;
+}
+.site-weather-layer[data-mode="leaves"] .site-weather-particle {
+  color:#d5a05b;
+  text-shadow:0 1px 2px rgba(224,143,67,.16);
+}
+@keyframes siteWeatherFall {
+  0% { transform:translate3d(0,-8vh,0) rotate(0deg); }
+  25% { transform:translate3d(var(--drift-mid,18px),22vh,0) rotate(80deg); }
+  50% { transform:translate3d(var(--drift-end,-18px),53vh,0) rotate(190deg); }
+  75% { transform:translate3d(var(--drift-mid,18px),82vh,0) rotate(285deg); }
+  100% { transform:translate3d(var(--drift-end,-18px),112vh,0) rotate(var(--turn,360deg)); }
+}
+.site-weather-layer[data-reduced="true"] .site-weather-particle { animation:none !important; }
+.settings-tabs { grid-template-columns:repeat(4,minmax(0,1fr)); }
+@media (max-width:520px) {
+  .settings-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-weather-particle { animation:none !important; }
+}
