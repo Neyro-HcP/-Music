@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="НсП Music — собственная музыкальная библиотека. Слушай и публикуй свои релизы.">
+  <title>НсП Music — своя волна</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="НсП Music — главная">
+        <span class="brand-mark"><span>Н</span><i></i></span>
+        <span class="brand-copy"><strong>НсП<span> MUSIC</span></strong><small>СВОЯ ВОЛНА</small></span>
+      </a>
+      <div class="sidebar-label">МЕНЮ</div>
+      <nav class="main-nav" aria-label="Основное меню">
+        <button class="nav-item active" data-view="all"><span class="nav-icon">◫</span><span>Моя библиотека</span><b id="sidebarCount">0</b></button>
+        <button class="nav-item" data-view="recent"><span class="nav-icon">◷</span><span>Недавние</span></button>
+        <button class="nav-item" data-view="favorites"><span class="nav-icon">♡</span><span>Избранное</span><b id="favoriteCount">0</b></button>
+      </nav>
+      <div class="sidebar-library-heading"><span>ПОСЛЕДНИЕ ТРЕКИ</span><button id="refreshButton" aria-label="Обновить библиотеку" title="Обновить">↻</button></div>
+      <div id="sidebarLibrary" class="sidebar-library"><div class="sidebar-empty">Тут будут твои релизы</div></div>
+      <div class="sidebar-bottom">
+        <div class="storage-note"><span class="status-dot"></span><span><b>ТВОЯ СТУДИЯ</b><small>Музыка хранится на сервере</small></span></div>
+        <button class="sidebar-upload" id="sidebarUpload"><span>＋</span> Загрузить трек</button>
+        <button class="author-button" id="authorButton"><span class="author-avatar">Н</span><span id="authorButtonText">Войти как автор</span><span class="author-arrow">↗</span></button>
+        <button class="about-link" id="aboutBtn">О проекте <span>↗</span></button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb"><span>МОЁ ПРОСТРАНСТВО</span><span class="breadcrumb-dot">/</span><b>НсП MUSIC</b></div>
+        <label class="search-box"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Найти трек, жанр или релиз..." autocomplete="off"><kbd>⌘ K</kbd></label>
+        <button class="top-upload" id="heroUpload"><span>＋</span> Новый релиз</button>
+      </header>
+
+      <section class="hero">
+        <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-disc"><div class="disc-center">Н<span>с</span>П</div></div><div class="art-spark spark-one">✳</div><div class="art-spark spark-two">✦</div><div class="art-label">ORIGINAL<br>SOUND / 001</div></div>
+        <div class="hero-content">
+          <div class="eyebrow"><span class="eyebrow-line"></span> ЛИЧНАЯ МУЗЫКАЛЬНАЯ ПЛОЩАДКА</div>
+          <h1>ТВОЙ ЗВУК.<br><span>ТВОИ ПРАВИЛА.</span></h1>
+          <p>Здесь живут твои идеи, релизы и звук, который узнают с первых секунд. Загружай музыку — собирай собственную историю.</p>
+          <div class="hero-actions"><button class="primary-button" id="heroUploadSecondary">＋ Загрузить музыку <span>↗</span></button><button class="text-button" id="exploreButton">Открыть библиотеку <span>↓</span></button></div>
+          <div class="hero-stats"><div><b id="trackStat">00</b><span>ТРЕКОВ В БИБЛИОТЕКЕ</span></div><i></i><div><b>100<span class="stat-unit">MB</span></b><span>МАКСИМАЛЬНЫЙ ФАЙЛ</span></div><i></i><div><b>∞</b><span>ИДЕЙ ДЛЯ РЕЛИЗОВ</span></div></div>
+        </div>
+        <div class="hero-index">НсП / 2026<br><span>НАЙДИ СВОЮ ЧАСТОТУ</span></div>
+      </section>
+
+      <section class="library-section" id="library">
+        <div class="section-header">
+          <div><div class="eyebrow"><span class="eyebrow-line"></span> ТВОЯ КОЛЛЕКЦИЯ</div><h2 id="viewTitle">Моя библиотека<span class="title-period">.</span></h2><p id="viewDescription">Все твои релизы — в одном месте.</p></div>
+          <div class="library-tools"><label class="sort-label">СОРТИРОВКА<select id="sortSelect"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="title">По названию</option><option value="artist">По исполнителю</option></select></label></div>
+        </div>
+        <div class="filter-row" role="group" aria-label="Фильтр треков"><button class="filter-pill active" data-filter="all">Все релизы <span id="allCount">0</span></button><button class="filter-pill" data-filter="recent">Недавно добавленные</button><button class="filter-pill" data-filter="favorites">♥ Избранное</button></div>
+        <div id="trackGrid" class="track-grid"></div>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-art"><div class="empty-vinyl">♫</div><span class="empty-spark">✦</span></div>
+          <div class="empty-kicker">С ЧЕГО НАЧНЁМ?</div><h3 id="emptyTitle">ЗДЕСЬ БУДЕТ ТВОЙ ЗВУК</h3><p id="emptyText">Библиотека пока пустая. Загрузи первый трек — и начнём собирать твою музыкальную историю.</p><button class="primary-button" id="emptyUpload">＋ Опубликовать первый трек</button>
+        </div>
+      </section>
+      <footer class="footer"><span>НсП MUSIC <i>•</i> ТВОЯ МУЗЫКА, ТВОЙ МИР</span><span>MADE FOR YOUR SOUND <b>↗</b></span></footer>
+    </main>
+  </div>
+
+  <div class="player" id="player">
+    <audio id="audio" preload="metadata"></audio>
+    <div class="player-track"><div class="player-cover cover-placeholder" id="playerCover"><span>НсП</span></div><div class="player-meta"><b id="playerTitle">Выбери свой трек</b><span id="playerArtist">Твоя музыка начнётся здесь</span></div><button id="playerFavorite" class="player-heart" disabled aria-label="Добавить в избранное">♡</button></div>
+    <div class="player-center"><div class="player-controls"><button id="prevButton" disabled aria-label="Предыдущий трек">↶</button><button class="play-button" id="playButton" disabled aria-label="Воспроизвести"><span id="playGlyph">▶</span></button><button id="nextButton" disabled aria-label="Следующий трек">↷</button></div><div class="timeline"><span id="currentTime">0:00</span><input id="seekBar" type="range" min="0" max="1000" value="0" disabled aria-label="Позиция воспроизведения"><span id="duration">0:00</span></div></div>
+    <div class="player-volume"><span>♫</span><input id="volumeBar" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость"><button id="queueButton" aria-label="Перейти к библиотеке" title="Библиотека">☷</button></div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Закрыть">×</button>
+      <div class="modal-kicker" id="modalKicker">РЕЖИМ АВТОРА</div>
+      <h2 id="modalTitle">ТВОЯ МУЗЫКА.<br><span>ТВОЙ КАТАЛОГ.</span></h2>
+      <p class="modal-intro" id="modalIntro">Войди, чтобы загружать и управлять своими публикациями.</p>
+      <form id="loginForm">
+        <label class="field-label" for="adminPassword">ПАРОЛЬ АВТОРА</label><input class="text-input" id="adminPassword" type="password" autocomplete="current-password" placeholder="Введи пароль" required>
+        <p class="form-error" id="loginError" role="alert"></p><button class="primary-button modal-submit" type="submit">Войти в студию <span>↗</span></button>
+      </form>
+      <form id="uploadForm" hidden>
+        <label class="field-label" for="trackTitle">НАЗВАНИЕ ТРЕКА *</label><input class="text-input" id="trackTitle" name="title" maxlength="100" placeholder="Как называется релиз?" required>
+        <div class="field-pair"><div><label class="field-label" for="trackArtist">ИСПОЛНИТЕЛЬ</label><input class="text-input" id="trackArtist" name="artist" maxlength="80" value="НсП"></div><div><label class="field-label" for="trackGenre">ЖАНР</label><select class="text-input" id="trackGenre" name="genre"><option>Рэп</option><option>Хип-хоп</option><option>Поп</option><option>Электроника</option><option>Drill</option><option>Phonk</option><option>Экспериментальный</option><option>Другое</option></select></div></div>
+        <label class="field-label" for="trackDescription">ОПИСАНИЕ <span>(необязательно)</span></label><textarea class="text-input" id="trackDescription" name="description" rows="2" maxlength="1000" placeholder="История релиза, настроение, детали..."></textarea>
+        <div class="file-pair"><label class="file-pick" for="audioFile"><span class="file-pick-icon">♫</span><b id="audioFileName">Выбери аудиофайл</b><small>MP3, WAV, M4A, FLAC и другие · до 100 МБ</small><input id="audioFile" name="audio" type="file" accept=".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.webm,audio/*" required></label><label class="file-pick cover-pick" for="coverFile"><span class="file-pick-icon">▧</span><b id="coverFileName">Добавить обложку</b><small>JPG, PNG или WEBP · до 8 МБ</small><input id="coverFile" name="cover" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label></div>
+        <p class="form-error" id="uploadError" role="alert"></p><button class="primary-button modal-submit" id="submitUpload" type="submit">Опубликовать релиз <span>↗</span></button>
+      </form>
+      <div id="aboutContent" hidden><p>НсП Music — личная музыкальная библиотека для оригинальных релизов. Загружай аудио, добавляй обложки, слушай и собирай свою коллекцию в одном месте.</p><p>Это независимый проект, вдохновлённый современными музыкальными сервисами. Генерация музыки нейросетью пока не входит в эту версию.</p><button class="primary-button modal-submit" id="aboutClose" type="button">Понятно <span>↗</span></button></div>
+      <div class="modal-footnote"><span class="status-dot"></span> ТВОЯ СТУДИЯ · НсП MUSIC</div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
