@@ -323,16 +323,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function addTntLabel(mesh) {
-    const c = document.createElement('canvas');
-    c.width=256;c.height=128;
-    const g=c.getContext('2d');
-    g.clearRect(0,0,c.width,c.height);
-    g.fillStyle='rgba(38,3,10,.82)';
-    g.fillRect(7,23,242,82);
-    g.strokeStyle='rgba(255,236,213,.8)';g.lineWidth=4;g.strokeRect(10,26,236,76);
-    g.fillStyle='#fff1df';g.font='900 55px Manrope,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('TNT',128,65);
-    const texture=new THREE.CanvasTexture(c);
-    texture.colorSpace=THREE.SRGBColorSpace;
     const sticker=new THREE.Mesh(geometries.tntLabel,materials.tntLabel);
     sticker.position.set(0,0,.249);
     mesh.add(sticker);
