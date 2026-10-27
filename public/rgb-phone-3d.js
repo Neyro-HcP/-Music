@@ -1120,8 +1120,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(!tiltEnabled||event.beta==null||event.gamma==null)return;
     const beta=THREE.MathUtils.degToRad(event.beta);
     const gamma=THREE.MathUtils.degToRad(event.gamma);
-    const rawAngle=(screen.orientation&&Number.isFinite(screen.orientation.angle)?screen.orientation.angle:
-      (Number.isFinite(window.orientation)?window.orientation:0));
+    const rawAngle=(window.screen&&window.screen.orientation&&Number.isFinite(window.screen.orientation.angle)
+      ?window.screen.orientation.angle
+      :(Number.isFinite(window.orientation)?window.orientation:0));
     const screenAngle=THREE.MathUtils.degToRad(rawAngle);
     const g=12;
     // Convert absolute sensor orientation to gravity projected onto the visible screen plane.
