@@ -32,6 +32,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let liquidSoundSource = null, liquidSoundFilter = null, liquidSoundGain = null;
   let tiltEnabled = false, tiltReference = null;
   let gravityX = 0, gravityY = -12, gravityZ = 0;
+  let targetGravityX = 0, targetGravityY = -12;
   let lastWakeGravity = {x:0,y:-12,z:0}, lastWakeAt = 0, lastCollisionSweep = 0;
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
   let liquidLevel = -2, liquidTargetLevel = -1, liquidPouring = false;
@@ -634,6 +635,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(!other){
       if(impact>1.15){
         playImpact(item.kind,impact,item.body.position.x);
+        if(liquidMode && item.body.position.y-item.radius < liquidLevel+item.radius*.65){
+          addWaveImpulse(item.body.position.x,item.body.position.z,clamp(impact*.018,.025,.17));
+        }
         const p=item.body.position;
         const av=item.body.angularVelocity;
         const nearX=Math.abs(p.x)>sideX-item.radius*1.5;
@@ -656,6 +660,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(collisionTimes.size>180&&now-lastCollisionSweep>900){
       lastCollisionSweep=now;
       for(const [k,v] of collisionTimes)if(now-v>900)collisionTimes.delete(k);
+    }
+    if(liquidMode && item.body.position.y-item.radius < liquidLevel+item.radius*.65){
+      addWaveImpulse(item.body.position.x,item.body.position.z,clamp(impact*.018,.025,.17));
     }
     const soundKind=item.kind==='ice'||other.kind==='ice'?'ice':
       item.kind==='rubber'&&other.kind==='rubber'?'rubber':
@@ -1087,32 +1094,23 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function updateTilt(event){
     if(!tiltEnabled||event.beta==null||event.gamma==null)return;
-    if(!tiltReference)tiltReference={beta:event.beta,gamma:event.gamma};
-    const deltaAngle=(value,reference)=>((value-reference+540)%360)-180;
-    const beta=THREE.MathUtils.degToRad(deltaAngle(event.beta,tiltReference.beta));
-    const gamma=THREE.MathUtils.degToRad(deltaAngle(event.gamma,tiltReference.gamma));
+    const beta=THREE.MathUtils.degToRad(event.beta);
+    const gamma=THREE.MathUtils.degToRad(event.gamma);
     const rawAngle=(screen.orientation&&Number.isFinite(screen.orientation.angle)?screen.orientation.angle:
       (Number.isFinite(window.orientation)?window.orientation:0));
     const screenAngle=THREE.MathUtils.degToRad(rawAngle);
-    const tiltX=gamma*Math.cos(screenAngle)-beta*Math.sin(screenAngle);
-    const tiltY=gamma*Math.sin(screenAngle)+beta*Math.cos(screenAngle);
     const g=12;
-    const gravityVector=new THREE.Vector3(
-      Math.sin(tiltX),
-      -Math.cos(tiltX)*Math.cos(tiltY),
-      Math.sin(tiltY)
-    ).normalize().multiplyScalar(g);
-    gravityX=gravityVector.x;
-    gravityY=gravityVector.y;
-    gravityZ=gravityVector.z;
-    world.gravity.set(gravityX,gravityY,gravityZ);
-    const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y,gravityZ-lastWakeGravity.z);
-    const now=performance.now();
-    if(gravityChange>.55&&now-lastWakeAt>100){
-      lastWakeGravity={x:gravityX,y:gravityY,z:gravityZ};
-      lastWakeAt=now;
-      for(const item of items)item.body.wakeUp();
-    }
+    // Convert absolute sensor orientation to gravity projected onto the visible screen plane.
+    // Do not calibrate against the activation pose: doing so cancels most of the Y-axis signal.
+    const sensorX=Math.sin(gamma)*g;
+    const sensorY=-Math.sin(beta)*Math.cos(gamma)*g;
+    let gx=sensorX*Math.cos(screenAngle)+sensorY*Math.sin(screenAngle);
+    let gy=-sensorX*Math.sin(screenAngle)+sensorY*Math.cos(screenAngle);
+    const length=Math.hypot(gx,gy);
+    if(length>g){gx*=g/length;gy*=g/length;}
+    targetGravityX=clamp(gx,-g,g);
+    targetGravityY=clamp(gy,-g,g);
+    gravityZ=0;
   }
 
   async function toggleTilt(){
@@ -1120,6 +1118,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       tiltEnabled=false;tiltReference=null;
       window.removeEventListener('deviceorientation',updateTilt,true);
       gravityX=0;gravityY=-12;gravityZ=0;
+      targetGravityX=0;targetGravityY=-12;
       lastWakeGravity={x:0,y:-12,z:0};
       world.gravity.set(gravityX,gravityY,gravityZ);
       tiltButton.setAttribute('aria-pressed','false');tiltLabel.textContent='Наклон';
@@ -1129,7 +1128,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(!('DeviceOrientationEvent'in window)){status('Датчик наклона недоступен');return;}
     try{
       if(typeof DeviceOrientationEvent.requestPermission==='function'){
-        const result=await DeviceOrientationEvent.requestPermission();
+            const result=await DeviceOrientationEvent.requestPermission();
         if(result!=='granted'){status('Разреши доступ к датчику в браузере');return;}
       }
       tiltEnabled=true;tiltReference=null;
@@ -1226,11 +1225,21 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         resize();
       }
     }
+    const gravityBlend=1-Math.exp(-delta*10);
+    gravityX+= (targetGravityX-gravityX)*gravityBlend;
+    gravityY+= (targetGravityY-gravityY)*gravityBlend;
     world.gravity.set(gravityX,gravityY,gravityZ);
+    const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y);
+    if(tiltEnabled&&gravityChange>.8&&frameNow-lastWakeAt>120){
+      lastWakeGravity={x:gravityX,y:gravityY,z:0};
+      lastWakeAt=frameNow;
+      for(const item of items)item.body.wakeUp();
+    }
     if(dragging){
       dragging.item.body.type=CANNON.Body.KINEMATIC;
       dragging.item.body.updateMassProperties();
     }
+    applyLiquidForces(delta);
     world.step(FIXED_STEP,delta,8);
     for(let i=items.length-1;i>=0;i--){
       const item=items[i];
