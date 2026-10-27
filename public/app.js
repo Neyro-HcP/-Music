@@ -901,7 +901,7 @@
     const value = String(text == null ? '' : text);
     if (mode === 'uppercase') return value.toLocaleUpperCase();
     if (mode === 'lowercase') return value.toLocaleLowerCase();
-    if (mode === 'titlecase') return value.toLocaleLowerCase().replace(/(^|[\\s\\-–—])([\\p{L}\\p{N}])/gu, function (_, prefix, letter) {
+    if (mode === 'titlecase') return value.toLocaleLowerCase().replace(/(^|\\s|[-–—])([A-Za-zА-Яа-яЁё0-9])/g, function (_, prefix, letter) {
       return prefix + letter.toLocaleUpperCase();
     });
     return value;
@@ -2115,10 +2115,10 @@
   $('#gradientMidPositionRange').addEventListener('input', function (event) { state.gradientMidPosition = Number(event.target.value); updateSettingsUI(); drawFrame(performance.now()); });
   $('#gradientAngleRange').addEventListener('input', function (event) { state.gradientAngle = Number(event.target.value); updateSettingsUI(); drawFrame(performance.now()); });
   $('#backgroundColor').addEventListener('input', function (event) { state.background = event.target.value; updateSettingsUI(); });
-  $('#titleColorInput').addEventListener('input', function (event) { state.titleColor = event.target.value; });
+  $('#titleColorInput').addEventListener('input', function (event) { state.titleColor = event.target.value; drawFrame(performance.now()); });
   $('#titleFontSelect').addEventListener('change', function (event) { state.titleFont = event.target.value; drawFrame(performance.now()); });
   $('#titleCaseSelect').addEventListener('change', function (event) { state.titleCase = event.target.value; drawFrame(performance.now()); });
-  $('#artistColorInput').addEventListener('input', function (event) { state.artistColor = event.target.value; });
+  $('#artistColorInput').addEventListener('input', function (event) { state.artistColor = event.target.value; drawFrame(performance.now()); });
   $('#artistFontSelect').addEventListener('change', function (event) { state.artistFont = event.target.value; drawFrame(performance.now()); });
   $('#artistCaseSelect').addEventListener('change', function (event) { state.artistCase = event.target.value; drawFrame(performance.now()); });
   $('#particleColorInput').addEventListener('input', function (event) { state.particleColor = event.target.value; });
@@ -2138,14 +2138,14 @@
   $('#logoShapeSelect').addEventListener('change', function(event){state.logoShape=event.target.value;$('#logoPreview').dataset.shape=state.logoShape;});
   $('#logoPulseEnabled').addEventListener('change', function(event){state.logoPulseEnabled=event.target.checked;});
   $('#logoPulseModeSelect').addEventListener('change', function(event){state.logoPulseMode=event.target.value;});
-  $('#logoHaloEnabled').addEventListener('change', function(event){state.logoHaloEnabled=event.target.checked;drawFrame(performance.now());});
-  $('#logoHaloRotationSpeedRange').addEventListener('input', function(event){state.logoHaloRotationSpeed=Number(event.target.value);$('#logoHaloRotationSpeedOutput').textContent=state.logoHaloRotationSpeed.toFixed(2)+'×';});
+  $('#logoHaloEnabled').addEventListener('change', function(event){state.logoHaloEnabled=event.target.checked;if(event.target.checked){state.showLogo=true;$('#showLogo').checked=true;}drawFrame(performance.now());});
+  $('#logoHaloRotationSpeedRange').addEventListener('input', function(event){state.logoHaloRotationSpeed=Number(event.target.value);$('#logoHaloRotationSpeedOutput').textContent=state.logoHaloRotationSpeed.toFixed(2)+'×';drawFrame(performance.now());});
   $('#logoHaloStyleSelect').addEventListener('change', function(event){state.logoHaloStyle=event.target.value;drawFrame(performance.now());});
   $('#logoHaloCountRange').addEventListener('input', function(event){state.logoHaloCount=Number(event.target.value);$('#logoHaloCountOutput').textContent=String(state.logoHaloCount);drawFrame(performance.now());});
   $('#logoHaloColorInput').addEventListener('input', function(event){state.logoHaloColor=event.target.value;});
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVisualizer').addEventListener('change', function(event){state.showVisualizer=event.target.checked;});
-  $('#visualizerGradientEnabled').addEventListener('change', function(event){state.visualizerGradient=event.target.checked;});
+  $('#visualizerGradientEnabled').addEventListener('change', function(event){state.visualizerGradient=event.target.checked;updateSettingsUI();drawFrame(performance.now());});
   $('#visualizerFilterSelect').addEventListener('change', function(event){state.visualizerFilter=event.target.value;});
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
   $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
