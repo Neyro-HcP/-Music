@@ -629,46 +629,36 @@
   }
 
   function drawTypography(w, h) {
+    if (!state.showTitle) return;
+    const title = ($('#trackTitle').value || 'Без названия').trim();
+    const artist = ($('#trackArtist').value || 'НсП').trim();
+    const scale = state.textSize / 100;
+    const titleSize = Math.max(14, Math.min(Math.round(w * 0.048), Math.round(h * 0.085))) * scale;
+    const artistSize = Math.max(10, Math.round(Math.min(w, h) * 0.022)) * scale;
+    const xPercent = state.textX / 100;
+    const yPercent = state.textY / 100;
+    const x = w * xPercent;
+    const safeBlockHeight = titleSize * 2.55 + artistSize;
+    const y = Math.max(10, Math.min(h - safeBlockHeight - h * 0.025, h * yPercent));
+    const textAlign = state.textX > 72 ? 'right' : 'left';
+    const maxWidth = w * 0.84;
+    const alignX = textAlign === 'right' ? Math.min(w - 12, x) : Math.max(12, Math.min(w - 12, x));
     ctx.save();
     ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.font = '500 ' + Math.max(10, Math.round(Math.min(w, h) * 0.015)) + 'px "DM Mono", monospace';
-    ctx.fillStyle = 'rgba(228,239,255,0.66)';
-    ctx.fillText('WAVEFRAME / VISUAL LAB', w * 0.045, h * 0.055);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = rgba(state.colorOne, 0.82);
-    ctx.fillText('●  LIVE SIGNAL', w * 0.955, h * 0.055);
-
-    if (state.showTitle) {
-      const title = ($('#trackTitle').value || 'YOUR TRACK').trim();
-      const artist = ($('#trackArtist').value || 'YOUR ARTIST').trim();
-      const titleSize = Math.max(20, Math.min(Math.round(w * 0.048), Math.round(h * 0.085)));
-      const artistSize = Math.max(12, Math.round(Math.min(w, h) * 0.022));
-      const fade = ctx.createLinearGradient(0, h * 0.75, 0, h);
-      fade.addColorStop(0, 'rgba(0,0,0,0)');
-      fade.addColorStop(1, 'rgba(0,0,0,0.58)');
-      ctx.fillStyle = fade;
-      ctx.fillRect(0, h * 0.72, w, h * 0.28);
-      ctx.textAlign = 'left';
-      ctx.font = '800 ' + titleSize + 'px Manrope, sans-serif';
-      ctx.fillStyle = '#f6f8ff';
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = rgba(state.colorOne, 0.25);
-      const maxTitleWidth = w * 0.78;
-      let shownTitle = title;
-      while (shownTitle.length > 2 && ctx.measureText(shownTitle).width > maxTitleWidth) shownTitle = shownTitle.slice(0, -2).trimEnd() + '…';
-      ctx.fillText(shownTitle, w * 0.055, h * 0.815);
-      ctx.shadowBlur = 0;
-      ctx.font = '500 ' + artistSize + 'px "DM Mono", monospace';
-      ctx.fillStyle = rgba(state.colorOne, 0.95);
-      let shownArtist = artist;
-      while (shownArtist.length > 2 && ctx.measureText(shownArtist).width > maxTitleWidth) shownArtist = shownArtist.slice(0, -2).trimEnd() + '…';
-      ctx.fillText(shownArtist.toUpperCase(), w * 0.058, h * 0.815 + titleSize * 1.2);
-      ctx.textAlign = 'right';
-      ctx.font = '500 ' + Math.max(10, Math.round(Math.min(w, h) * 0.015)) + 'px "DM Mono", monospace';
-      ctx.fillStyle = 'rgba(230,239,255,0.68)';
-      ctx.fillText('WF—' + String(Math.floor((audio.currentTime || 0) * 10)).padStart(5, '0'), w * 0.945, h * 0.925);
-    }
+    ctx.textAlign = textAlign;
+    ctx.shadowBlur = Math.min(24, state.glow * 0.65);
+    ctx.shadowColor = rgba(state.colorOne, 0.25);
+    ctx.font = '800 ' + Math.round(titleSize) + 'px Manrope, sans-serif';
+    let shownTitle = title;
+    while (shownTitle.length > 2 && ctx.measureText(shownTitle).width > maxWidth) shownTitle = shownTitle.slice(0, -2).trimEnd() + '…';
+    ctx.fillStyle = '#f5f6f8';
+    ctx.fillText(shownTitle, alignX, y, maxWidth);
+    ctx.shadowBlur = Math.min(14, state.glow * 0.45);
+    ctx.font = '600 ' + Math.round(artistSize) + 'px Manrope, sans-serif';
+    ctx.fillStyle = state.colorOne;
+    let shownArtist = artist;
+    while (shownArtist.length > 2 && ctx.measureText(shownArtist.toUpperCase()).width > maxWidth) shownArtist = shownArtist.slice(0, -2).trimEnd() + '…';
+    ctx.fillText(shownArtist.toUpperCase(), alignX, y + titleSize * 1.18, maxWidth);
     ctx.restore();
   }
 
@@ -678,11 +668,17 @@
     const h = canvas.height;
     const values = getAudioValues(now);
     drawBackground(w, h, now, values);
+    const dx = w * state.visualX / 100;
+    const dy = h * state.visualY / 100;
+    ctx.save();
+    ctx.translate(dx, dy);
     if (state.style === 'spectrum') drawSpectrum(w, h, now, values);
     else if (state.style === 'orbit') drawOrbit(w, h, now, values);
     else if (state.style === 'wave') drawWave(w, h, now, values);
     else if (state.style === 'aurora') drawAurora(w, h, now, values);
     else drawRadial(w, h, now, values);
+    drawCenterLogo(w, h);
+    ctx.restore();
     drawTypography(w, h);
     state.lastFrameTime = now;
   }
