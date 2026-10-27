@@ -673,3 +673,26 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
   gap: 7px;
 }
 .drag-hint span { color: var(--acid); font-size: 13px; }
+
+
+/* Compact controls for the expanded layer editor */
+.color-control input[type="range"] {
+  width: 54px;
+  flex: 0 0 54px;
+  min-width: 36px;
+  padding: 0;
+  margin: 0;
+}
+.color-control input[type="range"]::-webkit-slider-runnable-track { height: 3px; }
+.color-control input[type="range"]::-moz-range-track { height: 3px; }
+.color-control > span { min-width: 0; }
+.color-control small { white-space: nowrap; }
+.text-layer-panel { padding-bottom: 3px; }
+.text-layer-panel .color-row { margin-top: 11px; }
+.particle-colors-row { margin-top: 12px; }
+.drag-hint { user-select: none; -webkit-user-select: none; }
+@media (max-width: 380px) {
+  .color-control { gap: 5px; padding: 7px 5px; }
+  .color-control input[type="range"] { width: 41px; flex-basis: 41px; }
+  .color-control input[type="color"] { width: 23px; height: 25px; flex-basis: 23px; }
+}
