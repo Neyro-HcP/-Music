@@ -32,6 +32,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let liquidSoundSource = null, liquidSoundFilter = null, liquidSoundGain = null;
   let tiltEnabled = false, tiltReference = null;
   let gravityX = 0, gravityY = -12, gravityZ = 0;
+  let lastWakeGravity = {x:0,y:-12,z:0}, lastWakeAt = 0, lastCollisionSweep = 0;
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
   const items = [];
@@ -335,7 +336,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function createPhysics() {
     world = new CANNON.World({ gravity: new CANNON.Vec3(0,-12,0), allowSleep: true });
     world.broadphase = new CANNON.SAPBroadphase(world);
-    world.solver.iterations = coarsePointer ? 12 : 16;
+    world.solver.iterations = coarsePointer ? 9 : 13;
     world.solver.tolerance = .001;
     world.allowSleep = true;
     world.defaultContactMaterial.friction = .34;
@@ -640,7 +641,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(now-last<62)return;
     if(impact<1.05)return;
     collisionTimes.set(key,now);
-    if(collisionTimes.size>180){
+    if(collisionTimes.size>180&&now-lastCollisionSweep>900){
+      lastCollisionSweep=now;
       for(const [k,v] of collisionTimes)if(now-v>900)collisionTimes.delete(k);
     }
     const soundKind=item.kind==='ice'||other.kind==='ice'?'ice':
@@ -1047,7 +1049,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     gravityY=clamp(-Math.cos(tiltX)*Math.cos(tiltY)*g,-g,g);
     gravityZ=clamp(Math.sin(tiltY)*g,-g,g);
     world.gravity.set(gravityX,gravityY,gravityZ);
-    if(Math.abs(gravityX)>.75||Math.abs(gravityZ)>.75){
+    const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y,gravityZ-lastWakeGravity.z);
+    const now=performance.now();
+    if(gravityChange>.55&&now-lastWakeAt>100){
+      lastWakeGravity={x:gravityX,y:gravityY,z:gravityZ};
+      lastWakeAt=now;
       for(const item of items)item.body.wakeUp();
     }
   }
@@ -1057,6 +1063,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       tiltEnabled=false;tiltReference=null;
       window.removeEventListener('deviceorientation',updateTilt,true);
       gravityX=0;gravityY=-12;gravityZ=0;
+      lastWakeGravity={x:0,y:-12,z:0};
       world.gravity.set(gravityX,gravityY,gravityZ);
       tiltButton.setAttribute('aria-pressed','false');tiltLabel.textContent='Наклон';
       status('Управление наклоном выключено');
@@ -1070,6 +1077,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       }
       tiltEnabled=true;tiltReference=null;
       gravityX=0;gravityY=-12;gravityZ=0;
+      lastWakeGravity={x:0,y:-12,z:0};
       world.gravity.set(gravityX,gravityY,gravityZ);
       window.addEventListener('deviceorientation',updateTilt,true);
       tiltButton.setAttribute('aria-pressed','true');tiltLabel.textContent='Наклон включён';
