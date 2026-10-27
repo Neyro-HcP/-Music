@@ -259,7 +259,6 @@
     $('#vignettePulseOutput').textContent = state.vignettePulse + '%';
     $('#sensitivityOutput').textContent = Number(state.sensitivity).toFixed(1) + '×';
     $('#glowOutput').textContent = String(state.glow);
-    renderVisualizerLayerList();
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === state.style);
     });
@@ -1656,6 +1655,7 @@
     $('#trackTitle').dataset.autoTitle = state.file ? 'true' : 'false';
     $('#trackArtist').value = '';
     updateSettingsUI();
+    renderVisualizerLayerList();
     setStyle(state.style);
     toast('Настройки возвращены к исходным.');
   }
@@ -1687,7 +1687,7 @@
         <label class="toggle-row layer-gradient-row"><span><b>Градиент слоя</b><small>Использовать оба цвета</small></span><input type="checkbox" data-layer-id="${layer.id}" data-layer-key="gradient" ${layer.gradient?'checked':''}><i></i></label>`;
       host.appendChild(card);
     });
-    $('#visualizerLayerCount').textContent=(state.visualizerLayers.length+1)+' слой'+(state.visualizerLayers.length===0?'а':state.visualizerLayers.length<4?'а':'ев');
+    const layerTotal=state.visualizerLayers.length+1;$('#visualizerLayerCount').textContent=layerTotal===1?'1 слой':layerTotal<5?layerTotal+' слоя':layerTotal+' слоёв';
     $('#addVisualizerLayerButton').disabled=state.visualizerLayers.length>=8;
     $('#addVisualizerLayerButton').textContent=state.visualizerLayers.length>=8?'Лимит: 9 слоёв':'＋ Добавить слой';
   }
@@ -1946,6 +1946,7 @@
   nextVisualizerLayerId = state.visualizerLayers.reduce(function(max,layer){return Math.max(max,Number(layer.id)||0);},0)+1;
   initParticles();
   updateSettingsUI();
+  renderVisualizerLayerList();
   setStyle(state.style);
   updateTransport();
   void restoreSavedAssets();
