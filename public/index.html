@@ -27,7 +27,7 @@
   </header>
 
   <main class="app-main">
-    <section class="intro intro-minimal"><h1>Visual Lab<span class="accent-dot">.</span></h1></section>
+    
 
 <section class="workspace" id="workspace">
       <aside class="style-panel panel">
@@ -58,7 +58,7 @@
           <canvas id="visualizer" width="1280" height="720" aria-label="Предпросмотр аудиовизуализатора"></canvas>
           <div class="canvas-corner canvas-corner-tr" id="canvasAspectBadge">16:9 · 1280 × 720</div>
         </div>
-        <p class="drag-hint"><span>↔</span> Перетаскивай слои прямо на холсте</p>
+        
         <div class="track-transport">
           <div class="transport-file">
             <div class="file-art"><span>♫</span><i></i></div>
@@ -161,6 +161,8 @@
           <div class="control-heading"><span>Реакция на музыку</span><span class="micro-label">LOGO FX</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Пульсация</b><small>Размер меняется от звука</small></span><input id="logoPulseEnabled" type="checkbox" checked><i></i></label>
           <div class="control-heading compact-heading"><label for="logoPulseModeSelect">Источник</label></div>
+          <div class="control-heading compact-heading"><label for="logoHaloStyleSelect">Форма аудио-слоя</label></div>
+          <select id="logoHaloStyleSelect" class="select-field"><option value="radial">Радиальные лучи</option><option value="rings">Кольца</option><option value="wave">Волна по кругу</option></select>
           <select id="logoPulseModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
           <div class="control-heading compact-heading"><label for="logoPulseAmountRange">Сила пульсации</label><output id="logoPulseAmountOutput">45%</output></div>
           <input id="logoPulseAmountRange" class="range-input" type="range" min="0" max="100" step="1" value="45">
