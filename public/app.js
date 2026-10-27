@@ -128,10 +128,17 @@
       canvas.width = ratio.width;
       canvas.height = ratio.height;
     }
-    $('#canvasShell').style.setProperty('--canvas-ratio', ratio.width + ' / ' + ratio.height);
+    const shell = $('#canvasShell');
+    shell.style.setProperty('--canvas-ratio', ratio.width + ' / ' + ratio.height);
+    const availableHeight = Math.min(window.innerHeight * (window.innerWidth <= 720 ? 0.6 : 0.72), 680);
+    const parentWidth = shell.parentElement.clientWidth || 1000;
+    const fittedWidth = Math.min(parentWidth, availableHeight * ratio.width / ratio.height);
+    shell.style.width = Math.max(1, Math.floor(fittedWidth)) + 'px';
+    shell.style.maxWidth = '100%';
+    shell.style.marginLeft = 'auto';
+    shell.style.marginRight = 'auto';
     $('#canvasAspectBadge').textContent = ratio.label;
   }
-
   function setStyle(style) {
     if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(style)) return;
     state.style = style;
