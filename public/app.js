@@ -2238,11 +2238,7 @@
         const handle = document.createElement('span');
         handle.className = 'tiktok-follower-handle';
         handle.textContent = '@' + username;
-        const platform = document.createElement('span');
-        platform.className = 'tiktok-follower-platform';
-        platform.textContent = 'TikTok';
         details.appendChild(handle);
-        details.appendChild(platform);
 
         const arrow = document.createElement('span');
         arrow.className = 'tiktok-follower-arrow';
