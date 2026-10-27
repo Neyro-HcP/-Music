@@ -19,7 +19,24 @@
     glow: 22,
     aspect: 'landscape',
     showTitle: true,
-    showParticles: true
+    showParticles: true,
+    showVignette: true,
+    vignette: 65,
+    backgroundOpacity: 100,
+    logoSize: 18,
+    logoOpacity: 100,
+    logoX: 50,
+    logoY: 45,
+    visualX: 0,
+    visualY: 0,
+    textX: 6,
+    textY: 81,
+    textSize: 100,
+    particleCount: 85,
+    particleSize: 1,
+    particleSpeed: 1,
+    beatResponse: 1.4,
+    smoothing: 45
   };
 
   const palettes = {
@@ -40,6 +57,15 @@
     mediaDestination: null,
     frequencyData: null,
     timeData: null,
+    logoImage: null,
+    logoObjectUrl: null,
+    backgroundImage: null,
+    backgroundObjectUrl: null,
+    smoothedBands: new Float32Array(192),
+    peakBands: new Float32Array(192),
+    bassEnvelope: 0,
+    lastBassEnergy: 0,
+    beatPulse: 0,
     recorder: null,
     recordingStream: null,
     chunks: [],
@@ -100,6 +126,39 @@
     $('#aspectSelect').value = state.aspect;
     $('#showTitle').checked = state.showTitle;
     $('#showParticles').checked = state.showParticles;
+    $('#showVignette').checked = state.showVignette;
+    $('#vignetteRange').value = state.vignette;
+    $('#backgroundOpacityRange').value = state.backgroundOpacity;
+    $('#logoSizeRange').value = state.logoSize;
+    $('#logoOpacityRange').value = state.logoOpacity;
+    $('#logoXRange').value = state.logoX;
+    $('#logoYRange').value = state.logoY;
+    $('#visualXRange').value = state.visualX;
+    $('#visualYRange').value = state.visualY;
+    $('#textXRange').value = state.textX;
+    $('#textYRange').value = state.textY;
+    $('#textSizeRange').value = state.textSize;
+    $('#particleCountRange').value = state.particleCount;
+    $('#particleSizeRange').value = state.particleSize;
+    $('#particleSpeedRange').value = state.particleSpeed;
+    $('#beatResponseRange').value = state.beatResponse;
+    $('#smoothingRange').value = state.smoothing;
+    $('#vignetteOutput').textContent = state.vignette + '%';
+    $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
+    $('#logoSizeOutput').textContent = state.logoSize + '%';
+    $('#logoOpacityOutput').textContent = state.logoOpacity + '%';
+    $('#logoXOutput').textContent = state.logoX + '%';
+    $('#logoYOutput').textContent = state.logoY + '%';
+    $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
+    $('#visualYOutput').textContent = (state.visualY > 0 ? '+' : '') + state.visualY + '%';
+    $('#textXOutput').textContent = state.textX + '%';
+    $('#textYOutput').textContent = state.textY + '%';
+    $('#textSizeOutput').textContent = state.textSize + '%';
+    $('#particleCountOutput').textContent = state.particleCount;
+    $('#particleSizeOutput').textContent = Number(state.particleSize).toFixed(1) + '×';
+    $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
+    $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
+    $('#smoothingOutput').textContent = state.smoothing + '%';
     $('#sensitivityOutput').textContent = Number(state.sensitivity).toFixed(1) + '×';
     $('#glowOutput').textContent = String(state.glow);
     $$('.preset-card').forEach(function (button) {
@@ -167,43 +226,118 @@
   }
 
   function initParticles() {
-    state.particles = [];
-    for (let i = 0; i < 84; i++) {
+    const target = Math.max(0, Math.min(250, Number(state.particleCount) || 0));
+    while (state.particles.length < target) {
       state.particles.push({
         x: Math.random(),
         y: Math.random(),
-        size: 0.4 + Math.random() * 1.5,
+        size: 0.45 + Math.random() * 1.15,
         phase: Math.random() * Math.PI * 2,
-        speed: 0.15 + Math.random() * 0.55
+        speed: 0.2 + Math.random() * 0.65
       });
     }
+    if (state.particles.length > target) state.particles.length = target;
   }
 
   function getAudioValues(now) {
-    const binCount = state.frequencyData ? state.frequencyData.length : 0;
-    const available = Boolean(state.file && state.analyser && state.frequencyData && !audio.paused && !audio.ended);
-    if (state.analyser && state.frequencyData) state.analyser.getByteFrequencyData(state.frequencyData);
-    if (state.analyser && state.timeData) state.analyser.getByteTimeDomainData(state.timeData);
-    return {
-      available: available,
-      binCount: binCount,
-      level: function (index, count) {
-        if (available && binCount) {
-          const bin = Math.max(0, Math.min(binCount - 1, Math.floor(index / count * binCount * 0.82)));
-          return Math.min(1, (state.frequencyData[bin] / 255) * state.sensitivity * 1.35);
+    const bandCount = state.smoothedBands.length;
+    const active = Boolean(state.file && state.analyser && state.frequencyData && !audio.ended);
+    const dt = Math.max(0.008, Math.min(0.07, (now - (state.lastAudioTime || now - 16.7)) / 1000));
+    state.lastAudioTime = now;
+    if (state.analyser && state.frequencyData) {
+      state.analyser.getByteFrequencyData(state.frequencyData);
+      if (state.timeData) state.analyser.getByteTimeDomainData(state.timeData);
+    }
+
+    let bassEnergy = 0;
+    let bassSamples = 0;
+    if (active && state.frequencyData && state.audioContext) {
+      const nyquist = state.audioContext.sampleRate / 2;
+      const binCount = state.frequencyData.length;
+      const minHz = 28;
+      const maxHz = Math.min(18000, nyquist * 0.94);
+      const logSpan = Math.log(maxHz / minHz);
+      for (let i = 0; i < bandCount; i++) {
+        const f0 = minHz * Math.exp((i / bandCount) * logSpan);
+        const f1 = minHz * Math.exp(((i + 1) / bandCount) * logSpan);
+        let b0 = Math.max(0, Math.floor(f0 / nyquist * binCount));
+        let b1 = Math.min(binCount - 1, Math.max(b0 + 1, Math.ceil(f1 / nyquist * binCount)));
+        let sum = 0;
+        let count = 0;
+        for (let b = b0; b <= b1; b++) {
+          sum += state.frequencyData[b];
+          count++;
         }
-        const t = now / 1000;
-        return Math.max(0.035, (0.16 + Math.sin(t * 1.75 + index * 0.31) * 0.12 + Math.sin(t * 0.77 + index * 0.09) * 0.09) * state.sensitivity);
+        const raw = count ? sum / count : 0;
+        const normalized = Math.max(0, Math.min(1, (raw - 9) / 220));
+        let target = Math.pow(normalized, 0.72) * state.sensitivity;
+        if (i < 15) {
+          bassEnergy += normalized;
+          bassSamples++;
+        }
+        target = Math.max(0, Math.min(1.45, target));
+        const previous = state.smoothedBands[i];
+        const attack = 0.35 + (1 - state.smoothing / 100) * 0.58;
+        const release = 0.32 - (state.smoothing / 100) * 0.25;
+        const coefficient = target > previous ? attack : release;
+        const smoothed = previous + (target - previous) * Math.min(0.96, coefficient);
+        state.smoothedBands[i] = smoothed;
+        state.peakBands[i] = Math.max(smoothed, state.peakBands[i] - dt * (1.5 + state.smoothing / 60));
+      }
+      bassEnergy = bassSamples ? bassEnergy / bassSamples : 0;
+      const flux = Math.max(0, bassEnergy - state.lastBassEnergy);
+      const transient = Math.max(0, bassEnergy - state.bassEnvelope * 1.06);
+      const hit = Math.max(flux * 4.8, transient * 1.8) * state.beatResponse;
+      state.beatPulse = Math.max(hit, state.beatPulse * Math.exp(-dt * 5.2));
+      state.bassEnvelope = state.bassEnvelope * 0.91 + bassEnergy * 0.09;
+      state.lastBassEnergy = bassEnergy;
+    } else {
+      state.beatPulse *= Math.exp(-dt * 3.5);
+      for (let i = 0; i < bandCount; i++) {
+        state.smoothedBands[i] *= 0.94;
+        state.peakBands[i] *= 0.93;
+      }
+    }
+
+    const demo = function (index, count) {
+      const t = now / 1000;
+      const position = index / Math.max(1, count);
+      const wave = 0.12 + Math.max(0, Math.sin(t * 1.25 + position * 13)) * 0.13
+        + Math.max(0, Math.sin(t * 2.1 - position * 7)) * 0.08;
+      return wave * state.sensitivity;
+    };
+    return {
+      available: active && !audio.paused,
+      beat: Math.min(1, state.beatPulse),
+      bass: bassEnergy,
+      level: function (index, count) {
+        const pos = Math.max(0, Math.min(0.9999, index / Math.max(1, count)));
+        const band = Math.min(bandCount - 1, Math.floor(pos * bandCount));
+        if (!active) return Math.max(0.015, demo(index, count));
+        const smooth = state.smoothedBands[band] || 0;
+        const peak = state.peakBands[band] || 0;
+        const lowBoost = 1 - pos;
+        const beatBoost = state.beatPulse * state.beatResponse * lowBoost * 0.24;
+        return Math.max(0, Math.min(1.4, smooth + Math.max(0, peak - smooth) * 0.25 + beatBoost));
       },
       wave: function (index, count) {
-        if (available && state.timeData && state.timeData.length) {
-          const sample = state.timeData[Math.min(state.timeData.length - 1, Math.floor(index / count * state.timeData.length))];
+        if (active && state.timeData && state.timeData.length && !audio.paused) {
+          const sample = state.timeData[Math.min(state.timeData.length - 1, Math.floor(index / Math.max(1, count) * state.timeData.length))];
           return (sample - 128) / 128;
         }
         const t = now / 1000;
-        return Math.sin(index / count * Math.PI * 8 + t * 1.5) * 0.44 + Math.sin(index / count * Math.PI * 19 - t * 1.1) * 0.13;
+        return Math.sin(index / Math.max(1, count) * Math.PI * 8 + t * 1.5) * 0.44
+          + Math.sin(index / Math.max(1, count) * Math.PI * 19 - t * 1.1) * 0.13;
       }
     };
+  }
+
+  function drawCoverImage(image, w, h) {
+    if (!image || !image.width || !image.height) return;
+    const scale = Math.max(w / image.width, h / image.height);
+    const iw = image.width * scale;
+    const ih = image.height * scale;
+    ctx.drawImage(image, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
 
   function drawBackground(w, h, now, audioValues) {
@@ -214,45 +348,106 @@
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
+    if (state.backgroundImage) {
+      ctx.save();
+      ctx.globalAlpha = state.backgroundOpacity / 100;
+      drawCoverImage(state.backgroundImage, w, h);
+      ctx.restore();
+      ctx.fillStyle = 'rgba(0,0,0,' + (0.08 + (state.backgroundOpacity / 100) * 0.13) + ')';
+      ctx.fillRect(0, 0, w, h);
+    }
+
     const pulse = audioValues.level(6, 64);
     const glow = ctx.createRadialGradient(w * 0.5, h * 0.48, 4, w * 0.5, h * 0.48, Math.max(w, h) * 0.65);
-    glow.addColorStop(0, rgba(state.colorTwo, 0.13 + pulse * 0.1));
-    glow.addColorStop(0.48, rgba(state.colorOne, 0.035));
-    glow.addColorStop(1, rgba(state.background, 0));
+    glow.addColorStop(0, rgba(state.colorTwo, 0.10 + pulse * 0.08));
+    glow.addColorStop(0.48, rgba(state.colorOne, 0.025));
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(220,235,255,0.055)';
-    ctx.lineWidth = 1;
-    const grid = Math.max(42, Math.round(Math.min(w, h) / 16));
-    for (let x = 0; x < w; x += grid) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    if (!state.backgroundImage) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(220,235,255,0.035)';
+      ctx.lineWidth = 1;
+      const grid = Math.max(48, Math.round(Math.min(w, h) / 17));
+      for (let x = 0; x < w; x += grid) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += grid) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      ctx.restore();
     }
-    for (let y = 0; y < h; y += grid) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    ctx.restore();
 
-    if (state.showParticles) {
+    if (state.showParticles && state.particleCount > 0) {
       ctx.save();
       for (let i = 0; i < state.particles.length; i++) {
         const p = state.particles[i];
-        const flicker = 0.16 + (Math.sin(now / 700 * p.speed + p.phase) + 1) * 0.22;
+        const flicker = 0.12 + (Math.sin(now / 700 * p.speed * state.particleSpeed + p.phase) + 1) * 0.16;
         ctx.beginPath();
         ctx.fillStyle = i % 3 === 0 ? rgba(state.colorOne, flicker) : 'rgba(224,236,255,' + flicker + ')';
-        ctx.arc(p.x * w, (p.y * h + now * p.speed * 0.004) % h, p.size * Math.max(0.7, w / 1280), 0, Math.PI * 2);
+        const y = (p.y * h + now * p.speed * state.particleSpeed * 0.002) % h;
+        ctx.arc(p.x * w, y, p.size * state.particleSize * Math.max(0.7, w / 1280), 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     }
 
-    const vignette = ctx.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.16, w * 0.5, h * 0.48, Math.max(w, h) * 0.78);
-    vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(0,0,0,0.46)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, w, h);
+    if (state.showVignette && state.vignette > 0) {
+      const amount = state.vignette / 100;
+      const vignette = ctx.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.12, w * 0.5, h * 0.48, Math.max(w, h) * 0.74);
+      vignette.addColorStop(0, 'rgba(0,0,0,0)');
+      vignette.addColorStop(0.55, 'rgba(0,0,0,' + (amount * 0.15) + ')');
+      vignette.addColorStop(1, 'rgba(0,0,0,' + (amount * 0.78) + ')');
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, w, h);
+    }
   }
+
+  function drawCenterLogo(w, h) {
+    const size = Math.max(22, Math.min(w, h) * state.logoSize / 100);
+    const cx = w * state.logoX / 100;
+    const cy = h * state.logoY / 100;
+    ctx.save();
+    ctx.globalAlpha = state.logoOpacity / 100;
+    ctx.beginPath();
+    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(8,11,18,0.82)';
+    ctx.shadowBlur = state.glow * 0.7;
+    ctx.shadowColor = state.colorOne;
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, size / 2 - 1.5, 0, Math.PI * 2);
+    ctx.clip();
+    if (state.logoImage) {
+      drawCoverImageInCircle(state.logoImage, cx, cy, size);
+    } else {
+      ctx.shadowBlur = 0;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#f5f6f8';
+      ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif';
+      ctx.fillText('НсП', cx, cy);
+    }
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = rgba(state.colorOne, 0.82);
+    ctx.lineWidth = Math.max(1.2, size * 0.012);
+    ctx.beginPath();
+    ctx.arc(cx, cy, size / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCoverImageInCircle(image, cx, cy, size) {
+    if (!image || !image.width || !image.height) return;
+    const scale = Math.max(size / image.width, size / image.height);
+    const iw = image.width * scale;
+    const ih = image.height * scale;
+    ctx.drawImage(image, cx - iw / 2, cy - ih / 2, iw, ih);
+  }
+
 
   function colorGradient(y1, y2) {
     const gradient = ctx.createLinearGradient(0, y1, 0, y2);
