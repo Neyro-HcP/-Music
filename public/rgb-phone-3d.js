@@ -864,13 +864,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
     liquidSurfaceAccumulator+=step;
     if(liquidSurfaceAccumulator<1/30)return;
-    const surfaceDt=liquidSurfaceAccumulator;
     liquidSurfaceAccumulator=0;
     const geometry=geometries.liquidSurface;
     const position=geometry.attributes.position;
     const width=Math.max(.2,sideX*2-.16);
     const depth=1.34;
-    const speed=liquidMode==='water'?1.0:.42;
     const baseAmp=liquidMode==='water'?.027:.012;
     const energyAmp=Math.min(liquidEnergy,1.5)*(liquidMode==='water'?.035:.019);
     for(let i=0;i<position.count;i++){
@@ -1085,6 +1083,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function resize(){
     if(!renderer||!screen)return;
+    const oldRange=Math.max(.1,ceilY-floorY);
+    const liquidRatio=liquidMode?clamp((liquidLevel-floorY)/oldRange,0,1):0;
+    const targetRatio=liquidMode?clamp((liquidTargetLevel-floorY)/oldRange,0,1):0;
     const width=Math.max(1,screen.clientWidth),height=Math.max(1,screen.clientHeight);
     const dpr=Math.min(window.devicePixelRatio||1,maxDpr)*fpsScale;
     renderer.setPixelRatio(Math.max(.7,dpr));
@@ -1094,6 +1095,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     viewHalfHeight=camera.position.z*Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
     viewHalfWidth=viewHalfHeight*camera.aspect;
     rebuildWalls();
+    if(liquidMode){
+      liquidLevel=floorY+liquidRatio*(ceilY-floorY);
+      liquidTargetLevel=floorY+targetRatio*(ceilY-floorY);
+      updateLiquidLayout();
+    }
     for(const item of items){
       const p=item.body.position;
       p.x=clamp(p.x,-sideX+.32,sideX-.32);
@@ -1117,7 +1123,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function updateTilt(event){
-    if(!tiltEnabled||event.beta==null||event.gamma==null)return;
+    if(!tiltEnabled||!Number.isFinite(event.beta)||!Number.isFinite(event.gamma))return;
     const beta=THREE.MathUtils.degToRad(event.beta);
     const gamma=THREE.MathUtils.degToRad(event.gamma);
     const rawAngle=(window.screen&&window.screen.orientation&&Number.isFinite(window.screen.orientation.angle)
