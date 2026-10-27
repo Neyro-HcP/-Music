@@ -1,0 +1,73 @@
+
+.site-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 5px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 13px;
+  background: rgba(8,9,15,.54);
+}
+.site-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 35px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: rgba(224,221,242,.63);
+  text-decoration: none;
+  white-space: nowrap;
+  font: 650 11px/1.2 Manrope, system-ui, sans-serif;
+  transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+.site-tab:hover {
+  color: #fff;
+  background: rgba(255,255,255,.045);
+}
+.site-tab[aria-current="page"] {
+  color: #f6f3ff;
+  border-color: rgba(174,145,255,.24);
+  background: linear-gradient(135deg, rgba(127,92,226,.22), rgba(49,51,80,.28));
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
+}
+.site-tab:focus-visible { outline: 2px solid #b8a5ff; outline-offset: 2px; }
+@media (max-width: 1080px) {
+  .topbar { width: calc(100% - 32px); gap: 12px; }
+  .site-tab { padding: 0 10px; font-size: 10px; }
+  .topbar-actions { gap: 5px; }
+  .topbar-actions .quiet-button, .topbar-actions .site-weather-control { display: none; }
+  .topbar-actions .top-export { padding: 0 10px; font-size: 11px; }
+}
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    min-height: 70px;
+    padding: 10px 0 12px;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+  .brand { order: 1; }
+  .topbar-actions { order: 2; margin-left: auto; }
+  .site-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    margin: 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .site-tabs::-webkit-scrollbar { display: none; }
+  .site-tab { flex: 0 0 auto; min-height: 33px; padding: 0 12px; font-size: 11px; }
+  .topbar-actions .top-export { min-height: 35px; }
+}
+@media (max-width: 410px) {
+  .topbar { width: calc(100% - 24px); }
+  .site-tab { padding: 0 10px; }
+  .topbar-actions .top-export { font-size: 10px; }
+}
