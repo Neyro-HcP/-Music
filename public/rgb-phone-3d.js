@@ -30,13 +30,18 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let floorY = -2.65, ceilY = 2.65, sideX = 1.55;
   let soundEnabled = true, audioContext = null, masterGain = null, compressor = null;
   let tiltEnabled = false, tiltReference = null;
-  let gravityX = 0, gravityY = -12;
+  let gravityX = 0, gravityY = -12, gravityZ = 0;
+  let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
   const items = [];
   const bodies = new WeakMap();
   const walls = [];
   const activeEffects = [];
   const collisionTimes = new Map();
+  const liquidDrops = [];
+  const wallStreams = [];
+  const surfaceStreams = [];
+  const MAX_LIQUID_PARTICLES = coarsePointer ? 28 : 46;
   let maxDpr = coarsePointer ? 1.25 : 1.5;
   let animationHandle = 0;
   let fpsSamples = 0, fpsElapsed = 0, fpsScale = 1;
@@ -182,6 +187,43 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     materials.floor = new THREE.MeshStandardMaterial({ color: 0x15192b, roughness: .5, metalness: .14 });
     materials.back = new THREE.MeshBasicMaterial({ color: 0x090d19 });
     materials.ring = new THREE.MeshBasicMaterial({ color: 0xffbc71, transparent: true, opacity: .9, depthWrite: false, side: THREE.DoubleSide });
+    textures.waterFlow = makeCanvasTexture((g,s) => {
+      g.clearRect(0,0,s,s);
+      const gradient=g.createLinearGradient(0,0,s,0);
+      gradient.addColorStop(0,'rgba(255,255,255,0)');
+      gradient.addColorStop(.24,'rgba(255,255,255,.12)');
+      gradient.addColorStop(.42,'rgba(255,255,255,.68)');
+      gradient.addColorStop(.56,'rgba(255,255,255,.92)');
+      gradient.addColorStop(.72,'rgba(255,255,255,.3)');
+      gradient.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle=gradient;g.fillRect(0,0,s,s);
+      g.fillStyle='rgba(255,255,255,.25)';g.fillRect(s*.43,0,s*.1,s);
+    },64);
+    textures.slimeFlow = makeCanvasTexture((g,s) => {
+      g.clearRect(0,0,s,s);
+      const gradient=g.createLinearGradient(0,0,s,0);
+      gradient.addColorStop(0,'rgba(255,255,255,0)');
+      gradient.addColorStop(.18,'rgba(255,255,255,.24)');
+      gradient.addColorStop(.4,'rgba(255,255,255,.88)');
+      gradient.addColorStop(.58,'rgba(255,255,255,.95)');
+      gradient.addColorStop(.8,'rgba(255,255,255,.36)');
+      gradient.addColorStop(1,'rgba(255,255,255,0)');
+      g.fillStyle=gradient;g.fillRect(0,0,s,s);
+      for(let i=0;i<9;i++){
+        g.beginPath();g.ellipse(random(s*.2,s*.8),random(0,s),random(1,4),random(5,22),0,0,Math.PI*2);
+        g.fillStyle='rgba(255,255,255,'+random(.12,.4)+')';g.fill();
+      }
+    },64);
+    materials.water = new THREE.MeshPhysicalMaterial({
+      color:0x64dfff,roughness:.045,metalness:.02,transparent:true,opacity:.76,
+      clearcoat:1,clearcoatRoughness:.025,envMapIntensity:1.6,depthWrite:false
+    });
+    materials.slime = new THREE.MeshPhysicalMaterial({
+      color:0x75ee43,roughness:.12,metalness:.01,transparent:true,opacity:.88,
+      clearcoat:1,clearcoatRoughness:.06,envMapIntensity:1.35,depthWrite:false
+    });
+    materials.waterFlow = new THREE.MeshBasicMaterial({map:textures.waterFlow,color:0x70dfff,transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide});
+    materials.slimeFlow = new THREE.MeshBasicMaterial({map:textures.slimeFlow,color:0x87ec4f,transparent:true,opacity:.88,depthWrite:false,side:THREE.DoubleSide});
   }
 
   function createRenderer() {
@@ -232,6 +274,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.ice = new RoundedBoxGeometry(.48,.48,.48,3,.045);
     geometries.tnt = new RoundedBoxGeometry(.49,.49,.49,3,.035);
     geometries.tntLabel = new THREE.PlaneGeometry(.4,.2);
+    geometries.drop = new THREE.SphereGeometry(.055,8,6);
+    geometries.flowRibbon = new THREE.PlaneGeometry(1,1);
     geometries.shadow = new THREE.PlaneGeometry(1,1);
     geometries.floor = new THREE.BoxGeometry(1,.12,1.2);
     geometries.ring = new THREE.TorusGeometry(.12,.018,5,42);
@@ -339,22 +383,25 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const scale = kind==='rubber' ? random(.78,1.12) : kind==='ice' ? random(.86,1.13) : kind==='tnt' ? 1 : random(.85,1.2);
     let mesh, shape, mass, mat;
     if(kind==='rubber'){
-      mat=materials.ball;
+      mat=materials.ball.clone();
       mesh=new THREE.Mesh(geometries.sphere,mat);
       mesh.scale.setScalar(scale);
       shape=new CANNON.Sphere(.22*scale);
       mass=.62*scale;
     } else if(kind==='ice'){
-      mesh=new THREE.Mesh(geometries.ice,materials.ice);
+      mat=materials.ice.clone();
+      mesh=new THREE.Mesh(geometries.ice,mat);
       mesh.scale.setScalar(scale);
       shape=new CANNON.Box(new CANNON.Vec3(.23*scale,.23*scale,.23*scale));
       mass=.82*scale;
     } else if(kind==='tnt'){
-      mesh=new THREE.Mesh(geometries.tnt,materials.tnt);
+      mat=materials.tnt.clone();
+      mesh=new THREE.Mesh(geometries.tnt,mat);
       shape=new CANNON.Box(new CANNON.Vec3(.235,.235,.235));
       mass=1.15;
     } else {
-      mesh=new THREE.Mesh(geometries.cube,materials.cube);
+      mat=materials.cube.clone();
+      mesh=new THREE.Mesh(geometries.cube,mat);
       mesh.scale.setScalar(scale);
       shape=new CANNON.Box(new CANNON.Vec3(.22*scale,.22*scale,.22*scale));
       mass=.78*scale;
@@ -378,15 +425,16 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     });
     body.material=new CANNON.Material(kind);
     body.userData={kind};
-    body.angularVelocity.set(random(-1.8,1.8),random(-1.8,1.8),random(-1.8,1.8));
+    body.angularVelocity.set(random(-.45,.45),random(-.45,.45),random(-.75,.75));
     body.velocity.set(velocity?.x ?? random(-1.2,1.2),velocity?.y ?? random(-.6,.5),velocity?.z ?? random(-.55,.55));
     world.addBody(body);
-    const item={id:nextId++,kind,mesh,body,shadow,mass,scale,radius:kind==='rubber'?.22*scale:.39*scale,
+    const item={id:nextId++,kind,mesh,body,shadow,material:mat,mass,scale,radius:kind==='rubber'?.22*scale:.39*scale,
       fuseAt:options.fuseAt||0,lastSound:0};
     body.userData.item=item;
     bodies.set(body,item);
     body.addEventListener('collide', event=>onCollision(item,event));
     items.push(item);
+    if(liquidMode)attachLiquidToItem(item,liquidMode);
     return item;
   }
 
@@ -397,6 +445,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     world.removeBody(item.body);
     scene.remove(item.mesh);
     scene.remove(item.shadow);
+    item.material?.dispose();
+    for(let i=surfaceStreams.length-1;i>=0;i--)if(surfaceStreams[i].item===item)surfaceStreams.splice(i,1);
+    for(let i=liquidDrops.length-1;i>=0;i--)if(liquidDrops[i].item===item)liquidDrops.splice(i,1);
     item.body.removeAllEventListeners?.();
     if(dragging?.item===item)dragging=null;
   }
@@ -732,7 +783,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         clamp((b.y-a.y)/seconds,-12,12),
         clamp((b.x-a.x)/seconds*.11,-4.5,4.5)
       );
-      item.body.angularVelocity.set(random(-5,5),random(-5,5),random(-6,6));
+      const offset=d.offset;
+      const spin=clamp(((b.x-a.x)*offset.y-(b.y-a.y)*offset.x)*.7,-8,8);
+      item.body.angularVelocity.set(clamp(item.body.velocity.y*.2,-1.8,1.8),clamp(-item.body.velocity.x*.2,-1.8,1.8),spin);
       item.body.wakeUp();
       playImpact(item.kind,Math.hypot(item.body.velocity.x,item.body.velocity.y),item.body.position.x);
       if(item.kind==='tnt')item.fuseAt=performance.now()+1800;
