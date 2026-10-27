@@ -539,13 +539,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function stopLiquidSound(){
     if(!liquidSoundSource)return;
-    const source=liquidSoundSource,gain=liquidSoundGain;
+    const source=liquidSoundSource,gain=liquidSoundGain,filter=liquidSoundFilter;
     if(gain&&audioContext){
       gain.gain.cancelScheduledValues(audioContext.currentTime);
       gain.gain.setTargetAtTime(.0001,audioContext.currentTime,.07);
     }
     try{source.stop(audioContext.currentTime+.32);}catch(_){}
-    source.onended=()=>{try{source.disconnect();}catch(_){}};
+    source.onended=()=>{
+      try{source.disconnect();}catch(_){}
+      try{filter?.disconnect();}catch(_){}
+      try{gain?.disconnect();}catch(_){}
+    };
     liquidSoundSource=null;liquidSoundFilter=null;liquidSoundGain=null;
   }
 
@@ -1045,9 +1049,14 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const tiltX=gamma*Math.cos(screenAngle)-beta*Math.sin(screenAngle);
     const tiltY=gamma*Math.sin(screenAngle)+beta*Math.cos(screenAngle);
     const g=12;
-    gravityX=clamp(Math.sin(tiltX)*g,-g,g);
-    gravityY=clamp(-Math.cos(tiltX)*Math.cos(tiltY)*g,-g,g);
-    gravityZ=clamp(Math.sin(tiltY)*g,-g,g);
+    const gravityVector=new THREE.Vector3(
+      Math.sin(tiltX),
+      -Math.cos(tiltX)*Math.cos(tiltY),
+      Math.sin(tiltY)
+    ).normalize().multiplyScalar(g);
+    gravityX=gravityVector.x;
+    gravityY=gravityVector.y;
+    gravityZ=gravityVector.z;
     world.gravity.set(gravityX,gravityY,gravityZ);
     const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y,gravityZ-lastWakeGravity.z);
     const now=performance.now();
