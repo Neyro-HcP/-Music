@@ -15,32 +15,24 @@
 </head>
 <body>
   <div class="site-noise" aria-hidden="true"></div>
-  <header class="topbar">
+  <header class="topbar"><div class="site-weather-layer" id="siteWeatherLayer" aria-hidden="true"></div>
     <a class="brand" href="./" aria-label="НсП Visual Lab — главная">
       <span class="brand-nsp">НсП</span>
-      <span class="brand-text"><b>НсП VISUAL LAB</b><small>АУДИО · ВИЗУАЛ · АВТОРСКАЯ СЦЕНА</small></span>
+      <span class="brand-text"><b>НсП VISUAL LAB</b></span>
     </a>
-    <div class="topbar-center"><span class="live-dot"></span> ВСЁ РАБОТАЕТ В БРАУЗЕРЕ</div>
-    <div class="topbar-actions">
-      <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить стиль</button>
+<div class="topbar-actions"><div class="site-weather-control"><label for="siteParticlesMode">Эффект</label><select id="siteParticlesMode" aria-label="Эффект частиц сайта"><option value="off">Выкл.</option><option value="snow">Снег</option><option value="leaves">Листья</option></select></div>
+      <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить</button>
       <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
     </div>
   </header>
 
   <main class="app-main">
-    <section class="intro">
-      <div>
-        <div class="eyebrow"><span>АВТОРСКАЯ МУЗЫКАЛЬНАЯ ГРАФИКА</span><i></i><span>ПОД КОНТРОЛЕМ НсП</span></div>
-        <h1>ЗВУК, КОТОРЫЙ<br><span>ВИДНО.</span></h1>
-        <p class="intro-copy">Настраивай визуализатор до мелочей: форму, движение, фон, логотип, свет и типографику. Твоя сцена — твои правила.</p>
-      </div>
-      <div class="intro-stamp"><span class="stamp-orbit"></span><b>НсП / LAB</b><small>СВОЙ ЗВУК<br>СВОЙ ВИЗУАЛ</small></div>
-    </section>
+    <section class="intro intro-minimal"><h1>Visual Lab<span class="accent-dot">.</span></h1></section>
 
-    <section class="workspace" id="workspace">
+<section class="workspace" id="workspace">
       <aside class="style-panel panel">
-        <div class="panel-kicker"><span>01</span> ВИЗУАЛЬНЫЙ ДВИЖОК</div>
-        <div class="section-title-row"><h2>Выбери стиль</h2><span class="micro-label">PRESETS</span></div>
+        <div class="panel-kicker"><span>01</span> СТИЛЬ</div>
+        <div class="section-title-row"><h2>Визуализатор</h2><span class="micro-label">11</span></div>
         <div class="preset-list" id="presetList">
           <button class="preset-card active" type="button" data-style="spectrum"><span class="preset-thumb thumb-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="preset-info"><b>NEON SPECTRUM</b><small>Пульсирующие частоты</small></span><span class="preset-index">01</span></button>
           <button class="preset-card" type="button" data-style="orbit"><span class="preset-thumb thumb-orbit"><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="preset-info"><b>ORBITAL</b><small>Кольцо вокруг звука</small></span><span class="preset-index">02</span></button>
@@ -55,24 +47,22 @@
           <button class="preset-card" type="button" data-style="bars3d"><span class="preset-thumb thumb-bars3d"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="preset-info"><b>FREQUENCY WALL</b><small>Мощная зеркальная стена</small></span><span class="preset-index">11</span></button>
         </div>
         <div class="panel-divider"></div>
-        <div class="local-card"><span class="local-icon">⌁</span><div><b>ЛОКАЛЬНАЯ СТУДИЯ</b><p>Музыка не уходит на сервер. Логотип и фон сохраняются на этом устройстве.</p></div></div>
-        <div class="side-foot"><span>НсП STUDIO</span><span>BUILD 1.3</span></div>
-      </aside>
+</aside>
 
       <section class="preview-column">
         <div class="preview-header">
-          <div><div class="panel-kicker"><span>02</span> КОМПОЗИЦИЯ</div><h2>Предпросмотр<span class="accent-dot">.</span></h2></div>
+          <div><h2>Предпросмотр</h2></div>
           <div class="preview-status"><span class="live-dot"></span><span id="previewStatus">DEMO MODE</span></div>
         </div>
         <div class="canvas-shell" id="canvasShell">
           <canvas id="visualizer" width="1280" height="720" aria-label="Предпросмотр аудиовизуализатора"></canvas>
           <div class="canvas-corner canvas-corner-tr" id="canvasAspectBadge">16:9 · 1280 × 720</div>
         </div>
-        <p class="drag-hint"><span>↔</span> Перетаскивай сцену, логотип и текст прямо на холсте — мышью или пальцем</p>
+        <p class="drag-hint"><span>↔</span> Перетаскивай слои прямо на холсте</p>
         <div class="track-transport">
           <div class="transport-file">
             <div class="file-art"><span>♫</span><i></i></div>
-            <div class="file-copy"><b id="loadedTrackName">Сначала добавь аудио</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
+            <div class="file-copy"><b id="loadedTrackName">Добавь аудио</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
           </div>
           <div class="transport-controls">
             <button class="round-control" id="rewindButton" type="button" aria-label="В начало" title="В начало">↺</button>
@@ -91,21 +81,63 @@
 
       <aside class="controls-panel panel">
         <div class="panel-kicker"><span>03</span> НАСТРОЙКА СЦЕНЫ</div>
-        <div class="section-title-row"><h2>Твоя сцена</h2><span class="micro-label">EDITOR</span></div>
-        <div class="control-section">
-          <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
-          <button class="dropzone" id="dropzone" type="button">
-            <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm" hidden>
-            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
-          </button>
+        <div class="section-title-row"><h2>Настройки</h2><span class="micro-label">EDITOR</span></div>
+        <div class="settings-tabs" role="tablist" aria-label="Настройки">
+          <button class="settings-tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-text" data-settings-tab="text">Текст</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-background" data-settings-tab="background">Фон</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-logo" data-settings-tab="logo">Логотип</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-music" data-settings-tab="music">Музыка</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-particles" data-settings-tab="particles">Частицы</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-effects" data-settings-tab="effects">Спецэффекты</button>
         </div>
-        <div class="control-section">
+        <div class="settings-tab-panel" id="settings-panel-text" role="tabpanel" data-settings-panel="text">
+          <div class="control-section">
           <div class="control-heading"><label for="trackTitle">Название</label><span class="micro-label">TEXT</span></div>
           <input class="text-field" id="trackTitle" type="text" maxlength="80" placeholder="Название трека">
           <input class="text-field secondary-field" id="trackArtist" type="text" maxlength="60" placeholder="Исполнитель / подпись">
         </div>
-        <div class="panel-divider"></div>
-        <div class="control-section media-section">
+          <div class="control-section text-layer-panel">
+          <div class="control-heading"><span>Заголовок</span><span class="micro-label">СЛОЙ 02</span></div>
+          <div class="two-range-grid">
+            <label><span>Позиция X <output id="titleXOutput">6%</output></span><input id="titleXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
+            <label><span>Позиция Y <output id="titleYOutput">78%</output></span><input id="titleYRange" class="range-input" type="range" min="5" max="92" step="1" value="78"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="titleSizeRange">Размер заголовка</label><output id="titleSizeOutput">100%</output></div>
+          <input id="titleSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="color-row">
+            <label class="color-control"><input id="titleColorInput" type="color" value="#f5f6f8"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
+            <label class="color-control"><input id="titleOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="titleOpacityOutput">100%</small></span></label>
+          </div>
+        </div>
+          <div class="control-section text-layer-panel">
+          <div class="control-heading"><span>Подпись автора</span><span class="micro-label">СЛОЙ 03</span></div>
+          <div class="two-range-grid">
+            <label><span>Позиция X <output id="artistXOutput">6%</output></span><input id="artistXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
+            <label><span>Позиция Y <output id="artistYOutput">88%</output></span><input id="artistYRange" class="range-input" type="range" min="8" max="96" step="1" value="88"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="artistSizeRange">Размер подписи</label><output id="artistSizeOutput">100%</output></div>
+          <input id="artistSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="color-row">
+            <label class="color-control"><input id="artistColorInput" type="color" value="#d6b57c"><span><b>ЦВЕТ</b><small>Подпись</small></span></label>
+            <label class="color-control"><input id="artistOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="artistOpacityOutput">100%</small></span></label>
+          </div>
+        </div>
+          <div class="toggle-list"><label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label></div>
+        </div>
+        <div class="settings-tab-panel" id="settings-panel-background" role="tabpanel" data-settings-panel="background" hidden>
+          <div class="control-section media-section">
+          <div class="control-heading"><span>Собственный фон</span><span class="micro-label">IMAGE</span></div>
+          <div class="background-picker-row"><button class="background-pick-button" id="backgroundPickButton" type="button"><span>＋</span> Загрузить изображение</button><button class="icon-action" id="removeBackgroundButton" type="button" title="Убрать изображение">×</button></div>
+          <input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+          <div class="control-heading compact-heading"><label for="backgroundOpacityRange">Видимость фона</label><output id="backgroundOpacityOutput">100%</output></div>
+          <input id="backgroundOpacityRange" class="range-input" type="range" min="0" max="100" step="1" value="100">
+          <div class="control-heading compact-heading"><label for="vignetteRange">Виньетка</label><output id="vignetteOutput">65%</output></div>
+          <input id="vignetteRange" class="range-input" type="range" min="0" max="100" step="1" value="65">
+        </div>
+          <label class="background-color-row"><span><i></i>Цвет фона</span><input id="backgroundColor" type="color" value="#08090d"></label>
+          <div class="toggle-list"><label class="toggle-row"><span><b>Виньетка</b><small>Затемнение по краям</small></span><input id="showVignette" type="checkbox" checked><i></i></label></div>
+        </div>
+        <div class="settings-tab-panel" id="settings-panel-logo" role="tabpanel" data-settings-panel="logo" hidden><div class="control-section media-section">
           <div class="control-heading"><span>Логотип в центре</span><span class="micro-label">НсП</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Показывать логотип на холсте</b><small>Выключен по умолчанию, чтобы не перекрывать визуализатор</small></span><input id="showLogo" type="checkbox"><i></i></label>
           <div class="media-picker-row">
@@ -122,86 +154,33 @@
             <label><span>Центр X <output id="logoXOutput">50%</output></span><input id="logoXRange" class="range-input" type="range" min="10" max="90" step="1" value="50"></label>
             <label><span>Центр Y <output id="logoYOutput">45%</output></span><input id="logoYRange" class="range-input" type="range" min="10" max="90" step="1" value="45"></label>
           </div>
-        </div>
-        <div class="panel-divider"></div>
-        <div class="control-section media-section">
-          <div class="control-heading"><span>Собственный фон</span><span class="micro-label">IMAGE</span></div>
-          <div class="background-picker-row"><button class="background-pick-button" id="backgroundPickButton" type="button"><span>＋</span> Загрузить изображение</button><button class="icon-action" id="removeBackgroundButton" type="button" title="Убрать изображение">×</button></div>
-          <input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-          <div class="control-heading compact-heading"><label for="backgroundOpacityRange">Видимость фона</label><output id="backgroundOpacityOutput">100%</output></div>
-          <input id="backgroundOpacityRange" class="range-input" type="range" min="0" max="100" step="1" value="100">
-          <div class="control-heading compact-heading"><label for="vignetteRange">Виньетка</label><output id="vignetteOutput">65%</output></div>
-          <input id="vignetteRange" class="range-input" type="range" min="0" max="100" step="1" value="65">
-        </div>
-        <div class="panel-divider"></div>
-        <div class="control-section">
-          <div class="control-heading"><span>Цветовая палитра</span><span class="micro-label">COLOR</span></div>
-          <div class="color-row"><label class="color-control"><input id="colorOne" type="color" value="#d6b57c"><span><b>NEON</b><small>Основной</small></span></label><label class="color-control"><input id="colorTwo" type="color" value="#8b97b0"><span><b>GLOW</b><small>Вторичный</small></span></label></div>
-          <label class="background-color-row"><span><i></i>Цвет фона</span><input id="backgroundColor" type="color" value="#08090d"></label>
-          <div class="swatches" aria-label="Быстрые цветовые темы">
-            <button type="button" class="swatch active" data-palette="acid" title="Amber and slate" aria-label="Янтарный и графитовый"></button>
-            <button type="button" class="swatch" data-palette="ocean" title="Deep ocean" aria-label="Голубой и бирюзовый"></button>
-            <button type="button" class="swatch" data-palette="sunset" title="Sunset" aria-label="Оранжевый и розовый"></button>
-            <button type="button" class="swatch" data-palette="mono" title="Monochrome" aria-label="Монохром"></button>
-            <button type="button" class="swatch" data-palette="pink" title="Cyber pink" aria-label="Розовый и синий"></button>
-          </div>
-        </div>
-        <div class="panel-divider"></div>
-        <div class="control-section">
-          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
-          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
-          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
-        </div>
-        <div class="control-section">
-          <div class="control-heading"><label for="glowRange">Свечение</label><output id="glowOutput">22</output></div>
-          <input id="glowRange" class="range-input" type="range" min="0" max="40" step="1" value="22">
-          <div class="range-labels"><span>Чётко</span><span>NEON GLOW</span></div>
-        </div>
-        <div class="control-section">
-          <div class="control-heading"><label for="aspectSelect">Формат кадра</label><span class="micro-label">RATIO</span></div>
-          <select id="aspectSelect" class="select-field"><option value="landscape">16:9 · YouTube</option><option value="square">1:1 · пост</option><option value="portrait">9:16 · Shorts / Reels</option></select>
-        </div>
-        <div class="panel-divider"></div>
-        <div class="control-section">
-          <div class="control-heading"><span>Визуализатор</span><span class="micro-label">СЛОЙ 01</span></div>
+        
+          <div class="control-heading compact-heading"><label for="logoShapeSelect">Форма</label></div>
+          <select id="logoShapeSelect" class="select-field"><option value="circle">Круг</option><option value="square">Квадрат</option><option value="diamond">Ромб</option><option value="hexagon">Шестиугольник</option></select>
+          <div class="panel-divider"></div>
+          <div class="control-heading"><span>Реакция на музыку</span><span class="micro-label">LOGO FX</span></div>
+          <label class="toggle-row standalone-toggle"><span><b>Пульсация</b><small>Размер меняется от звука</small></span><input id="logoPulseEnabled" type="checkbox" checked><i></i></label>
+          <div class="control-heading compact-heading"><label for="logoPulseModeSelect">Источник</label></div>
+          <select id="logoPulseModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
+          <div class="control-heading compact-heading"><label for="logoPulseAmountRange">Сила пульсации</label><output id="logoPulseAmountOutput">45%</output></div>
+          <input id="logoPulseAmountRange" class="range-input" type="range" min="0" max="100" step="1" value="45">
+          <label class="toggle-row standalone-toggle"><span><b>Аудио-кольца вокруг логотипа</b><small>Мини-визуализатор эмблемы</small></span><input id="logoHaloEnabled" type="checkbox" checked><i></i></label>
           <div class="two-range-grid">
-            <label><span>Положение X <output id="visualXOutput">0%</output></span><input id="visualXRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
-            <label><span>Положение Y <output id="visualYOutput">0%</output></span><input id="visualYRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
+            <label><span>Кольца <output id="logoHaloCountOutput">3</output></span><input id="logoHaloCountRange" class="range-input" type="range" min="0" max="6" step="1" value="3"></label>
+            <label><span>Толщина <output id="logoHaloWidthOutput">2</output></span><input id="logoHaloWidthRange" class="range-input" type="range" min="1" max="8" step="1" value="2"></label>
           </div>
-          <div class="two-range-grid">
-            <label><span>Масштаб <output id="visualScaleOutput">100%</output></span><input id="visualScaleRange" class="range-input" type="range" min="35" max="175" step="5" value="100"></label>
-            <label><span>Прозрачность <output id="visualOpacityOutput">100%</output></span><input id="visualOpacityRange" class="range-input" type="range" min="10" max="100" step="1" value="100"></label>
-          </div>
-          <div class="control-heading compact-heading"><label for="visualLineWidthRange">Толщина линий</label><output id="visualLineWidthOutput">1.0×</output></div>
-          <input id="visualLineWidthRange" class="range-input" type="range" min="0.5" max="3" step="0.1" value="1">
-        </div>
-        <div class="control-section text-layer-panel">
-          <div class="control-heading"><span>Заголовок</span><span class="micro-label">СЛОЙ 02</span></div>
-          <div class="two-range-grid">
-            <label><span>Позиция X <output id="titleXOutput">6%</output></span><input id="titleXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
-            <label><span>Позиция Y <output id="titleYOutput">78%</output></span><input id="titleYRange" class="range-input" type="range" min="5" max="92" step="1" value="78"></label>
-          </div>
-          <div class="control-heading compact-heading"><label for="titleSizeRange">Размер заголовка</label><output id="titleSizeOutput">100%</output></div>
-          <input id="titleSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
-          <div class="color-row">
-            <label class="color-control"><input id="titleColorInput" type="color" value="#f5f6f8"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
-            <label class="color-control"><input id="titleOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="titleOpacityOutput">100%</small></span></label>
-          </div>
-        </div>
-        <div class="control-section text-layer-panel">
-          <div class="control-heading"><span>Подпись автора</span><span class="micro-label">СЛОЙ 03</span></div>
-          <div class="two-range-grid">
-            <label><span>Позиция X <output id="artistXOutput">6%</output></span><input id="artistXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
-            <label><span>Позиция Y <output id="artistYOutput">88%</output></span><input id="artistYRange" class="range-input" type="range" min="8" max="96" step="1" value="88"></label>
-          </div>
-          <div class="control-heading compact-heading"><label for="artistSizeRange">Размер подписи</label><output id="artistSizeOutput">100%</output></div>
-          <input id="artistSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
-          <div class="color-row">
-            <label class="color-control"><input id="artistColorInput" type="color" value="#d6b57c"><span><b>ЦВЕТ</b><small>Подпись</small></span></label>
-            <label class="color-control"><input id="artistOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="artistOpacityOutput">100%</small></span></label>
-          </div>
-        </div>
-        <div class="control-section">
+          <div class="color-row particle-colors-row">
+            <label class="color-control"><input id="logoHaloColorInput" type="color" value="#d6b57c"><span><b>ЦВЕТ КОЛЕЦ</b><small>Контур</small></span></label>
+            <label class="color-control"><input id="logoGlowRange" type="range" min="0" max="30" step="1" value="14"><span><b>СВЕЧЕНИЕ</b><small id="logoGlowOutput">14</small></span></label>
+          </div></div></div>
+        <div class="settings-tab-panel" id="settings-panel-music" role="tabpanel" data-settings-panel="music" hidden><div class="control-section">
+          <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
+          <button class="dropzone" id="dropzone" type="button">
+            <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm" hidden>
+            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
+          </button>
+        </div></div>
+        <div class="settings-tab-panel" id="settings-panel-particles" role="tabpanel" data-settings-panel="particles" hidden><div class="control-section">
           <div class="control-heading"><span>Частицы</span><span class="micro-label">СЛОЙ 04 · FX</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b><small>Движение на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
           <div class="control-heading compact-heading"><label for="particleDirectionSelect">Направление</label></div>
@@ -224,15 +203,73 @@
           <input id="particleGlowRange" class="range-input" type="range" min="0" max="24" step="1" value="0">
           <div class="control-heading compact-heading"><label for="particleSpeedRange">Скорость частиц</label><output id="particleSpeedOutput">1.0×</output></div>
           <input id="particleSpeedRange" class="range-input" type="range" min="0" max="3" step="0.1" value="1">
+        </div></div>
+        <div class="settings-tab-panel" id="settings-panel-effects" role="tabpanel" data-settings-panel="effects" hidden>
+          <div class="control-section">
+            <div class="control-heading"><span>Основной визуализатор</span><span class="micro-label">LAYER 01</span></div>
+            <label class="toggle-row standalone-toggle"><span><b>Показывать визуализатор</b><small>Логотип и текст останутся видимы</small></span><input id="showVisualizer" type="checkbox" checked><i></i></label>
+          </div>
+          <div class="control-section">
+          <div class="control-heading"><span>Цветовая палитра</span><span class="micro-label">COLOR</span></div>
+          <div class="color-row"><label class="color-control"><input id="colorOne" type="color" value="#d6b57c"><span><b>NEON</b><small>Основной</small></span></label><label class="color-control"><input id="colorTwo" type="color" value="#8b97b0"><span><b>GLOW</b><small>Вторичный</small></span></label></div>
+          
+          <div class="swatches" aria-label="Быстрые цветовые темы">
+            <button type="button" class="swatch active" data-palette="acid" title="Amber and slate" aria-label="Янтарный и графитовый"></button>
+            <button type="button" class="swatch" data-palette="ocean" title="Deep ocean" aria-label="Голубой и бирюзовый"></button>
+            <button type="button" class="swatch" data-palette="sunset" title="Sunset" aria-label="Оранжевый и розовый"></button>
+            <button type="button" class="swatch" data-palette="mono" title="Monochrome" aria-label="Монохром"></button>
+            <button type="button" class="swatch" data-palette="pink" title="Cyber pink" aria-label="Розовый и синий"></button>
+          </div>
         </div>
-        <div class="control-section">
+          <div class="control-section">
+          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
+          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
+          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
+        </div>
+          <div class="control-section">
+          <div class="control-heading"><label for="glowRange">Свечение</label><output id="glowOutput">22</output></div>
+          <input id="glowRange" class="range-input" type="range" min="0" max="40" step="1" value="22">
+          <div class="range-labels"><span>Чётко</span><span>NEON GLOW</span></div>
+        </div>
+          <div class="control-section">
+          <div class="control-heading"><label for="aspectSelect">Формат кадра</label><span class="micro-label">RATIO</span></div>
+          <select id="aspectSelect" class="select-field"><option value="landscape">16:9 · YouTube</option><option value="square">1:1 · пост</option><option value="portrait">9:16 · Shorts / Reels</option></select>
+        </div>
+          <div class="control-section">
+          <div class="control-heading"><span>Визуализатор</span><span class="micro-label">СЛОЙ 01</span></div>
+          <div class="two-range-grid">
+            <label><span>Положение X <output id="visualXOutput">0%</output></span><input id="visualXRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
+            <label><span>Положение Y <output id="visualYOutput">0%</output></span><input id="visualYRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
+          </div>
+          <div class="two-range-grid">
+            <label><span>Масштаб <output id="visualScaleOutput">100%</output></span><input id="visualScaleRange" class="range-input" type="range" min="35" max="175" step="5" value="100"></label>
+            <label><span>Прозрачность <output id="visualOpacityOutput">100%</output></span><input id="visualOpacityRange" class="range-input" type="range" min="10" max="100" step="1" value="100"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="visualLineWidthRange">Толщина линий</label><output id="visualLineWidthOutput">1.0×</output></div>
+          <input id="visualLineWidthRange" class="range-input" type="range" min="0.5" max="3" step="0.1" value="1">
+        </div>
+          <div class="control-section">
+            <div class="control-heading"><span>Рендер основного слоя</span><span class="micro-label">RENDER</span></div>
+            <label class="toggle-row standalone-toggle"><span><b>Градиент</b><small>Переход между двумя цветами</small></span><input id="visualizerGradientEnabled" type="checkbox" checked><i></i></label>
+            <div class="control-heading compact-heading"><label for="visualizerShadowRange">Тень слоя</label><output id="visualizerShadowOutput">12</output></div>
+            <input id="visualizerShadowRange" class="range-input" type="range" min="0" max="40" step="1" value="12">
+            <div class="control-heading compact-heading"><label for="visualizerFilterSelect">Фильтр визуализатора</label></div>
+            <select id="visualizerFilterSelect" class="select-field"><option value="none">Без фильтра</option><option value="punch">Контраст + цвет</option><option value="mono">Монохром</option><option value="warm">Тёплый тон</option><option value="cold">Холодный тон</option><option value="bloom">Яркое свечение</option></select>
+          </div>
+          <div class="control-section visualizer-layer-editor">
+            <div class="control-heading"><span>Дополнительные слои</span><span class="micro-label" id="visualizerLayerCount">1 слой</span></div>
+            <p class="setting-note">Новый слой накладывается поверх предыдущего. Все параметры можно менять отдельно.</p>
+            <div id="visualizerLayerList"></div>
+            <button class="primary-button layer-add-button" id="addVisualizerLayerButton" type="button">＋ Добавить слой</button>
+          </div>
+          <div class="control-section">
           <div class="control-heading"><span>Динамика</span><span class="micro-label">AUDIO</span></div>
           <div class="control-heading compact-heading"><label for="beatResponseRange">Реакция на удар</label><output id="beatResponseOutput">1.8×</output></div>
           <input id="beatResponseRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1.8">
           <div class="control-heading compact-heading"><label for="smoothingRange">Плавность</label><output id="smoothingOutput">45%</output></div>
           <input id="smoothingRange" class="range-input" type="range" min="0" max="90" step="5" value="45">
         </div>
-        <div class="control-section impact-settings">
+          <div class="control-section impact-settings">
           <div class="control-heading"><span>Камера и ударные эффекты</span><span class="micro-label">IMPACT FX</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Дёргать камеру</b><small>Реакция на бас и ударные биты</small></span><input id="cameraShakeEnabled" type="checkbox"><i></i></label>
           <div class="control-heading compact-heading"><label for="cameraShakeModeSelect">Источник тряски</label></div>
@@ -246,21 +283,11 @@
           <div class="control-heading compact-heading"><label for="vignettePulseRange">Пульсация виньетки</label><output id="vignettePulseOutput">28%</output></div>
           <input id="vignettePulseRange" class="range-input" type="range" min="0" max="100" step="1" value="28">
         </div>
-        <div class="toggle-list">
-          <label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label>
-          <label class="toggle-row"><span><b>Виньетка</b><small>Затемнение по краям</small></span><input id="showVignette" type="checkbox" checked><i></i></label>
         </div>
-        <div class="panel-divider"></div>
-        <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div>
-      </aside>
+        <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div></aside>
     </section>
 
-    <section class="bottom-strip">
-      <div class="bottom-feature"><span>01</span><div><b>СОЗДАВАЙ БЕЗ ОГРАНИЧЕНИЙ</b><small>Стили, палитры, типографика и формат кадра.</small></div></div>
-      <div class="bottom-feature"><span>02</span><div><b>ЗВУК ОСТАЁТСЯ ТВОИМ</b><small>Аудио обрабатывается локально, без загрузки на сервер.</small></div></div>
-      <div class="bottom-feature"><span>03</span><div><b>СРАЗУ В ВИДЕО</b><small>Экспорт MP4 / WebM в браузере и PNG-кадр обложки.</small></div></div>
-    </section>
-    <footer class="footer"><span><b>НсП</b> <i>•</i> VISUAL LAB</span><span>СДЕЛАНО НсП <b>↗</b></span></footer>
+<footer class="footer"><span><b>НсП</b> <i>•</i> VISUAL LAB</span></footer>
   </main>
 
   <audio id="audio" preload="metadata"></audio>
