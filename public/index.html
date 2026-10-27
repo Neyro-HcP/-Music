@@ -3,102 +3,164 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10110f">
-  <meta name="description" content="НсП Music — собственная музыкальная библиотека. Слушай и публикуй свои релизы.">
-  <title>НсП Music — своя волна</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="WAVEFRAME — бесплатный онлайн-конструктор аудиовизуализаторов. Создавай неоновые визуалы и экспортируй видео прямо в браузере.">
+  <title>WAVEFRAME — Visual Lab</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/app.css">
-  <script src="/app.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./app.css">
+  <script src="./app.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <a class="brand" href="/" aria-label="НсП Music — главная">
-        <span class="brand-mark"><span>Н</span><i></i></span>
-        <span class="brand-copy"><strong>НсП<span> MUSIC</span></strong><small>СВОЯ ВОЛНА</small></span>
-      </a>
-      <div class="sidebar-label">МЕНЮ</div>
-      <nav class="main-nav" aria-label="Основное меню">
-        <button class="nav-item active" data-view="all"><span class="nav-icon">◫</span><span>Моя библиотека</span><b id="sidebarCount">0</b></button>
-        <button class="nav-item" data-view="recent"><span class="nav-icon">◷</span><span>Недавние</span></button>
-        <button class="nav-item" data-view="favorites"><span class="nav-icon">♡</span><span>Избранное</span><b id="favoriteCount">0</b></button>
-      </nav>
-      <div class="sidebar-library-heading"><span>ПОСЛЕДНИЕ ТРЕКИ</span><button id="refreshButton" aria-label="Обновить библиотеку" title="Обновить">↻</button></div>
-      <div id="sidebarLibrary" class="sidebar-library"><div class="sidebar-empty">Тут будут твои релизы</div></div>
-      <div class="sidebar-bottom">
-        <div class="storage-note"><span class="status-dot"></span><span><b>ТВОЯ СТУДИЯ</b><small>Музыка хранится на сервере</small></span></div>
-        <button class="sidebar-upload" id="sidebarUpload"><span>＋</span> Загрузить трек</button>
-        <button class="author-button" id="authorButton"><span class="author-avatar">Н</span><span id="authorButtonText">Войти как автор</span><span class="author-arrow">↗</span></button>
-        <button class="about-link" id="aboutBtn">О проекте <span>↗</span></button>
+  <div class="site-noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="WAVEFRAME — начало">
+      <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-text"><b>WAVEFRAME</b><small>VISUAL LAB <em>01</em></small></span>
+    </a>
+    <div class="topbar-center"><span class="live-dot"></span> STUDIO RUNS IN YOUR BROWSER</div>
+    <div class="topbar-actions">
+      <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить стиль</button>
+      <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="intro">
+      <div>
+        <div class="eyebrow"><span>ИНСТРУМЕНТ ДЛЯ ЗВУКА</span><i></i><span>NO CLOUD RENDER</span></div>
+        <h1>СДЕЛАЙ ЗВУК<br><span>ВИДИМЫМ.</span></h1>
+        <p class="intro-copy">Собери собственный аудиовизуализатор: от чистой волны до неонового космоса. Настраивай сцену, слушай и экспортируй видео — прямо здесь.</p>
       </div>
-    </aside>
-
-    <main class="main-content">
-      <header class="topbar">
-        <div class="breadcrumb"><span>МОЁ ПРОСТРАНСТВО</span><span class="breadcrumb-dot">/</span><b>НсП MUSIC</b></div>
-        <label class="search-box"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Найти трек, жанр или релиз..." autocomplete="off"><kbd>⌘ K</kbd></label>
-        <button class="top-upload" id="heroUpload"><span>＋</span> Новый релиз</button>
-      </header>
-
-      <section class="hero">
-        <div class="hero-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-disc"><div class="disc-center">Н<span>с</span>П</div></div><div class="art-spark spark-one">✳</div><div class="art-spark spark-two">✦</div><div class="art-label">ORIGINAL<br>SOUND / 001</div></div>
-        <div class="hero-content">
-          <div class="eyebrow"><span class="eyebrow-line"></span> ЛИЧНАЯ МУЗЫКАЛЬНАЯ ПЛОЩАДКА</div>
-          <h1>ТВОЙ ЗВУК.<br><span>ТВОИ ПРАВИЛА.</span></h1>
-          <p>Здесь живут твои идеи, релизы и звук, который узнают с первых секунд. Загружай музыку — собирай собственную историю.</p>
-          <div class="hero-actions"><button class="primary-button" id="heroUploadSecondary">＋ Загрузить музыку <span>↗</span></button><button class="text-button" id="exploreButton">Открыть библиотеку <span>↓</span></button></div>
-          <div class="hero-stats"><div><b id="trackStat">00</b><span>ТРЕКОВ В БИБЛИОТЕКЕ</span></div><i></i><div><b>100<span class="stat-unit">MB</span></b><span>МАКСИМАЛЬНЫЙ ФАЙЛ</span></div><i></i><div><b>∞</b><span>ИДЕЙ ДЛЯ РЕЛИЗОВ</span></div></div>
-        </div>
-        <div class="hero-index">НсП / 2026<br><span>НАЙДИ СВОЮ ЧАСТОТУ</span></div>
-      </section>
-
-      <section class="library-section" id="library">
-        <div class="section-header">
-          <div><div class="eyebrow"><span class="eyebrow-line"></span> ТВОЯ КОЛЛЕКЦИЯ</div><h2 id="viewTitle">Моя библиотека<span class="title-period">.</span></h2><p id="viewDescription">Все твои релизы — в одном месте.</p></div>
-          <div class="library-tools"><label class="sort-label">СОРТИРОВКА<select id="sortSelect"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="title">По названию</option><option value="artist">По исполнителю</option></select></label></div>
-        </div>
-        <div class="filter-row" role="group" aria-label="Фильтр треков"><button class="filter-pill active" data-filter="all">Все релизы <span id="allCount">0</span></button><button class="filter-pill" data-filter="recent">Недавно добавленные</button><button class="filter-pill" data-filter="favorites">♥ Избранное</button></div>
-        <div id="trackGrid" class="track-grid"></div>
-        <div id="emptyState" class="empty-state">
-          <div class="empty-art"><div class="empty-vinyl">♫</div><span class="empty-spark">✦</span></div>
-          <div class="empty-kicker">С ЧЕГО НАЧНЁМ?</div><h3 id="emptyTitle">ЗДЕСЬ БУДЕТ ТВОЙ ЗВУК</h3><p id="emptyText">Библиотека пока пустая. Загрузи первый трек — и начнём собирать твою музыкальную историю.</p><button class="primary-button" id="emptyUpload">＋ Опубликовать первый трек</button>
-        </div>
-      </section>
-      <footer class="footer"><span>НсП MUSIC <i>•</i> ТВОЯ МУЗЫКА, ТВОЙ МИР</span><span>MADE FOR YOUR SOUND <b>↗</b></span></footer>
-    </main>
-  </div>
-
-  <div class="player" id="player">
-    <audio id="audio" preload="metadata"></audio>
-    <div class="player-track"><div class="player-cover cover-placeholder" id="playerCover"><span>НсП</span></div><div class="player-meta"><b id="playerTitle">Выбери свой трек</b><span id="playerArtist">Твоя музыка начнётся здесь</span></div><button id="playerFavorite" class="player-heart" disabled aria-label="Добавить в избранное">♡</button></div>
-    <div class="player-center"><div class="player-controls"><button id="prevButton" disabled aria-label="Предыдущий трек">↶</button><button class="play-button" id="playButton" disabled aria-label="Воспроизвести"><span id="playGlyph">▶</span></button><button id="nextButton" disabled aria-label="Следующий трек">↷</button></div><div class="timeline"><span id="currentTime">0:00</span><input id="seekBar" type="range" min="0" max="1000" value="0" disabled aria-label="Позиция воспроизведения"><span id="duration">0:00</span></div></div>
-    <div class="player-volume"><span>♫</span><input id="volumeBar" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Громкость"><button id="queueButton" aria-label="Перейти к библиотеке" title="Библиотека">☷</button></div>
-  </div>
-
-  <div class="modal-backdrop" id="modalBackdrop" hidden>
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <button class="modal-close" id="modalClose" aria-label="Закрыть">×</button>
-      <div class="modal-kicker" id="modalKicker">РЕЖИМ АВТОРА</div>
-      <h2 id="modalTitle">ТВОЯ МУЗЫКА.<br><span>ТВОЙ КАТАЛОГ.</span></h2>
-      <p class="modal-intro" id="modalIntro">Войди, чтобы загружать и управлять своими публикациями.</p>
-      <form id="loginForm">
-        <label class="field-label" for="adminPassword">ПАРОЛЬ АВТОРА</label><input class="text-input" id="adminPassword" type="password" autocomplete="current-password" placeholder="Введи пароль" required>
-        <p class="form-error" id="loginError" role="alert"></p><button class="primary-button modal-submit" type="submit">Войти в студию <span>↗</span></button>
-      </form>
-      <form id="uploadForm" hidden>
-        <label class="field-label" for="trackTitle">НАЗВАНИЕ ТРЕКА *</label><input class="text-input" id="trackTitle" name="title" maxlength="100" placeholder="Как называется релиз?" required>
-        <div class="field-pair"><div><label class="field-label" for="trackArtist">ИСПОЛНИТЕЛЬ</label><input class="text-input" id="trackArtist" name="artist" maxlength="80" value="НсП"></div><div><label class="field-label" for="trackGenre">ЖАНР</label><select class="text-input" id="trackGenre" name="genre"><option>Рэп</option><option>Хип-хоп</option><option>Поп</option><option>Электроника</option><option>Drill</option><option>Phonk</option><option>Экспериментальный</option><option>Другое</option></select></div></div>
-        <label class="field-label" for="trackDescription">ОПИСАНИЕ <span>(необязательно)</span></label><textarea class="text-input" id="trackDescription" name="description" rows="2" maxlength="1000" placeholder="История релиза, настроение, детали..."></textarea>
-        <div class="file-pair"><label class="file-pick" for="audioFile"><span class="file-pick-icon">♫</span><b id="audioFileName">Выбери аудиофайл</b><small>MP3, WAV, M4A, FLAC и другие · до 100 МБ</small><input id="audioFile" name="audio" type="file" accept=".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,.opus,.webm,audio/*" required></label><label class="file-pick cover-pick" for="coverFile"><span class="file-pick-icon">▧</span><b id="coverFileName">Добавить обложку</b><small>JPG, PNG или WEBP · до 8 МБ</small><input id="coverFile" name="cover" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label></div>
-        <p class="form-error" id="uploadError" role="alert"></p><button class="primary-button modal-submit" id="submitUpload" type="submit">Опубликовать релиз <span>↗</span></button>
-      </form>
-      <div id="aboutContent" hidden><p>НсП Music — личная музыкальная библиотека для оригинальных релизов. Загружай аудио, добавляй обложки, слушай и собирай свою коллекцию в одном месте.</p><p>Это независимый проект, вдохновлённый современными музыкальными сервисами. Генерация музыки нейросетью пока не входит в эту версию.</p><button class="primary-button modal-submit" id="aboutClose" type="button">Понятно <span>↗</span></button></div>
-      <div class="modal-footnote"><span class="status-dot"></span> ТВОЯ СТУДИЯ · НсП MUSIC</div>
+      <div class="intro-stamp"><span class="stamp-orbit"></span><b>WF / 001</b><small>CREATE<br>YOUR FREQUENCY</small></div>
     </section>
-  </div>
+
+    <section class="workspace" id="workspace">
+      <aside class="style-panel panel">
+        <div class="panel-kicker"><span>01</span> ВИЗУАЛЬНЫЙ ДВИЖОК</div>
+        <div class="section-title-row"><h2>Выбери стиль</h2><span class="micro-label">PRESETS</span></div>
+        <div class="preset-list" id="presetList">
+          <button class="preset-card active" type="button" data-style="spectrum">
+            <span class="preset-thumb thumb-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>NEON SPECTRUM</b><small>Пульсирующие частоты</small></span><span class="preset-index">01</span>
+          </button>
+          <button class="preset-card" type="button" data-style="orbit">
+            <span class="preset-thumb thumb-orbit"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>ORBITAL</b><small>Кольцо вокруг звука</small></span><span class="preset-index">02</span>
+          </button>
+          <button class="preset-card" type="button" data-style="wave">
+            <span class="preset-thumb thumb-wave"><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>PURE WAVE</b><small>Живая аудиоволна</small></span><span class="preset-index">03</span>
+          </button>
+          <button class="preset-card" type="button" data-style="aurora">
+            <span class="preset-thumb thumb-aurora"><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>AURORA</b><small>Текучие световые слои</small></span><span class="preset-index">04</span>
+          </button>
+          <button class="preset-card" type="button" data-style="radial">
+            <span class="preset-thumb thumb-radial"><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>SONIC CORE</b><small>Радиальный импульс</small></span><span class="preset-index">05</span>
+          </button>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="local-card"><span class="local-icon">⌁</span><div><b>ЛОКАЛЬНАЯ СТУДИЯ</b><p>Музыка не отправляется на сервер. Файл остаётся на твоём устройстве.</p></div></div>
+        <div class="side-foot"><span>WAVEFRAME STUDIO</span><span>BUILD 1.0</span></div>
+      </aside>
+
+      <section class="preview-column">
+        <div class="preview-header">
+          <div><div class="panel-kicker"><span>02</span> КОМПОЗИЦИЯ</div><h2>Live preview<span class="accent-dot">.</span></h2></div>
+          <div class="preview-status"><span class="live-dot"></span><span id="previewStatus">DEMO MODE</span></div>
+        </div>
+        <div class="canvas-shell" id="canvasShell">
+          <canvas id="visualizer" width="1280" height="720" aria-label="Предпросмотр аудиовизуализатора"></canvas>
+          <div class="canvas-corner canvas-corner-tl">WF<span> / LIVE SIGNAL</span></div>
+          <div class="canvas-corner canvas-corner-tr" id="canvasAspectBadge">16:9 · 1280 × 720</div>
+          <div class="canvas-corner canvas-corner-bl">AUDIO REACTIVE <i></i></div>
+          <div class="canvas-corner canvas-corner-br">30 FPS TARGET</div>
+        </div>
+        <div class="track-transport">
+          <div class="transport-file">
+            <div class="file-art"><span>♫</span><i></i></div>
+            <div class="file-copy"><b id="loadedTrackName">Сначала добавь аудио</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
+          </div>
+          <div class="transport-controls">
+            <button class="round-control" id="rewindButton" type="button" aria-label="В начало" title="В начало">↺</button>
+            <button class="play-control" id="playButton" type="button" aria-label="Воспроизвести" disabled><span id="playGlyph">▶</span></button>
+            <button class="round-control" id="stopButton" type="button" aria-label="Остановить" title="Остановить" disabled>■</button>
+          </div>
+          <div class="transport-time"><span id="currentTime">0:00</span><span class="time-separator">/</span><span id="durationTime">0:00</span></div>
+        </div>
+        <div class="seek-row"><input id="seekRange" type="range" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" disabled></div>
+        <div class="preview-bottom">
+          <div class="preview-hint"><span class="hint-spark">✳</span><span id="previewHint">Загрузи аудио, чтобы визуал реагировал на частоты.</span></div>
+          <div class="preview-actions"><button class="outline-button" id="pngButton" type="button">↓ PNG кадр</button><button class="primary-button" id="exportButton" type="button" disabled><span class="export-icon">●</span> Экспорт WebM</button></div>
+        </div>
+        <div class="export-progress-wrap" id="exportProgressWrap" hidden><div class="export-progress-label"><span id="exportStatus">Идёт запись...</span><span id="exportElapsed">00:00</span></div><div class="export-progress-track"><i id="exportProgress"></i></div><p>Видео записывается в реальном времени. Не закрывай вкладку до завершения трека.</p></div>
+      </section>
+
+      <aside class="controls-panel panel">
+        <div class="panel-kicker"><span>03</span> НАСТРОЙКА СЦЕНЫ</div>
+        <div class="section-title-row"><h2>Твоя композиция</h2><span class="micro-label">EDITOR</span></div>
+        <div class="control-section">
+          <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
+          <button class="dropzone" id="dropzone" type="button">
+            <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm" hidden>
+            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
+          </button>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="trackTitle">Название</label><span class="micro-label">TEXT</span></div>
+          <input class="text-field" id="trackTitle" type="text" maxlength="80" placeholder="Название трека">
+          <input class="text-field secondary-field" id="trackArtist" type="text" maxlength="60" placeholder="Исполнитель / подпись">
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section">
+          <div class="control-heading"><span>Цветовая палитра</span><span class="micro-label">COLOR</span></div>
+          <div class="color-row"><label class="color-control"><input id="colorOne" type="color" value="#b8ff4f"><span><b>NEON</b><small>Основной</small></span></label><label class="color-control"><input id="colorTwo" type="color" value="#7865ff"><span><b>GLOW</b><small>Вторичный</small></span></label></div>
+          <label class="background-color-row"><span><i></i>Цвет фона</span><input id="backgroundColor" type="color" value="#080b14"></label>
+          <div class="swatches" aria-label="Быстрые цветовые темы">
+            <button type="button" class="swatch active" data-palette="acid" title="Acid lime" aria-label="Лайм и фиолетовый"></button>
+            <button type="button" class="swatch" data-palette="ocean" title="Deep ocean" aria-label="Голубой и бирюзовый"></button>
+            <button type="button" class="swatch" data-palette="sunset" title="Sunset" aria-label="Оранжевый и розовый"></button>
+            <button type="button" class="swatch" data-palette="mono" title="Monochrome" aria-label="Монохром"></button>
+            <button type="button" class="swatch" data-palette="pink" title="Cyber pink" aria-label="Розовый и синий"></button>
+          </div>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section">
+          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
+          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
+          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="glowRange">Свечение</label><output id="glowOutput">22</output></div>
+          <input id="glowRange" class="range-input" type="range" min="0" max="40" step="1" value="22">
+          <div class="range-labels"><span>Чётко</span><span>NEON GLOW</span></div>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="aspectSelect">Формат кадра</label><span class="micro-label">RATIO</span></div>
+          <select id="aspectSelect" class="select-field"><option value="landscape">16:9 · YouTube</option><option value="square">1:1 · пост</option><option value="portrait">9:16 · Shorts / Reels</option></select>
+        </div>
+        <div class="toggle-list">
+          <label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label>
+          <label class="toggle-row"><span><b>Звёздная пыль</b><small>Частицы на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div>
+      </aside>
+    </section>
+
+    <section class="bottom-strip">
+      <div class="bottom-feature"><span>01</span><div><b>СОЗДАВАЙ БЕЗ ОГРАНИЧЕНИЙ</b><small>Стили, палитры, типографика и формат кадра.</small></div></div>
+      <div class="bottom-feature"><span>02</span><div><b>ЗВУК ОСТАЁТСЯ ТВОИМ</b><small>Аудио обрабатывается локально, без загрузки на сервер.</small></div></div>
+      <div class="bottom-feature"><span>03</span><div><b>СРАЗУ В ВИДЕО</b><small>Экспорт WebM в браузере и PNG-кадр обложки.</small></div></div>
+    </section>
+    <footer class="footer"><span><b>WAVEFRAME</b> <i>•</i> VISUAL LAB</span><span>BUILT FOR THE FREQUENCY <b>↗</b></span></footer>
+  </main>
+
+  <audio id="audio" preload="metadata"></audio>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
