@@ -254,9 +254,7 @@
       radial: 'SONIC CORE'
     };
     $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
-    const now = performance.now();
-    drawFrame(now);
-    state.lastRenderAt = now;
+    // The capped animation loop renders the new style on the next frame instead of blocking the click.
   }
 
   function setPalette(name) {
