@@ -974,22 +974,91 @@
     updateTransport();
   }
 
-  function supportedRecorderType() {
+  function supportedRecorderType(preferMp4) {
     if (!window.MediaRecorder) return '';
-    const types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    const mp4Types = ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
+    const webmTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    const types = preferMp4 ? mp4Types : webmTypes;
     return types.find(function (type) { return MediaRecorder.isTypeSupported(type); }) || '';
   }
 
   function setExportUI(active) {
-    const buttonText = active ? '■ Остановить запись' : '● Экспорт WebM';
-    $('#exportButton').textContent = buttonText;
-    $('#topExportButton').textContent = active ? '■ Остановить запись' : '↗ Экспорт видео';
+    const selectedFormat = $('#exportFormatSelect').value || 'mp4';
+    const actionText = selectedFormat.toUpperCase();
+    const activeText = state.converting ? '↻ Конвертация MP4…' : '■ Остановить запись';
+    $('#exportButton').textContent = active ? activeText : '● Экспорт ' + actionText;
+    $('#topExportButton').textContent = active ? activeText : '↗ Экспорт ' + actionText;
     $('#exportButton').classList.toggle('recording', active);
     $('#topExportButton').classList.toggle('recording', active);
     $('#exportProgressWrap').hidden = !active;
   }
 
-  function stopExport(manual) {
+  function loadExternalScript(src) {
+    return new Promise(function (resolve, reject) {
+      const existing = Array.from(document.scripts).find(function (script) { return script.src === src; });
+      if (existing) {
+        if (window.FFmpeg && window.FFmpeg.createFFmpeg) resolve();
+        else reject(new Error('Не удалось инициализировать конвертер MP4.'));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = function () { reject(new Error('Не удалось загрузить конвертер MP4. Проверь интернет и повтори экспорт.')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function convertWebmToMp4(webmBlob) {
+    if (!state.ffmpegPromise) {
+      state.ffmpegPromise = (async function () {
+        if (!window.FFmpeg || !window.FFmpeg.createFFmpeg) {
+          await loadExternalScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
+        }
+        const api = window.FFmpeg;
+        if (!api || !api.createFFmpeg || !api.fetchFile) throw new Error('Конвертер MP4 не инициализировался.');
+        const ffmpeg = api.createFFmpeg({
+          log: false,
+          corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+          progress: function (progress) {
+            const ratio = progress && Number.isFinite(progress.ratio) ? progress.ratio : 0;
+            $('#exportProgress').style.width = Math.round(12 + Math.max(0, Math.min(1, ratio)) * 84) + '%';
+            $('#exportStatus').textContent = 'Конвертируем MP4…';
+          }
+        });
+        await ffmpeg.load();
+        return { ffmpeg: ffmpeg, fetchFile: api.fetchFile };
+      })().catch(function (error) { state.ffmpegPromise = null; throw error; });
+    }
+    const ready = await state.ffmpegPromise;
+    const ffmpeg = ready.ffmpeg;
+    const inputName = 'nsp-recording-input.webm';
+    const outputName = 'nsp-recording-output.mp4';
+    try {
+      ffmpeg.FS('writeFile', inputName, await ready.fetchFile(webmBlob));
+      await ffmpeg.run('-i', inputName, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', outputName);
+      const data = ffmpeg.FS('readFile', outputName);
+      const exactBytes = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      return new Blob([exactBytes], { type: 'video/mp4' });
+    } finally {
+      try { ffmpeg.FS('unlink', inputName); } catch {}
+      try { ffmpeg.FS('unlink', outputName); } catch {}
+    }
+  }
+
+  function downloadVideoBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+
+  function stopExport(manual) {  function stopExport(manual) {
     if (!state.recorder || state.recorder.state === 'inactive') return;
     if (manual) {
       audio.pause();
@@ -999,6 +1068,7 @@
   }
 
   async function startExport() {
+    if (state.converting) { toast('Дождись завершения конвертации MP4.', true); return; }
     if (state.recorder && state.recorder.state !== 'inactive') {
       stopExport(true);
       return;
@@ -1011,11 +1081,12 @@
       toast('Экспорт видео недоступен в этом браузере. Попробуй Chrome или Edge.', true);
       return;
     }
-    const mimeType = supportedRecorderType();
-    if (!mimeType) {
-      toast('Браузер не поддерживает запись WebM. Попробуй обновить Chrome.', true);
-      return;
-    }
+    const wantsMp4 = $('#exportFormatSelect').value === 'mp4';
+    const nativeMp4Type = wantsMp4 ? supportedRecorderType(true) : '';
+    const mimeType = nativeMp4Type || supportedRecorderType(false);
+    if (!mimeType) { toast('Браузер не поддерживает запись видео. Попробуй обновить Chrome.', true); return; }
+    state.currentExportFormat = wantsMp4 ? 'mp4' : 'webm';
+    state.currentRecorderMimeType = mimeType;
 
     try {
       ensureAudioGraph();
@@ -1035,7 +1106,7 @@
         if (event.data && event.data.size > 0) state.chunks.push(event.data);
       };
       state.recorder.onerror = function () { toast('Ошибка записи видео. Попробуй записать ещё раз.', true); };
-      state.recorder.onstop = function () {
+      state.recorder.onstop = async function () {
         window.clearInterval(state.recordingTimer);
         state.recordingTimer = null;
         if (state.recordingStream) state.recordingStream.getTracks().forEach(function (track) { track.stop(); });
@@ -1043,25 +1114,46 @@
         const blob = new Blob(state.chunks, { type: mimeType });
         state.chunks = [];
         state.recorder = null;
-        setExportUI(false);
         $('#exportProgress').style.width = '0%';
-        if (blob.size > 0) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10) + '.webm';
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-          toast('Видео готово: WEBM · ' + bytesLabel(blob.size) + '.');
-        } else {
+        const wantsMp4Now = state.currentExportFormat === 'mp4';
+        const recordedMp4 = mimeType.toLowerCase().indexOf('video/mp4') === 0;
+        const filenameBase = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10);
+        if (blob.size <= 0) {
+          setExportUI(false);
           toast('Запись пустая. Запусти трек и попробуй ещё раз.', true);
+        } else if (wantsMp4Now && !recordedMp4) {
+          state.converting = true;
+          setExportUI(true);
+          $('#exportStatus').textContent = 'Загрузка конвертера MP4…';
+          try {
+            const mp4Blob = await convertWebmToMp4(blob);
+            if (!mp4Blob || mp4Blob.size <= 0) throw new Error('Конвертер вернул пустой файл.');
+            downloadVideoBlob(mp4Blob, filenameBase + '.mp4');
+            toast('Готово: настоящий MP4 · ' + bytesLabel(mp4Blob.size) + '.');
+          } catch (error) {
+            downloadVideoBlob(blob, filenameBase + '.webm');
+            toast('Не удалось собрать MP4: ' + (error.message || 'ошибка конвертации') + '. Скачан исходный WebM, его формат не подменён.', true);
+          } finally {
+            state.converting = false;
+            state.currentExportFormat = $('#exportFormatSelect').value || 'mp4';
+            setExportUI(false);
+            $('#exportProgress').style.width = '0%';
+            $('#exportStatus').textContent = 'Экспорт завершён';
+            setPlayState();
+          }
+          return;
+        } else {
+          const extension = recordedMp4 ? 'mp4' : 'webm';
+          downloadVideoBlob(blob, filenameBase + '.' + extension);
+          setExportUI(false);
+          toast('Видео готово: ' + extension.toUpperCase() + ' · ' + bytesLabel(blob.size) + '.');
         }
+        state.currentExportFormat = $('#exportFormatSelect').value || 'mp4';
+        setExportUI(false);
         $('#exportStatus').textContent = 'Экспорт завершён';
         setPlayState();
       };
-      state.recorder.start(1000);
+      state.recorder.start(1000);      state.recorder.start(1000);
       setExportUI(true);
       $('#exportStatus').textContent = 'Записываем визуализатор…';
       state.recordingTimer = window.setInterval(function () {
@@ -1566,6 +1658,7 @@
   $('#seekRange').addEventListener('input', function (event) { if (Number.isFinite(audio.duration)) audio.currentTime = Number(event.target.value) / 1000 * audio.duration; });
   $('#exportButton').addEventListener('click', startExport);
   $('#topExportButton').addEventListener('click', startExport);
+  $('#exportFormatSelect').addEventListener('change', function () { setExportUI(false); });
   $('#pngButton').addEventListener('click', exportPng);
   $('#projectButton').addEventListener('click', function () {
     downloadText('nsp-visual-project.json', JSON.stringify(currentProject(), null, 2), 'application/json');
