@@ -1026,7 +1026,10 @@
 
     if (state.showVisualizer) {
       drawVisualizerLayer(w,h,now,values,null);
-      state.visualizerLayers.forEach(function(layer){if(layer.enabled!==false)drawVisualizerLayer(w,h,now,values,layer);});
+      for (let layerIndex = 0; layerIndex < state.visualizerLayers.length; layerIndex++) {
+        const layer = state.visualizerLayers[layerIndex];
+        if (layer.enabled !== false) drawVisualizerLayer(w,h,now,values,layer);
+      }
     }
 
     ctx.save();
