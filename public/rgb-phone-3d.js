@@ -37,6 +37,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
   let liquidLevel = -2, liquidTargetLevel = -1, liquidPouring = false;
   let liquidEnergy = 0, liquidSurfaceAccumulator = 0, nextPourWaveAt = 0;
+  let liquidSurfaceTilt = 0, targetLiquidSurfaceTilt = 0, liquidSpillMesh = null;
+  let nextLiquidAsmrAt = 0, lastLiquidTiltImpulseAt = 0;
   let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null;
   const liquidWaveImpulses = [];
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
@@ -252,6 +254,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const geometry=new THREE.BufferGeometry();
     geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
     geometry.setIndex(indices);
+    geometry.userData.basePositions = new Float32Array(positions);
     geometry.computeVertexNormals();
     return geometry;
   }
@@ -295,6 +298,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.liquidSurface = new THREE.PlaneGeometry(1,1,coarsePointer?24:38,coarsePointer?8:12);
     geometries.liquidSurface.rotateX(-Math.PI/2);
     geometries.liquidPour = new THREE.CylinderGeometry(.035,.075,1,coarsePointer?7:10,1,true);
+    geometries.liquidSpill = new THREE.CylinderGeometry(.025,.085,1,coarsePointer?6:8,2,true);
     geometries.shadow = new THREE.PlaneGeometry(1,1);
     geometries.floor = new THREE.BoxGeometry(1,.12,1.2);
     geometries.ring = new THREE.TorusGeometry(.12,.018,5,42);
@@ -319,6 +323,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidPourMesh.visible = false;
     liquidPourMesh.renderOrder = 4;
     scene.add(liquidPourMesh);
+    liquidSpillMesh = new THREE.Mesh(geometries.liquidSpill, materials.waterStream);
+    liquidSpillMesh.visible = false;
+    liquidSpillMesh.renderOrder = 5;
+    scene.add(liquidSpillMesh);
 
     const stars = new THREE.BufferGeometry();
     const starCount = coarsePointer ? 65 : 100;
@@ -462,7 +470,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     body.velocity.set(velocity?.x ?? random(-1.2,1.2),velocity?.y ?? random(-.6,.5),velocity?.z ?? random(-.55,.55));
     world.addBody(body);
     const item={id:nextId++,kind,mesh,body,shadow,material:mat,mass,scale,radius:kind==='rubber'?.22*scale:.39*scale,
-      fuseAt:options.fuseAt||0,lastSound:0};
+      fuseAt:options.fuseAt||0,lastSound:0,lastASMR:0,lastTouchSound:0};
     body.userData.item=item;
     bodies.set(body,item);
     body.addEventListener('collide', event=>onCollision(item,event));
@@ -623,11 +631,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function playImpact(kind,speed,x=0){
-    if(!soundEnabled || speed<.9)return;
+    if(!soundEnabled || speed<.55)return;
     const t=performance.now();
     if(t-soundClock<32)return;
     soundClock=t;
-    const power=clamp((speed-.65)/8,.05,1);
+    const power=clamp((speed-.35)/8,.035,.82);
     if(kind==='ice'){
       iceClink(speed,x);
     }else if(kind==='rubber'){
@@ -648,6 +656,51 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     }
   }
 
+  function playTouchASMR(item,x=item?.body?.position?.x||0){
+    if(!soundEnabled||!item)return;
+    const now=performance.now();
+    if(now-(item.lastTouchSound||0)<90)return;
+    item.lastTouchSound=now;
+    if(item.kind==='ice'){
+      noiseBurst(.048,.0048,'soft',2200,x);
+      voice(random(1050,1480),.12,'sine',.009,'down',x,random(-7,7));
+      if(Math.random()<.55)voice(random(1750,2300),.085,'sine',.0045,'down',x,random(-8,8));
+    }else if(item.kind==='rubber'){
+      noiseBurst(.06,.0065,'soft',650,x);
+      voice(random(155,215),.105,'sine',.013,'down',x);
+      voice(random(300,400),.065,'triangle',.0045,'down',x);
+    }else if(item.kind==='tnt'){
+      noiseBurst(.055,.006,'soft',430,x);
+      voice(random(120,165),.12,'sine',.014,'down',x);
+    }else{
+      noiseBurst(.05,.006,'soft',890,x);
+      voice(random(235,340),.085,'triangle',.011,'down',x);
+      if(Math.random()<.45)voice(random(520,760),.06,'sine',.004,'down',x);
+    }
+  }
+
+  function playDragASMR(item,x,travel){
+    if(!soundEnabled||!item)return;
+    const now=performance.now();
+    const cooldown=item.kind==='ice'?150:115;
+    if(now-(item.lastASMR||0)<cooldown)return;
+    item.lastASMR=now;
+    const motion=clamp(.2+Math.min(Math.abs(travel||0)*2.2,.8),.2,1);
+    if(item.kind==='ice'){
+      noiseBurst(random(.045,.075),.0038*motion,'soft',random(1750,2450),x);
+      if(Math.random()<.72)voice(random(980,1550),.09,.006*motion,'sine','down',x,random(-9,9));
+    }else if(item.kind==='rubber'){
+      noiseBurst(random(.05,.085),.0048*motion,'soft',random(430,720),x);
+      voice(random(155,220),.085,.008*motion,'sine','down',x);
+    }else if(item.kind==='tnt'){
+      noiseBurst(random(.05,.08),.0042*motion,'soft',random(320,540),x);
+      voice(random(115,165),.09,.009*motion,'sine','down',x);
+    }else{
+      noiseBurst(random(.045,.075),.0045*motion,'soft',random(680,1050),x);
+      voice(random(220,320),.075,.007*motion,'triangle','down',x);
+    }
+  }
+
   function onCollision(item,event){
     const other=bodies.get(event.body);
     let impact=0;
@@ -657,9 +710,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       impact=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
     }
     if(!other){
-      if(impact>1.15){
+      if(impact>.78){
         playImpact(item.kind,impact,item.body.position.x);
-        if(liquidMode && item.body.position.y-item.radius < liquidLevel+item.radius*.65){
+        if(liquidMode && item.body.position.y-item.radius < liquidHeightAt(item.body.position.x)+item.radius*.65){
           addWaveImpulse(item.body.position.x,item.body.position.z,clamp(impact*.018,.025,.17));
         }
         const p=item.body.position;
@@ -679,13 +732,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const now=performance.now();
     const last=collisionTimes.get(key)||0;
     if(now-last<62)return;
-    if(impact<1.05)return;
+    if(impact<.68)return;
     collisionTimes.set(key,now);
     if(collisionTimes.size>180&&now-lastCollisionSweep>900){
       lastCollisionSweep=now;
       for(const [k,v] of collisionTimes)if(now-v>900)collisionTimes.delete(k);
     }
-    if(liquidMode && item.body.position.y-item.radius < liquidLevel+item.radius*.65){
+    if(liquidMode && item.body.position.y-item.radius < liquidHeightAt(item.body.position.x)+item.radius*.65){
       addWaveImpulse(item.body.position.x,item.body.position.z,clamp(impact*.018,.025,.17));
     }
     const soundKind=item.kind==='ice'||other.kind==='ice'?'ice':
@@ -744,15 +797,37 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(liquidVolumeMesh)liquidVolumeMesh.visible=false;
     if(liquidSurfaceMesh)liquidSurfaceMesh.visible=false;
     if(liquidPourMesh)liquidPourMesh.visible=false;
+    if(liquidSpillMesh)liquidSpillMesh.visible=false;
+  }
+
+  function liquidHeightAt(x){
+    return liquidLevel + liquidSurfaceTilt*x;
   }
 
   function updateLiquidLayout(){
-    if(!liquidVolumeMesh||!liquidSurfaceMesh||!liquidPourMesh)return;
+    if(!liquidVolumeMesh||!liquidSurfaceMesh||!liquidPourMesh||!liquidSpillMesh)return;
     const width=Math.max(.2,sideX*2-.16);
     const depth=1.34;
     const height=Math.max(.035,liquidLevel-floorY);
+    const centerY=floorY+height*.5;
+    const volumeGeometry=geometries.liquidVolume;
+    const volumePosition=volumeGeometry.attributes.position;
+    const base=volumeGeometry.userData.basePositions;
+    for(let i=0;i<volumePosition.count;i++){
+      const baseX=base[i*3];
+      const baseY=base[i*3+1];
+      if(baseY>0){
+        const worldX=baseX*width;
+        const surfaceY=clamp(liquidLevel+liquidSurfaceTilt*worldX,floorY+.012,ceilY-.012);
+        volumePosition.setY(i,(surfaceY-centerY)/height);
+      }else{
+        volumePosition.setY(i,baseY);
+      }
+    }
+    volumePosition.needsUpdate=true;
+    volumeGeometry.computeVertexNormals();
     liquidVolumeMesh.scale.set(width,height,depth);
-    liquidVolumeMesh.position.set(0,floorY+height*.5,0);
+    liquidVolumeMesh.position.set(0,centerY,0);
     liquidSurfaceMesh.scale.set(width,1,depth);
     liquidSurfaceMesh.position.set(0,liquidLevel,0);
     const streamHeight=Math.max(.03,ceilY-liquidLevel);
@@ -762,6 +837,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidVolumeMesh.visible=shown;
     liquidSurfaceMesh.visible=shown;
     liquidPourMesh.visible=shown&&liquidPouring;
+
+    const spillStrength=clamp((Math.abs(liquidSurfaceTilt)-.2)/.55,0,1);
+    const spillSide=liquidSurfaceTilt>=0?1:-1;
+    const spillX=spillSide*(sideX-.035);
+    const spillTop=clamp(liquidHeightAt(spillX),floorY+.025,ceilY-.018);
+    const spillLength=clamp((spillTop-floorY)*(.36+spillStrength*.22),.22,Math.max(.22,(ceilY-floorY)*.72));
+    liquidSpillMesh.material=liquidMode==='slime'?materials.slimeStream:materials.waterStream;
+    liquidSpillMesh.position.set(spillX,spillTop-spillLength*.5,.78);
+    liquidSpillMesh.scale.set(.72+spillStrength*.62,spillLength,.72+spillStrength*.62);
+    liquidSpillMesh.rotation.z=-spillSide*spillStrength*.12;
+    liquidSpillMesh.visible=shown&&tiltEnabled&&spillStrength>.035&&liquidLevel>floorY+(ceilY-floorY)*.28;
   }
 
   function addWaveImpulse(x,z,amplitude){
@@ -796,6 +882,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidVolumeMesh.material=mode==='water'?materials.waterVolume:materials.slimeVolume;
     liquidSurfaceMesh.material=mode==='water'?materials.waterSurface:materials.slimeSurface;
     liquidPourMesh.material=mode==='water'?materials.waterStream:materials.slimeStream;
+    liquidSpillMesh.material=mode==='water'?materials.waterStream:materials.slimeStream;
+    nextLiquidAsmrAt=performance.now()+360;
     liquidVolumeMesh.visible=true;
     liquidSurfaceMesh.visible=true;
     liquidPourMesh.visible=true;
@@ -814,7 +902,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     for(const item of items){
       const pos=item.body.position;
       const r=item.radius;
-      const submerged=clamp((liquidLevel-(pos.y-r))/(2*r),0,1);
+      const localSurface=liquidHeightAt(pos.x);
+      const submerged=clamp((localSurface-(pos.y-r))/(2*r),0,1);
       const previous=item.liquidSubmerged||0;
       item.liquidSubmerged=submerged;
       if(submerged>.05){
@@ -831,7 +920,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         item.body.angularVelocity.y*=clamp(1-(water?1.1:3)*submerged*dt,.68,1);
         item.body.angularVelocity.z*=clamp(1-(water?1.2:3.2)*submerged*dt,.66,1);
       }
-      if(submerged>.12&&previous<=.12&&pos.y+r>liquidLevel-.12){
+      if(submerged>.12&&previous<=.12&&pos.y+r>localSurface-.12){
         addWaveImpulse(pos.x,pos.z,clamp(Math.hypot(item.body.velocity.x,item.body.velocity.y)*.025,.035,.16));
         playImpact('water',Math.hypot(item.body.velocity.x,item.body.velocity.y),pos.x);
       }
@@ -848,9 +937,14 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       if(performance.now()>=nextPourWaveAt){
         addWaveImpulse(random(-sideX*.32,sideX*.32),random(-.38,.38),liquidMode==='water'?.12:.055);
         nextPourWaveAt=performance.now()+(liquidMode==='water'?560:1050);
-        if(soundEnabled&&liquidMode==='water'){
-          noiseBurst(.045,.007,'soft',1550,0);
-          voice(random(780,1150),.065,'sine',.009,'down',0);
+        if(soundEnabled){
+          if(liquidMode==='water'){
+            noiseBurst(.055,.0055,'soft',random(1350,1850),0);
+            voice(random(720,1180),.075,'sine',.0075,'down',0);
+          }else{
+            noiseBurst(.075,.006,'soft',random(360,620),0);
+            voice(random(145,245),.09,'sine',.008,'down',0);
+          }
         }
       }
       if(liquidLevel>=liquidTargetLevel-.005){
@@ -888,12 +982,29 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         const envelope=Math.exp(-Math.abs(front)*2.6)*Math.exp(-age*impulse.decay);
         wave+=Math.sin(front*13)*impulse.amplitude*envelope;
       }
-      position.setY(i,wave);
+      const absoluteSurfaceY=clamp(liquidLevel+wave+x*liquidSurfaceTilt,floorY+.005,ceilY-.005);
+      position.setY(i,absoluteSurfaceY-liquidLevel);
     }
     position.needsUpdate=true;
     geometry.computeVertexNormals();
     for(let i=liquidWaveImpulses.length-1;i>=0;i--){
       if(nowSeconds-liquidWaveImpulses[i].born>2.8)liquidWaveImpulses.splice(i,1);
+    }
+
+    const nowMs=performance.now();
+    if(nowMs>=nextLiquidAsmrAt){
+      const movement=clamp(Math.max(liquidEnergy*.35,Math.abs(liquidSurfaceTilt)*.58,tiltEnabled ? .16 : .035),0,1);
+      if(soundEnabled&&movement>.12){
+        const edgeX=clamp(Math.sign(liquidSurfaceTilt||gravityX)*sideX*.72,-sideX*.72,sideX*.72);
+        if(liquidMode==='water'){
+          noiseBurst(.06,.0028+movement*.004,'soft',random(1250,2000),edgeX);
+          if(Math.random()<.7)voice(random(650,1120),.09,.003+movement*.003,'sine','down',edgeX,random(-8,8));
+        }else{
+          noiseBurst(.085,.0035+movement*.004,'soft',random(380,680),edgeX);
+          voice(random(135,260),.095,.004+movement*.004,'sine','down',edgeX,random(-5,5));
+        }
+      }
+      nextLiquidAsmrAt=nowMs+(liquidMode==='water'?520:760);
     }
   }
 
@@ -1008,7 +1119,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const hits=raycaster.intersectObjects(items.map(item=>item.mesh),false);
     if(!hits.length){
       if(liquidMode&&liquidSurfaceMesh?.visible){
-        liquidSurfacePlane.constant=-liquidLevel;
+        liquidSurfacePlane.normal.set(-liquidSurfaceTilt,1,0).normalize();
+        liquidSurfacePlane.constant=-liquidLevel/Math.sqrt(1+liquidSurfaceTilt*liquidSurfaceTilt);
         if(raycaster.ray.intersectPlane(liquidSurfacePlane,hitPoint)){
           const x=clamp(hitPoint.x,-sideX,sideX);
           const z=clamp(hitPoint.z,-.62,.62);
@@ -1030,11 +1142,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       return;
     }
     item.body.wakeUp();
+    playTouchASMR(item,item.body.position.x);
     const p=pointerWorld(event,item.body.position.z);
     dragging={
       item,pointerId:event.pointerId,planeZ:item.body.position.z,
       offset:new THREE.Vector3(item.body.position.x-p.x,item.body.position.y-p.y,0),
       start:p.clone(),startTime:performance.now(),moved:false,
+      lastAudioX:item.body.position.x,lastAudioY:item.body.position.y,
       samples:[{x:p.x,y:p.y,t:performance.now()}],oldType:item.body.type
     };
     item.body.type=CANNON.Body.KINEMATIC;
@@ -1059,6 +1173,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     item.body.wakeUp();
     const t=performance.now();
     d.samples.push({x:pos.x,y:pos.y,t});
+    if(d.moved){
+      const travel=Math.hypot(pos.x-(d.lastAudioX??pos.x),pos.y-(d.lastAudioY??pos.y));
+      playDragASMR(item,pos.x,travel);
+      d.lastAudioX=pos.x;d.lastAudioY=pos.y;
+    }
     while(d.samples.length>2&&d.samples[0].t<t-115)d.samples.shift();
   }
 
@@ -1271,6 +1390,16 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const gravityBlend=1-Math.exp(-delta*10);
     gravityX+= (targetGravityX-gravityX)*gravityBlend;
     gravityY+= (targetGravityY-gravityY)*gravityBlend;
+    const previousLiquidTilt=liquidSurfaceTilt;
+    const verticalGravity=Math.abs(gravityY)>2?gravityY:(gravityY<0?-2:2);
+    targetLiquidSurfaceTilt=tiltEnabled?clamp(-gravityX/verticalGravity,-1.08,1.08):0;
+    const liquidTiltBlend=1-Math.exp(-delta*(liquidMode==='slime'?2.35:4.1));
+    liquidSurfaceTilt+=(targetLiquidSurfaceTilt-liquidSurfaceTilt)*liquidTiltBlend;
+    if(liquidMode&&tiltEnabled&&Math.abs(liquidSurfaceTilt-previousLiquidTilt)>.055&&frameNow-lastLiquidTiltImpulseAt>220){
+      addWaveImpulse(Math.sign(liquidSurfaceTilt||gravityX)*sideX*.42,random(-.38,.38),
+        clamp(Math.abs(liquidSurfaceTilt-previousLiquidTilt)*.45+Math.abs(liquidSurfaceTilt)*.025,.025,.15));
+      lastLiquidTiltImpulseAt=frameNow;
+    }
     world.gravity.set(gravityX,gravityY,gravityZ);
     const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y);
     if(tiltEnabled&&gravityChange>.8&&frameNow-lastWakeAt>120){
