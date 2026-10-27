@@ -736,3 +736,67 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
   .export-format-select { width:70px; flex-basis:70px; font-size:10px; }
   .preview-actions { gap:5px; }
 }
+
+
+/* Minimal tabbed controls */
+.intro-minimal { min-height:0; padding:20px 0 16px; }
+.intro-minimal h1 { margin:0; font-size:clamp(28px,4vw,42px); letter-spacing:-.06em; }
+.topbar { position:relative; isolation:isolate; overflow:hidden; }
+.brand,.topbar-actions { position:relative; z-index:2; }
+.site-weather-layer { position:absolute; inset:0; z-index:1; overflow:hidden; pointer-events:none; }
+.site-weather-particle { position:absolute; top:-22px; display:block; line-height:1; color:#eef5ff; text-shadow:0 0 10px rgba(198,223,255,.4); animation:siteWeatherFall linear infinite; will-change:transform; }
+.site-weather-layer[data-mode="leaves"] .site-weather-particle { color:#d5a05b; text-shadow:0 0 8px rgba(224,143,67,.26); }
+@keyframes siteWeatherFall { from { transform:translate3d(0,-10px,0) rotate(0deg); } to { transform:translate3d(var(--drift,18px),100px,0) rotate(240deg); } }
+.site-weather-control { display:flex; align-items:center; gap:6px; margin-right:8px; position:relative; z-index:2; }
+.site-weather-control label { color:#818ba0; font:9px var(--mono); }
+.site-weather-control select { height:34px; max-width:88px; padding:0 6px; border:1px solid var(--line); border-radius:7px; background:#10131d; color:#cfd6e6; font-size:10px; }
+.settings-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:0 0 14px; padding:5px; border:1px solid var(--line); border-radius:12px; background:rgba(0,0,0,.16); }
+.settings-tab { min-height:34px; padding:7px 5px; border:1px solid transparent; border-radius:8px; color:#8993a8; background:transparent; font-size:10px; font-weight:700; cursor:pointer; transition:background .16s ease,color .16s ease,border-color .16s ease; }
+.settings-tab:hover { color:#e5eaf4; background:rgba(255,255,255,.035); }
+.settings-tab.active { color:var(--acid); background:rgba(184,255,79,.07); border-color:rgba(184,255,79,.18); }
+.settings-tab:focus-visible { outline:2px solid var(--acid); outline-offset:2px; }
+.settings-tab-panel[hidden] { display:none !important; }
+.settings-tab-panel { min-width:0; }
+.settings-tab-panel > .control-section { margin-top:12px; }
+.settings-tab-panel .panel-divider { margin:13px 0; }
+.settings-tab-panel .control-heading { letter-spacing:-.01em; }
+.setting-note,.empty-layer-note { margin:5px 0 12px; color:#858fa5; font-size:10px; line-height:1.6; }
+.visualizer-layer-editor { padding-top:12px; border-top:1px solid var(--line); }
+.visual-layer-card { padding:11px; margin:9px 0; border:1px solid rgba(169,185,219,.17); border-radius:10px; background:rgba(255,255,255,.022); }
+.visual-layer-head { display:flex; align-items:center; justify-content:space-between; gap:8px; color:#dbe3f4; font-size:10px; }
+.visual-layer-head b { font:600 10px var(--mono); }
+.layer-remove-button { padding:3px 0; color:#bd8791; }
+.layer-color-row { margin-top:8px; }
+.layer-range-grid { gap:10px; margin-top:8px; }
+.layer-range-grid label > span { font-size:8px; }
+.layer-range-grid output { color:var(--acid); font:9px var(--mono); }
+.layer-gradient-row { margin-top:9px; padding-top:8px; border-top:1px solid var(--line); }
+.layer-gradient-row b { font-size:9px; }
+.layer-add-button { width:100%; margin-top:8px; min-height:36px; font-size:10px; }
+.layer-add-button:disabled { opacity:.45; cursor:not-allowed; }
+#logoPreview[data-shape="square"] { border-radius:0; clip-path:none; }
+#logoPreview[data-shape="diamond"] { border-radius:0; clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%); }
+#logoPreview[data-shape="hexagon"] { border-radius:0; clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%); }
+.controls-panel .section-title-row { margin-bottom:12px; }
+.controls-panel .panel-kicker { margin-bottom:7px; }
+.controls-panel .settings-actions { margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+.local-card,.side-foot,.bottom-strip,.topbar-center { display:none !important; }
+.footer { justify-content:flex-start; padding-top:14px; }
+@media (max-width:1060px) { .topbar-actions { gap:7px; } .site-weather-control { margin-right:0; } }
+@media (max-width:720px) {
+ .topbar { min-height:64px; height:auto; }
+ .brand-text b { font-size:11px; }
+ .topbar-actions { gap:5px; }
+ .site-weather-control label { display:none; }
+ .site-weather-control select { width:63px; max-width:63px; height:32px; font-size:9px; }
+ .settings-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; }
+ .settings-tab { min-height:33px; font-size:9px; }
+ .intro-minimal { padding:16px 0 12px; }
+ .intro-minimal h1 { font-size:30px; }
+ .workspace { display:flex; flex-direction:column; }
+ .preview-column { order:1; }
+ .controls-panel { order:2; }
+ .style-panel { order:3; }
+ .layer-color-row { grid-template-columns:1fr 1fr; }
+ .site-weather-particle { font-size:9px; }
+}
