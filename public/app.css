@@ -1009,3 +1009,148 @@ body {
   .preset-info small { font-size:8px; }
   .gradient-editor { padding:10px; }
 }
+
+
+/* Mafin618 footer feature — restrained RGB edge and ambient particles. */
+.nsp-friend-card {
+  position:relative;
+  isolation:isolate;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  width:min(100%,520px);
+  min-height:206px;
+  margin:10px auto 24px;
+  padding:28px 22px 26px;
+  overflow:hidden;
+  border:1px solid rgba(184,165,255,.13);
+  border-radius:22px;
+  background:
+    radial-gradient(ellipse at 50% 0%,rgba(152,113,255,.14),transparent 58%),
+    linear-gradient(145deg,rgba(23,18,43,.96),rgba(10,8,20,.98));
+  box-shadow:0 18px 54px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.025);
+  text-align:center;
+}
+.nsp-friend-card::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:radial-gradient(ellipse at 50% 100%,rgba(122,104,255,.12),transparent 64%);
+}
+.friend-card-top {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#a69dc6;
+  font:600 9px/1.4 var(--mono);
+  letter-spacing:.16em;
+}
+.friend-dot {
+  width:6px;
+  height:6px;
+  flex:0 0 6px;
+  border-radius:50%;
+  background:#b8a5ff;
+  box-shadow:0 0 12px rgba(184,165,255,.8);
+}
+.friend-rgb-frame {
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:100%;
+  padding:2px;
+  border-radius:13px;
+  background:linear-gradient(110deg,#ff5277 0%,#ffc65c 19%,#65ffb0 38%,#53cfff 58%,#a77aff 78%,#ff5277 100%);
+  background-size:320% 320%;
+  animation:friendRgbFlow 4.5s linear infinite;
+  box-shadow:0 0 18px rgba(136,103,255,.18),0 0 36px rgba(84,199,255,.08);
+}
+.friend-rgb-frame::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-5px;
+  border-radius:17px;
+  background:inherit;
+  background-size:inherit;
+  filter:blur(9px);
+  opacity:.42;
+  pointer-events:none;
+}
+.friend-nickname {
+  display:block;
+  min-width:130px;
+  max-width:100%;
+  padding:10px 29px;
+  border:1px solid rgba(255,255,255,.04);
+  border-radius:11px;
+  background:#0d0a1a;
+  color:#fbfaff;
+  font:800 clamp(22px,4vw,30px)/1.2 var(--font);
+  letter-spacing:-.035em;
+  text-shadow:0 0 19px rgba(210,196,255,.28);
+}
+.friend-caption {
+  margin:0;
+  color:#c7baff;
+  font:500 13px/1.5 var(--font);
+  letter-spacing:.015em;
+}
+.friend-card-orbit {
+  position:absolute;
+  z-index:-1;
+  width:176px;
+  height:176px;
+  border:1px solid rgba(184,165,255,.09);
+  border-radius:50%;
+  pointer-events:none;
+}
+.friend-orbit-one { transform:scaleX(1.65) rotate(-18deg); }
+.friend-orbit-two { width:216px;height:216px;transform:scaleX(1.5) rotate(24deg);border-color:rgba(111,176,255,.06); }
+.friend-particle {
+  position:absolute;
+  z-index:0;
+  display:block;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#b8a5ff;
+  box-shadow:0 0 8px 2px rgba(184,165,255,.48);
+  opacity:0;
+  pointer-events:none;
+  animation:friendParticleFloat 5s ease-in-out infinite;
+  will-change:transform,opacity;
+}
+.friend-particle-a { top:24%;left:16%;background:#ff78b7;box-shadow:0 0 9px 2px rgba(255,120,183,.44);animation-delay:-1.1s; }
+.friend-particle-b { top:32%;right:14%;width:3px;height:3px;background:#61d9ff;box-shadow:0 0 9px 2px rgba(97,217,255,.46);animation-delay:-3.3s; }
+.friend-particle-c { bottom:21%;left:25%;width:3px;height:3px;background:#a3ffcf;box-shadow:0 0 9px 2px rgba(163,255,207,.42);animation-delay:-2s; }
+.friend-particle-d { bottom:25%;right:23%;background:#d6a3ff;animation-delay:-.6s; }
+.friend-particle-e { top:16%;right:31%;width:2px;height:2px;background:#fff;box-shadow:0 0 7px 2px rgba(255,255,255,.35);animation-delay:-4.1s; }
+.friend-particle-f { bottom:17%;left:42%;width:2px;height:2px;background:#67baff;box-shadow:0 0 8px 2px rgba(103,186,255,.36);animation-delay:-2.7s; }
+@keyframes friendRgbFlow {
+  0% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+  100% { background-position:0% 50%; }
+}
+@keyframes friendParticleFloat {
+  0%,100% { transform:translate3d(0,8px,0) scale(.7);opacity:0; }
+  25% { opacity:.75; }
+  50% { transform:translate3d(9px,-9px,0) scale(1.15);opacity:.95; }
+  75% { opacity:.6; }
+}
+@media (max-width:720px) {
+  .nsp-friend-card { min-height:188px;margin:4px auto 18px;padding:24px 14px;border-radius:18px; }
+  .friend-nickname { min-width:118px;padding:9px 23px; }
+  .friend-caption { font-size:12px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .friend-rgb-frame,.friend-particle { animation:none !important; }
+  .friend-rgb-frame { background-position:50% 50%; }
+  .friend-particle { opacity:.55; }
+}
