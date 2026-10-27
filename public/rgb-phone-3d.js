@@ -505,6 +505,48 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     osc.stop(t+duration+.025);
   }
 
+  function startLiquidSound(mode){
+    if(!soundEnabled||!mode){stopLiquidSound();return;}
+    createSound();
+    if(!audioContext||!masterGain)return;
+    stopLiquidSound();
+    const length=Math.floor(audioContext.sampleRate*2.2);
+    const buffer=audioContext.createBuffer(1,length,audioContext.sampleRate);
+    const data=buffer.getChannelData(0);
+    let low=0;
+    for(let i=0;i<length;i++){
+      const white=Math.random()*2-1;
+      low=low*.91+white*.09;
+      data[i]=mode==='water'?(white*.22+low*.78):(low*.85+white*.15);
+    }
+    liquidSoundSource=audioContext.createBufferSource();
+    liquidSoundSource.buffer=buffer;
+    liquidSoundSource.loop=true;
+    liquidSoundFilter=audioContext.createBiquadFilter();
+    liquidSoundFilter.type=mode==='water'?'bandpass':'lowpass';
+    liquidSoundFilter.frequency.value=mode==='water'?1850:620;
+    liquidSoundFilter.Q.value=mode==='water'?.45:.7;
+    liquidSoundGain=audioContext.createGain();
+    liquidSoundGain.gain.value=.0001;
+    liquidSoundSource.connect(liquidSoundFilter);
+    liquidSoundFilter.connect(liquidSoundGain);
+    liquidSoundGain.connect(masterGain);
+    liquidSoundSource.start();
+    liquidSoundGain.gain.setTargetAtTime(mode==='water'?.022:.032,audioContext.currentTime,.24);
+  }
+
+  function stopLiquidSound(){
+    if(!liquidSoundSource)return;
+    const source=liquidSoundSource,gain=liquidSoundGain;
+    if(gain&&audioContext){
+      gain.gain.cancelScheduledValues(audioContext.currentTime);
+      gain.gain.setTargetAtTime(.0001,audioContext.currentTime,.07);
+    }
+    try{source.stop(audioContext.currentTime+.32);}catch(_){}
+    source.onended=()=>{try{source.disconnect();}catch(_){}};
+    liquidSoundSource=null;liquidSoundFilter=null;liquidSoundGain=null;
+  }
+
   function noiseBurst(duration,volume,filterType,frequency,x=0){
     if(!soundEnabled)return;
     createSound();
@@ -734,8 +776,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(liquidMode){
       createWallStreams(liquidMode);
       for(const item of items)attachLiquidToItem(item,liquidMode);
+      startLiquidSound(liquidMode);
       status(liquidMode==='water'?'Вода стекает тонкими струйками и каплями':'Слизь тянется густыми дорожками по предметам');
     }else{
+      stopLiquidSound();
       status('Жидкость остановлена');
     }
   }
@@ -835,7 +879,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(pos.y>ceilY-rY){pos.y=ceilY-rY;if(item.body.velocity.y>0){addWallImpact(item.kind,Math.abs(item.body.velocity.y),pos.x);item.body.velocity.y=-Math.abs(item.body.velocity.y)*.68;av.x*=.58;av.z*=.58;}}
     if(pos.z<-.72){pos.z=-.72;if(item.body.velocity.z<0){item.body.velocity.z=Math.abs(item.body.velocity.z)*.68;av.x*=.62;av.y*=.62;}}
     if(pos.z>.72){pos.z=.72;if(item.body.velocity.z>0){item.body.velocity.z=-Math.abs(item.body.velocity.z)*.68;av.x*=.62;av.y*=.62;}}
-    const maxSpin=11;
+    const touchingX=Math.abs(pos.x)>=sideX-radius-.025;
+    const touchingY=pos.y<=floorY+rY+.025||pos.y>=ceilY-rY-.025;
+    const touchingZ=Math.abs(pos.z)>=.68;
+    if(touchingX){av.y*=.9;av.z*=.9;}
+    if(touchingY){av.x*=.9;av.z*=.9;}
+    if(touchingZ){av.x*=.9;av.y*=.9;}
+    const speed=Math.hypot(item.body.velocity.x,item.body.velocity.y,item.body.velocity.z);
+    const spin=Math.hypot(av.x,av.y,av.z);
+    if(touchingY&&speed<.22&&spin<2.5){av.x*=.68;av.y*=.82;av.z*=.68;}
+    if(speed<.12&&spin<.16)item.body.sleep();
+    const maxSpin=9;
     av.x=clamp(av.x,-maxSpin,maxSpin);av.y=clamp(av.y,-maxSpin,maxSpin);av.z=clamp(av.z,-maxSpin,maxSpin);
   }
 
@@ -979,8 +1033,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function updateTilt(event){
     if(!tiltEnabled||event.beta==null||event.gamma==null)return;
     if(!tiltReference)tiltReference={beta:event.beta,gamma:event.gamma};
-    const beta=THREE.MathUtils.degToRad(event.beta-tiltReference.beta);
-    const gamma=THREE.MathUtils.degToRad(event.gamma-tiltReference.gamma);
+    const deltaAngle=(value,reference)=>((value-reference+540)%360)-180;
+    const beta=THREE.MathUtils.degToRad(deltaAngle(event.beta,tiltReference.beta));
+    const gamma=THREE.MathUtils.degToRad(deltaAngle(event.gamma,tiltReference.gamma));
     const rawAngle=(screen.orientation&&Number.isFinite(screen.orientation.angle)?screen.orientation.angle:
       (Number.isFinite(window.orientation)?window.orientation:0));
     const screenAngle=THREE.MathUtils.degToRad(rawAngle);
@@ -1069,9 +1124,14 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       soundEnabled=!soundEnabled;
       soundButton.setAttribute('aria-pressed',String(soundEnabled));
       soundLabel.textContent=soundEnabled?'Звук':'Без звука';
-      if(soundEnabled)createSound();
-      if(!soundEnabled&&masterGain&&audioContext)masterGain.gain.setTargetAtTime(0,audioContext.currentTime,.025);
-      if(soundEnabled&&masterGain&&audioContext)masterGain.gain.setTargetAtTime(.48,audioContext.currentTime,.04);
+      if(soundEnabled){
+        createSound();
+        if(masterGain&&audioContext)masterGain.gain.setTargetAtTime(.48,audioContext.currentTime,.04);
+        if(liquidMode)startLiquidSound(liquidMode);
+      }else{
+        stopLiquidSound();
+        if(masterGain&&audioContext)masterGain.gain.setTargetAtTime(.0001,audioContext.currentTime,.025);
+      }
       status(soundEnabled?'Звуки включены':'Звуки выключены');
     });
     tiltButton.addEventListener('click',toggleTilt);
