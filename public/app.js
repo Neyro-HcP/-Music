@@ -29,12 +29,27 @@
     logoY: 45,
     visualX: 0,
     visualY: 0,
-    textX: 6,
-    textY: 81,
-    textSize: 100,
+    visualScale: 100,
+    visualOpacity: 100,
+    visualLineWidth: 1,
+    titleX: 6,
+    titleY: 78,
+    titleSize: 100,
+    titleColor: '#f5f6f8',
+    titleOpacity: 100,
+    artistX: 6,
+    artistY: 88,
+    artistSize: 100,
+    artistColor: '#d6b57c',
+    artistOpacity: 100,
     particleCount: 85,
     particleSize: 1,
     particleSpeed: 1,
+    particleDirection: 'float',
+    particleShape: 'circle',
+    particleColor: '#d6b57c',
+    particleOpacity: 65,
+    particleGlow: 0,
     beatResponse: 1.4,
     smoothing: 45
   };
@@ -57,6 +72,8 @@
     mediaDestination: null,
     frequencyData: null,
     timeData: null,
+    frequencyBands: [],
+    lastRenderAt: 0,
     logoImage: null,
     logoObjectUrl: null,
     backgroundImage: null,
@@ -135,9 +152,24 @@
     $('#logoYRange').value = state.logoY;
     $('#visualXRange').value = state.visualX;
     $('#visualYRange').value = state.visualY;
-    $('#textXRange').value = state.textX;
-    $('#textYRange').value = state.textY;
-    $('#textSizeRange').value = state.textSize;
+    $('#visualScaleRange').value = state.visualScale;
+    $('#visualOpacityRange').value = state.visualOpacity;
+    $('#visualLineWidthRange').value = state.visualLineWidth;
+    $('#titleXRange').value = state.titleX;
+    $('#titleYRange').value = state.titleY;
+    $('#titleSizeRange').value = state.titleSize;
+    $('#titleColorInput').value = state.titleColor;
+    $('#titleOpacityRange').value = state.titleOpacity;
+    $('#artistXRange').value = state.artistX;
+    $('#artistYRange').value = state.artistY;
+    $('#artistSizeRange').value = state.artistSize;
+    $('#artistColorInput').value = state.artistColor;
+    $('#artistOpacityRange').value = state.artistOpacity;
+    $('#particleDirectionSelect').value = state.particleDirection;
+    $('#particleShapeSelect').value = state.particleShape;
+    $('#particleColorInput').value = state.particleColor;
+    $('#particleOpacityRange').value = state.particleOpacity;
+    $('#particleGlowRange').value = state.particleGlow;
     $('#particleCountRange').value = state.particleCount;
     $('#particleSizeRange').value = state.particleSize;
     $('#particleSpeedRange').value = state.particleSpeed;
@@ -151,9 +183,19 @@
     $('#logoYOutput').textContent = state.logoY + '%';
     $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
     $('#visualYOutput').textContent = (state.visualY > 0 ? '+' : '') + state.visualY + '%';
-    $('#textXOutput').textContent = state.textX + '%';
-    $('#textYOutput').textContent = state.textY + '%';
-    $('#textSizeOutput').textContent = state.textSize + '%';
+    $('#visualScaleOutput').textContent = state.visualScale + '%';
+    $('#visualOpacityOutput').textContent = state.visualOpacity + '%';
+    $('#visualLineWidthOutput').textContent = Number(state.visualLineWidth).toFixed(1) + '×';
+    $('#titleXOutput').textContent = state.titleX + '%';
+    $('#titleYOutput').textContent = state.titleY + '%';
+    $('#titleSizeOutput').textContent = state.titleSize + '%';
+    $('#titleOpacityOutput').textContent = state.titleOpacity + '%';
+    $('#artistXOutput').textContent = state.artistX + '%';
+    $('#artistYOutput').textContent = state.artistY + '%';
+    $('#artistSizeOutput').textContent = state.artistSize + '%';
+    $('#artistOpacityOutput').textContent = state.artistOpacity + '%';
+    $('#particleOpacityOutput').textContent = state.particleOpacity + '%';
+    $('#particleGlowOutput').textContent = String(state.particleGlow);
     $('#particleCountOutput').textContent = state.particleCount;
     $('#particleSizeOutput').textContent = Number(state.particleSize).toFixed(1) + '×';
     $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
