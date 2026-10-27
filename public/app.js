@@ -1249,7 +1249,7 @@
     audio.load();
     const cleanName = file.name.replace(/\.[^/.]+$/, '');
     $('#loadedTrackName').textContent = file.name;
-    $('#loadedTrackInfo').textContent = bytesLabel(file.size) + ' · ЛОКАЛЬНЫЙ ФАЙЛ';
+    $('#loadedTrackInfo').textContent = bytesLabel(file.size) + ' · локальный файл';
     if (!$('#trackTitle').value.trim() || $('#trackTitle').dataset.autoTitle === 'true') {
       $('#trackTitle').value = cleanName;
       $('#trackTitle').dataset.autoTitle = 'true';
@@ -1281,7 +1281,7 @@
   function setPlayState() {
     $('#playGlyph').textContent = audio.paused ? '▶' : 'Ⅱ';
     $('#playButton').classList.toggle('is-playing', !audio.paused);
-    if (state.file) $('#previewStatus').textContent = audio.paused ? 'Пауза' : 'AUDIO REACTIVE';
+    if (state.file) $('#previewStatus').textContent = audio.paused ? 'Пауза' : 'Аудио';
     if (state.file && !audio.paused) $('#previewHint').textContent = 'Аудио обрабатывается в реальном времени.';
   }
 
