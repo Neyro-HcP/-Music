@@ -534,29 +534,36 @@
   }
 
   function drawSpectrum(w, h, now, values) {
-    const count = Math.max(54, Math.min(104, Math.floor(w / 13)));
-    const gap = Math.max(2, w * 0.0035);
-    const barW = (w - 100) / count - gap;
+    const count = Math.max(50, Math.min(104, Math.floor(w / 13)));
+    const gap = Math.max(2, w * 0.003);
+    const cell = (w - 100) / count;
+    const barW = Math.max(1, (cell - gap) * (0.68 + state.visualLineWidth * 0.22));
     const baseline = h * 0.61;
-    const maxH = h * 0.3;
+    const maxH = h * 0.29;
+    const gradient = colorGradient(baseline - maxH, baseline + 2);
     ctx.save();
-    ctx.shadowBlur = state.glow;
-    ctx.shadowColor = state.colorOne;
-    ctx.fillStyle = colorGradient(baseline - maxH, baseline + 2);
+    ctx.fillStyle = gradient;
+    ctx.shadowBlur = 0;
     for (let i = 0; i < count; i++) {
       const level = values.level(i, count);
-      const barH = Math.max(3, Math.min(maxH, level * maxH));
-      const x = 50 + i * (barW + gap);
-      ctx.globalAlpha = 0.88;
-      ctx.fillRect(x, baseline - barH, Math.max(1, barW), barH);
-      ctx.globalAlpha = 0.28;
-      ctx.fillRect(x, baseline + 5, Math.max(1, barW), barH * 0.24);
+      const barH = Math.max(2, Math.min(maxH, level * maxH));
+      const x = 50 + i * cell + (cell - barW) * 0.5;
+      ctx.globalAlpha = 0.92;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(x, baseline - barH, barW, barH, Math.min(barW * 0.45, 6)); ctx.fill();
+      } else {
+        ctx.fillRect(x, baseline - barH, barW, barH);
+      }
+      ctx.globalAlpha = 0.13;
+      ctx.fillRect(x, baseline + 5, barW, barH * 0.22);
     }
     ctx.restore();
 
     ctx.save();
-    ctx.strokeStyle = rgba(state.colorOne, 0.32);
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = rgba(state.colorOne, 0.38);
+    ctx.lineWidth = Math.max(1, state.visualLineWidth);
+    ctx.shadowColor = state.colorOne;
+    ctx.shadowBlur = Math.min(8, state.glow * 0.4);
     ctx.beginPath(); ctx.moveTo(36, baseline + 1); ctx.lineTo(w - 36, baseline + 1); ctx.stroke();
     ctx.restore();
     drawCoreRing(w * 0.5, h * 0.37, Math.min(w, h) * 0.07, now, values);
@@ -587,26 +594,27 @@
     const cy = h * 0.46;
     const radius = Math.min(w, h) * 0.19;
     ctx.save();
-    ctx.shadowBlur = state.glow * 1.2;
+    ctx.lineWidth = Math.max(1, state.visualLineWidth);
+    ctx.shadowBlur = Math.min(10, state.glow * 0.45);
     ctx.shadowColor = state.colorTwo;
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = rgba(state.colorTwo, 0.68);
+    ctx.strokeStyle = rgba(state.colorTwo, 0.58);
     ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = rgba(state.colorOne, 0.26);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = rgba(state.colorOne, 0.24);
     ctx.beginPath(); ctx.arc(cx, cy, radius * 1.28, 0, Math.PI * 2); ctx.stroke();
-    const count = Math.max(100, Math.floor(Math.min(w, h) * 0.42));
+    const count = Math.min(280, Math.max(100, Math.floor(Math.min(w, h) * 0.34)));
+    const baseWidth = Math.max(1, w / 900 * 2.0 * state.visualLineWidth);
     for (let i = 0; i < count; i++) {
-      const angle = i / count * Math.PI * 2 + now / 18000;
-      const amp = Math.max(3, values.level(i, count) * Math.min(w, h) * 0.12);
+      const angle = i / count * Math.PI * 2 + now / 24000;
+      const amp = Math.max(2, values.level(i, count) * Math.min(w, h) * 0.12);
       const inner = radius + 7;
       const outer = inner + amp;
-      const x1 = cx + Math.cos(angle) * inner;
-      const y1 = cy + Math.sin(angle) * inner;
-      const x2 = cx + Math.cos(angle) * outer;
-      const y2 = cy + Math.sin(angle) * outer;
-      ctx.lineWidth = Math.max(1, w / 900 * 2.3);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.lineWidth = baseWidth;
       ctx.strokeStyle = i % 2 === 0 ? state.colorOne : state.colorTwo;
-      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.stroke();
     }
     ctx.restore();
     drawCoreRing(cx, cy, radius * 0.57, now, values);
@@ -628,8 +636,8 @@
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.strokeStyle = layer === 0 ? state.colorOne : rgba(state.colorTwo, 0.6 - layer * 0.13);
-      ctx.lineWidth = (layer === 0 ? 3 : 6 - layer) * Math.max(0.6, w / 1280);
-      ctx.shadowBlur = state.glow;
+      ctx.lineWidth = (layer === 0 ? 3 : 6 - layer) * Math.max(0.6, w / 1280) * state.visualLineWidth;
+      ctx.shadowBlur = Math.min(12, state.glow * 0.55);
       ctx.shadowColor = layer === 0 ? state.colorOne : state.colorTwo;
       ctx.stroke();
       ctx.restore();
@@ -659,8 +667,8 @@
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.strokeStyle = rgba(band.color, band.alpha);
-      ctx.lineWidth = (index === 0 ? 4 : 2.6) * Math.max(0.8, w / 1280);
-      ctx.shadowBlur = state.glow * 1.25;
+      ctx.lineWidth = (index === 0 ? 4 : 2.6) * Math.max(0.8, w / 1280) * state.visualLineWidth;
+      ctx.shadowBlur = Math.min(12, state.glow * 0.6);
       ctx.shadowColor = band.color;
       ctx.stroke();
       ctx.lineTo(w, h * 0.88);
@@ -679,11 +687,11 @@
     const cx = w * 0.5;
     const cy = h * 0.44;
     const radius = Math.min(w, h) * 0.145;
-    const count = Math.max(96, Math.floor(Math.min(w, h) * 0.36));
+    const count = Math.min(260, Math.max(96, Math.floor(Math.min(w, h) * 0.27)));
     ctx.save();
     ctx.lineCap = 'round';
-    ctx.shadowBlur = state.glow;
-    ctx.shadowColor = state.colorOne;
+    ctx.shadowBlur = 0;
+    const baseWidth = Math.max(1.1, w / 800 * 1.5 * state.visualLineWidth);
     for (let i = 0; i < count; i++) {
       const angle = i / count * Math.PI * 2 - Math.PI / 2;
       const level = values.level(i, count);
@@ -693,50 +701,58 @@
       ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
       ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
       ctx.strokeStyle = i % 3 === 0 ? state.colorOne : state.colorTwo;
-      ctx.lineWidth = Math.max(1.2, w / 800 * 1.6);
+      ctx.lineWidth = baseWidth;
       ctx.stroke();
     }
     ctx.restore();
     drawCoreRing(cx, cy, radius * 0.75, now, values);
-
     ctx.save();
     ctx.strokeStyle = rgba(state.colorOne, 0.2);
-    ctx.lineWidth = 1;
+    ctx.lineWidth = Math.max(1, state.visualLineWidth);
     ctx.beginPath(); ctx.arc(cx, cy, radius * 1.9, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
+  }
+
+  function titleAnchor(w, xPercent) {
+    return xPercent > 72 ? { x: Math.min(w - 12, w * xPercent / 100), align: 'right' } : { x: Math.max(12, Math.min(w - 12, w * xPercent / 100)), align: 'left' };
   }
 
   function drawTypography(w, h) {
     if (!state.showTitle) return;
     const title = ($('#trackTitle').value || 'Без названия').trim();
     const artist = ($('#trackArtist').value || 'НсП').trim();
-    const scale = state.textSize / 100;
-    const titleSize = Math.max(14, Math.min(Math.round(w * 0.048), Math.round(h * 0.085))) * scale;
-    const artistSize = Math.max(10, Math.round(Math.min(w, h) * 0.022)) * scale;
-    const xPercent = state.textX / 100;
-    const yPercent = state.textY / 100;
-    const x = w * xPercent;
-    const safeBlockHeight = titleSize * 2.55 + artistSize;
-    const y = Math.max(10, Math.min(h - safeBlockHeight - h * 0.025, h * yPercent));
-    const textAlign = state.textX > 72 ? 'right' : 'left';
+    const base = Math.min(w, h);
+    const titlePx = Math.max(16, Math.min(Math.round(w * 0.048), Math.round(h * 0.085))) * state.titleSize / 100;
+    const artistPx = Math.max(10, Math.round(base * 0.022)) * state.artistSize / 100;
+    const titleAnchorPos = titleAnchor(w, state.titleX);
+    const artistAnchorPos = titleAnchor(w, state.artistX);
+    const titleY = Math.max(10, Math.min(h - titlePx - 12, h * state.titleY / 100));
+    const artistY = Math.max(10, Math.min(h - artistPx - 12, h * state.artistY / 100));
     const maxWidth = w * 0.84;
-    const alignX = textAlign === 'right' ? Math.min(w - 12, x) : Math.max(12, Math.min(w - 12, x));
+
     ctx.save();
     ctx.textBaseline = 'top';
-    ctx.textAlign = textAlign;
-    ctx.shadowBlur = Math.min(24, state.glow * 0.65);
-    ctx.shadowColor = rgba(state.colorOne, 0.25);
-    ctx.font = '800 ' + Math.round(titleSize) + 'px Manrope, sans-serif';
+    ctx.textAlign = titleAnchorPos.align;
+    ctx.font = '800 ' + Math.round(titlePx) + 'px Manrope, sans-serif';
     let shownTitle = title;
     while (shownTitle.length > 2 && ctx.measureText(shownTitle).width > maxWidth) shownTitle = shownTitle.slice(0, -2).trimEnd() + '…';
-    ctx.fillStyle = '#f5f6f8';
-    ctx.fillText(shownTitle, alignX, y, maxWidth);
-    ctx.shadowBlur = Math.min(14, state.glow * 0.45);
-    ctx.font = '600 ' + Math.round(artistSize) + 'px Manrope, sans-serif';
-    ctx.fillStyle = state.colorOne;
-    let shownArtist = artist;
-    while (shownArtist.length > 2 && ctx.measureText(shownArtist.toUpperCase()).width > maxWidth) shownArtist = shownArtist.slice(0, -2).trimEnd() + '…';
-    ctx.fillText(shownArtist.toUpperCase(), alignX, y + titleSize * 1.18, maxWidth);
+    ctx.globalAlpha = state.titleOpacity / 100;
+    ctx.fillStyle = state.titleColor;
+    ctx.shadowBlur = Math.min(10, state.glow * 0.35);
+    ctx.shadowColor = state.titleColor;
+    ctx.fillText(shownTitle, titleAnchorPos.x, titleY, maxWidth);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.textAlign = artistAnchorPos.align;
+    ctx.font = '600 ' + Math.round(artistPx) + 'px Manrope, sans-serif';
+    let shownArtist = artist.toUpperCase();
+    while (shownArtist.length > 2 && ctx.measureText(shownArtist).width > maxWidth) shownArtist = shownArtist.slice(0, -2).trimEnd() + '…';
+    ctx.globalAlpha = state.artistOpacity / 100;
+    ctx.fillStyle = state.artistColor;
+    ctx.shadowBlur = 0;
+    ctx.fillText(shownArtist, artistAnchorPos.x, artistY, maxWidth);
     ctx.restore();
   }
 
@@ -746,17 +762,23 @@
     const h = canvas.height;
     const values = getAudioValues(now);
     drawBackground(w, h, now, values);
+
     const dx = w * state.visualX / 100;
     const dy = h * state.visualY / 100;
+    const scale = state.visualScale / 100;
     ctx.save();
-    ctx.translate(dx, dy);
+    ctx.translate(w * 0.5 + dx, h * 0.5 + dy);
+    ctx.scale(scale, scale);
+    ctx.translate(-w * 0.5, -h * 0.5);
+    ctx.globalAlpha = state.visualOpacity / 100;
     if (state.style === 'spectrum') drawSpectrum(w, h, now, values);
     else if (state.style === 'orbit') drawOrbit(w, h, now, values);
     else if (state.style === 'wave') drawWave(w, h, now, values);
     else if (state.style === 'aurora') drawAurora(w, h, now, values);
     else drawRadial(w, h, now, values);
-    drawCenterLogo(w, h);
     ctx.restore();
+
+    drawCenterLogo(w, h);
     drawTypography(w, h);
     state.lastFrameTime = now;
   }
