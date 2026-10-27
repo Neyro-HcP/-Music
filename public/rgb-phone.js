@@ -582,7 +582,7 @@
     const gamma = event.gamma - tiltBase.gamma;
     const beta = event.beta - tiltBase.beta;
     tiltGravityX = clamp(gamma * 19, -760, 760);
-    tiltGravityY = clamp(820 + beta * 12, 160, 1450);
+    tiltGravityY = clamp(820 + beta * 12, -820, 1450);
   }
 
   async function toggleTilt() {
