@@ -5,11 +5,13 @@
   const $$ = function (selector, root) { return Array.from((root || document).querySelectorAll(selector)); };
 
   const canvas = $('#visualizer');
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   const audio = $('#audio');
   const fileInput = $('#audioFile');
   const dropzone = $('#dropzone');
   const toastEl = $('#toast');
+  const lowPowerDevice = Boolean((window.matchMedia && window.matchMedia('(max-width: 720px), (pointer: coarse)').matches) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4));
+  const audioBandCount = lowPowerDevice ? 128 : 192;
   const defaults = {
     style: 'spectrum',
     colorOne: '#d6b57c',
@@ -58,7 +60,7 @@
     artistSize: 100,
     artistColor: '#d6b57c',
     artistOpacity: 100,
-    particleCount: 85,
+    particleCount: lowPowerDevice ? 55 : 85,
     particleSize: 1,
     particleSpeed: 1,
     particleDirection: 'float',
@@ -100,8 +102,8 @@
     logoObjectUrl: null,
     backgroundImage: null,
     backgroundObjectUrl: null,
-    smoothedBands: new Float32Array(192),
-    peakBands: new Float32Array(192),
+    smoothedBands: new Float32Array(audioBandCount),
+    peakBands: new Float32Array(audioBandCount),
     bassEnvelope: 0,
     lastBassEnergy: 0,
     beatPulse: 0,
@@ -354,7 +356,8 @@
     state.lastAudioTime = now;
     if (state.analyser && state.frequencyData) {
       state.analyser.getByteFrequencyData(state.frequencyData);
-      if (state.timeData) state.analyser.getByteTimeDomainData(state.timeData);
+      const needsWaveform = state.style === 'wave' || state.style === 'scope' || (state.showLogo && state.logoHaloEnabled && state.logoHaloStyle === 'wave');
+      if (needsWaveform && state.timeData) state.analyser.getByteTimeDomainData(state.timeData);
     }
 
     let bassEnergy = 0;
@@ -995,7 +998,14 @@
     const scale=state.visualScale/100*(1+impact*state.visualizerPulse/100*.34)*(layer?layer.scale/100:1);
     ctx.save();ctx.translate(w*.5+dx,h*.5+dy);ctx.scale(scale,scale);ctx.translate(-w*.5,-h*.5);
     ctx.globalAlpha=state.visualOpacity/100*(layer?layer.opacity/100:1);
-    if('filter' in ctx){const pieces=[visualizerFilterCss(state.visualizerFilter)];if(shadow>0)pieces.push('drop-shadow(0px 0px '+Math.min(40,shadow)+'px '+colorOne+')');ctx.filter=pieces.filter(Boolean).join(' ')||'none';}
+    if ('filter' in ctx) {
+      const pieces = [];
+      const filter = visualizerFilterCss(state.visualizerFilter);
+      if (filter && filter !== 'none') pieces.push(filter);
+      // Full-canvas drop-shadow filters are expensive on phones; keep the saved value but skip the costly pass in low-power preview/export.
+      if (shadow > 0 && !lowPowerDevice) pieces.push('drop-shadow(0px 0px ' + Math.min(40, shadow) + 'px ' + colorOne + ')');
+      ctx.filter = pieces.join(' ') || 'none';
+    }
     drawSelectedVisualizer(w,h,now,values);ctx.restore();
     state.colorOne=original.colorOne;state.colorTwo=original.colorTwo;state.glow=original.glow;state.visualizerGradient=original.visualizerGradient;
   }
@@ -1027,17 +1037,25 @@
     state.lastFrameTime = now;
   }
 
+  let animationRequest = 0;
   function animate(now) {
-    if (document.hidden) {
-      window.requestAnimationFrame(animate);
-      return;
-    }
-    if (now - state.lastRenderAt >= 1000 / 30) {
+    animationRequest = 0;
+    if (document.hidden) return;
+    const targetInterval = state.recording ? 1000 / 30 : (lowPowerDevice ? 1000 / 24 : 1000 / 30);
+    if (now - state.lastRenderAt >= targetInterval) {
       drawFrame(now);
       state.lastRenderAt = now;
     }
-    window.requestAnimationFrame(animate);
+    animationRequest = window.requestAnimationFrame(animate);
   }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (animationRequest) window.cancelAnimationFrame(animationRequest);
+      animationRequest = 0;
+    } else if (!animationRequest) {
+      animationRequest = window.requestAnimationFrame(animate);
+    }
+  });
 
   function ensureAudioGraph() {
     if (!state.file) return false;
@@ -1047,7 +1065,7 @@
     if (!state.source) {
       state.source = state.audioContext.createMediaElementSource(audio);
       state.analyser = state.audioContext.createAnalyser();
-      state.analyser.fftSize = 4096;
+      state.analyser.fftSize = lowPowerDevice ? 2048 : 4096;
       state.analyser.smoothingTimeConstant = 0.32 + state.smoothing / 100 * 0.46;
       state.analyser.minDecibels = -90;
       state.analyser.maxDecibels = -15;
@@ -1747,12 +1765,23 @@
     if(!['off','snow','leaves'].includes(mode))mode='off';
     const select=$('#siteParticlesMode'),layer=$('#siteWeatherLayer');select.value=mode;layer.innerHTML='';layer.dataset.mode=mode;
     if(mode!=='off'){
-      const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches,total=reduced?8:22;
+      const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const total=reduced?6:(lowPowerDevice?18:28);
+      layer.dataset.reduced=reduced?'true':'false';
       for(let i=0;i<total;i++){
-        const particle=document.createElement('span');particle.className='site-weather-particle';particle.textContent=mode==='snow'?'❄':'❧';
-        particle.style.left=(2+Math.random()*96).toFixed(1)+'%';particle.style.animationDuration=(3.8+Math.random()*7.5).toFixed(2)+'s';
-        particle.style.animationDelay=(-Math.random()*9).toFixed(2)+'s';particle.style.fontSize=(mode==='snow'?7+Math.random()*9:10+Math.random()*10)+'px';
-        particle.style.opacity=(.22+Math.random()*.48).toFixed(2);particle.style.setProperty('--drift',((Math.random()-.5)*38).toFixed(1)+'px');layer.appendChild(particle);
+        const particle=document.createElement('span');
+        particle.className='site-weather-particle';
+        particle.textContent=mode==='snow'?(['❄','✧','·'][i%3]):(['❧','❦','❧'][i%3]);
+        particle.style.left=(2+Math.random()*96).toFixed(1)+'%';
+        particle.style.animationDuration=((mode==='snow'?10:9)+Math.random()*(mode==='snow'?10:11)).toFixed(2)+'s';
+        particle.style.animationDelay=(-Math.random()*18).toFixed(2)+'s';
+        particle.style.fontSize=(mode==='snow'?7+Math.random()*10:11+Math.random()*11)+'px';
+        particle.style.opacity=(.20+Math.random()*.52).toFixed(2);
+        particle.style.setProperty('--drift-mid',((Math.random()-.5)*90).toFixed(1)+'px');
+        particle.style.setProperty('--drift-end',((Math.random()-.5)*130).toFixed(1)+'px');
+        particle.style.setProperty('--turn',((Math.random()>.5?1:-1)*(240+Math.random()*360)).toFixed(0)+'deg');
+        if(reduced) particle.style.top=(Math.random()*92).toFixed(1)+'vh';
+        layer.appendChild(particle);
       }
     }
     if(persist){try{localStorage.setItem('nsp-site-weather',mode);}catch{}}
@@ -1974,5 +2003,5 @@
   updateTransport();
   void restoreSavedAssets();
   window.addEventListener('resize', applyAspect);
-  window.requestAnimationFrame(animate);
+  animationRequest = window.requestAnimationFrame(animate);
 })();
