@@ -336,19 +336,19 @@
       button.classList.toggle('active', button.dataset.style === style);
     });
     const statusNames = {
-      spectrum: 'NEON SPECTRUM',
-      orbit: 'ORBITAL FIELD',
-      wave: 'PURE WAVEFORM',
-      aurora: 'AURORA FLOW',
-      radial: 'SONIC CORE',
-      impact: 'BASS IMPACT',
-      matrix: 'POWER MATRIX',
-      scope: 'LIVE OSCILLOSCOPE',
-      tunnel: 'SONIC TUNNEL',
-      shockwave: 'BASS SHOCKWAVE',
-      bars3d: 'FREQUENCY WALL'
+      spectrum: 'Спектр',
+      orbit: 'Орбита',
+      wave: 'Волна',
+      aurora: 'Аврора',
+      radial: 'Радиальный',
+      impact: 'Удар',
+      matrix: 'Матрица',
+      scope: 'Осциллограмма',
+      tunnel: 'Туннель',
+      shockwave: 'Ударная волна',
+      bars3d: 'Стена частот'
     };
-    $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
+    $('#previewStatus').textContent = state.file ? 'Аудио' : 'Демо · ' + statusNames[style];
     // The capped animation loop renders the new style on the next frame instead of blocking the click.
   }
 
@@ -1254,8 +1254,8 @@
       $('#trackTitle').value = cleanName;
       $('#trackTitle').dataset.autoTitle = 'true';
     }
-    $('#previewStatus').textContent = 'AUDIO READY';
-    $('#previewHint').textContent = 'Аудио загружено. Нажми Play — визуал начнёт реагировать на звук.';
+    $('#previewStatus').textContent = 'Готово';
+    $('#previewHint').textContent = 'Нажми ▶, чтобы запустить.';
     $('#exportButton').disabled = false;
     $('#topExportButton').classList.add('ready');
     $('#exportButton').classList.add('ready');
@@ -1281,8 +1281,8 @@
   function setPlayState() {
     $('#playGlyph').textContent = audio.paused ? '▶' : 'Ⅱ';
     $('#playButton').classList.toggle('is-playing', !audio.paused);
-    if (state.file) $('#previewStatus').textContent = audio.paused ? 'AUDIO PAUSED' : 'AUDIO REACTIVE';
-    if (state.file && !audio.paused) $('#previewHint').textContent = 'Визуал анализирует частоты в реальном времени.';
+    if (state.file) $('#previewStatus').textContent = audio.paused ? 'Пауза' : 'AUDIO REACTIVE';
+    if (state.file && !audio.paused) $('#previewHint').textContent = 'Аудио обрабатывается в реальном времени.';
   }
 
   async function togglePlay() {
