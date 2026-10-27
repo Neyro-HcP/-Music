@@ -1530,3 +1530,8 @@ input[type="range"]::-moz-range-thumb {
   .nsp-crew-particle { opacity:.48; }
   *,*::before,*::after { scroll-behavior:auto !important;transition-duration:.01ms !important; }
 }
+
+
+/* Compact functional count; hide secondary explanatory copy throughout the interface. */
+.layer-count { color:#918c97;font:500 9px/1 var(--mono);letter-spacing:.025em;white-space:nowrap; }
+.toggle-row small { display:none !important; }
