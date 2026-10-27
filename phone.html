@@ -52,7 +52,7 @@
       <div>
         <div class="phone-kicker">INTERACTIVE PHYSICS</div>
         <h1>RGB PHONE</h1>
-        <p>Бросай, сталкивай, наклоняй. Лёд звенит и потрескивает, резиновые шарики пружинят, а каждый предмет подчиняется физике.</p>
+        <p>Бросай, сталкивай, раскрашивай. Наклоняй телефон, запускай воду и слизь — лёгкая 3D-симуляция создана с прицелом на мобильную производительность.</p>
       </div>
       <div class="phone-intro-meta"><i></i><span id="phoneRenderMode">3D ENGINE · ЗАПУСК</span></div>
     </div>
@@ -79,6 +79,21 @@
           <button class="phone-action" type="button" data-phone-add="cube"><span class="phone-action-icon">◈</span> Кубики</button>
           <button class="phone-action" type="button" data-phone-add="tnt"><span class="phone-action-icon">▦</span> TNT</button>
         </div>
+        <div class="phone-divider"></div>
+        <h2 class="phone-side-title">Раскраска</h2>
+        <label class="phone-color-picker" for="phonePaintColor">
+          <span>Цвет предметов</span>
+          <input id="phonePaintColor" type="color" value="#a78bfa" aria-label="Выбрать цвет раскраски">
+        </label>
+        <button class="phone-action phone-action-wide" id="phonePaintMode" type="button" aria-pressed="false">✦ Кисть: выкл.</button>
+        <p class="phone-hint">Включи кисть и нажимай на предметы, чтобы перекрашивать их.</p>
+        <div class="phone-divider"></div>
+        <h2 class="phone-side-title">Жидкости</h2>
+        <div class="phone-action-grid">
+          <button class="phone-action" id="phoneWater" type="button" data-liquid="water" aria-pressed="false"><span class="phone-action-icon">💧</span> Вода</button>
+          <button class="phone-action" id="phoneSlime" type="button" data-liquid="slime" aria-pressed="false"><span class="phone-action-icon">●</span> Слизь</button>
+        </div>
+        <p class="phone-hint">Вода собирается в капли и стекает по поверхностям. Слизь медленнее тянется и оставляет густые дорожки.</p>
         <div class="phone-divider"></div>
         <h2 class="phone-side-title">Управление</h2>
         <div class="phone-action-grid">
