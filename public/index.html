@@ -171,28 +171,65 @@
         </div>
         <div class="panel-divider"></div>
         <div class="control-section">
-          <div class="control-heading"><span>Положение визуализатора</span><span class="micro-label">MOVE</span></div>
+          <div class="control-heading"><span>Визуализатор</span><span class="micro-label">СЛОЙ 01</span></div>
           <div class="two-range-grid">
-            <label><span>По X <output id="visualXOutput">0%</output></span><input id="visualXRange" class="range-input" type="range" min="-30" max="30" step="1" value="0"></label>
-            <label><span>По Y <output id="visualYOutput">0%</output></span><input id="visualYRange" class="range-input" type="range" min="-30" max="30" step="1" value="0"></label>
+            <label><span>Положение X <output id="visualXOutput">0%</output></span><input id="visualXRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
+            <label><span>Положение Y <output id="visualYOutput">0%</output></span><input id="visualYRange" class="range-input" type="range" min="-35" max="35" step="1" value="0"></label>
+          </div>
+          <div class="two-range-grid">
+            <label><span>Масштаб <output id="visualScaleOutput">100%</output></span><input id="visualScaleRange" class="range-input" type="range" min="35" max="175" step="5" value="100"></label>
+            <label><span>Прозрачность <output id="visualOpacityOutput">100%</output></span><input id="visualOpacityRange" class="range-input" type="range" min="10" max="100" step="1" value="100"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="visualLineWidthRange">Толщина линий</label><output id="visualLineWidthOutput">1.0×</output></div>
+          <input id="visualLineWidthRange" class="range-input" type="range" min="0.5" max="3" step="0.1" value="1">
+        </div>
+        <div class="control-section text-layer-panel">
+          <div class="control-heading"><span>Заголовок</span><span class="micro-label">СЛОЙ 02</span></div>
+          <div class="two-range-grid">
+            <label><span>Позиция X <output id="titleXOutput">6%</output></span><input id="titleXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
+            <label><span>Позиция Y <output id="titleYOutput">78%</output></span><input id="titleYRange" class="range-input" type="range" min="5" max="92" step="1" value="78"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="titleSizeRange">Размер заголовка</label><output id="titleSizeOutput">100%</output></div>
+          <input id="titleSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="color-row">
+            <label class="color-control"><input id="titleColorInput" type="color" value="#f5f6f8"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
+            <label class="color-control"><input id="titleOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="titleOpacityOutput">100%</small></span></label>
+          </div>
+        </div>
+        <div class="control-section text-layer-panel">
+          <div class="control-heading"><span>Подпись автора</span><span class="micro-label">СЛОЙ 03</span></div>
+          <div class="two-range-grid">
+            <label><span>Позиция X <output id="artistXOutput">6%</output></span><input id="artistXRange" class="range-input" type="range" min="2" max="90" step="1" value="6"></label>
+            <label><span>Позиция Y <output id="artistYOutput">88%</output></span><input id="artistYRange" class="range-input" type="range" min="8" max="96" step="1" value="88"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="artistSizeRange">Размер подписи</label><output id="artistSizeOutput">100%</output></div>
+          <input id="artistSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="color-row">
+            <label class="color-control"><input id="artistColorInput" type="color" value="#d6b57c"><span><b>ЦВЕТ</b><small>Подпись</small></span></label>
+            <label class="color-control"><input id="artistOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="artistOpacityOutput">100%</small></span></label>
           </div>
         </div>
         <div class="control-section">
-          <div class="control-heading"><span>Положение текста</span><span class="micro-label">TYPE</span></div>
-          <div class="two-range-grid">
-            <label><span>По X <output id="textXOutput">6%</output></span><input id="textXRange" class="range-input" type="range" min="3" max="90" step="1" value="6"></label>
-            <label><span>По Y <output id="textYOutput">81%</output></span><input id="textYRange" class="range-input" type="range" min="5" max="94" step="1" value="81"></label>
-          </div>
-          <div class="control-heading compact-heading"><label for="textSizeRange">Размер текста</label><output id="textSizeOutput">100%</output></div>
-          <input id="textSizeRange" class="range-input" type="range" min="55" max="180" step="5" value="100">
-        </div>
-        <div class="control-section">
-          <div class="control-heading"><span>Частицы</span><span class="micro-label">FX</span></div>
+          <div class="control-heading"><span>Частицы</span><span class="micro-label">СЛОЙ 04 · FX</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b><small>Движение на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+          <div class="control-heading compact-heading"><label for="particleDirectionSelect">Направление</label></div>
+          <select id="particleDirectionSelect" class="select-field">
+            <option value="up">Вверх</option><option value="down">Вниз</option><option value="left">Влево</option><option value="right">Вправо</option><option value="out">От центра</option><option value="in">К центру</option><option value="float" selected>Плавающее</option>
+          </select>
+          <div class="control-heading compact-heading"><label for="particleShapeSelect">Форма</label></div>
+          <select id="particleShapeSelect" class="select-field">
+            <option value="circle" selected>Круги</option><option value="square">Квадраты</option><option value="diamond">Ромбы</option><option value="line">Штрихи</option><option value="star">Звёзды</option>
+          </select>
           <div class="two-range-grid">
-            <label><span>Количество <output id="particleCountOutput">84</output></span><input id="particleCountRange" class="range-input" type="range" min="0" max="250" step="5" value="85"></label>
+            <label><span>Количество <output id="particleCountOutput">85</output></span><input id="particleCountRange" class="range-input" type="range" min="0" max="250" step="5" value="85"></label>
             <label><span>Размер <output id="particleSizeOutput">1.0×</output></span><input id="particleSizeRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1"></label>
           </div>
+          <div class="color-row particle-colors-row">
+            <label class="color-control"><input id="particleColorInput" type="color" value="#d6b57c"><span><b>ЦВЕТ</b><small>Частицы</small></span></label>
+            <label class="color-control"><input id="particleOpacityRange" type="range" min="5" max="100" step="1" value="65"><span><b>ALPHA</b><small id="particleOpacityOutput">65%</small></span></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="particleGlowRange">Свечение частиц</label><output id="particleGlowOutput">0</output></div>
+          <input id="particleGlowRange" class="range-input" type="range" min="0" max="24" step="1" value="0">
           <div class="control-heading compact-heading"><label for="particleSpeedRange">Скорость частиц</label><output id="particleSpeedOutput">1.0×</output></div>
           <input id="particleSpeedRange" class="range-input" type="range" min="0" max="3" step="0.1" value="1">
         </div>
