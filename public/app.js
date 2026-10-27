@@ -1094,7 +1094,7 @@
         title: $('#trackTitle').value,
         artist: $('#trackArtist').value
       },
-      note: 'This file stores visualizer settings only. It does not contain audio.'
+      note: 'The JSON stores settings only. It does not contain audio or image files; the browser keeps uploaded logo and background locally.'
     };
   }
 
@@ -1148,6 +1148,9 @@
 
   function resetSettings() {
     Object.assign(state, defaults);
+    removeLogo();
+    removeBackground();
+    initParticles();
     $('#trackTitle').value = state.file ? state.file.name.replace(/\.[^/.]+$/, '') : '';
     $('#trackTitle').dataset.autoTitle = state.file ? 'true' : 'false';
     $('#trackArtist').value = '';
@@ -1155,6 +1158,118 @@
     setStyle(state.style);
     toast('Настройки возвращены к исходным.');
   }
+
+  const logoFileInput = $('#logoFile');
+  const backgroundFileInput = $('#backgroundFile');
+  $('#logoPickButton').addEventListener('click', function () { logoFileInput.click(); });
+  $('#backgroundPickButton').addEventListener('click', function () { backgroundFileInput.click(); });
+  $('#removeLogoButton').addEventListener('click', function () { removeLogo(); toast('Используется монограмма НсП.'); });
+  $('#removeBackgroundButton').addEventListener('click', function () { removeBackground(); toast('Изображение фона убрано.'); });
+  logoFileInput.addEventListener('change', function () {
+    const file = logoFileInput.files && logoFileInput.files[0];
+    if (file) useLocalImage(file, 'logo', false);
+    logoFileInput.value = '';
+  });
+  backgroundFileInput.addEventListener('change', function () {
+    const file = backgroundFileInput.files && backgroundFileInput.files[0];
+    if (file) useLocalImage(file, 'background', false);
+    backgroundFileInput.value = '';
+  });
+
+  const rangeBindings = [
+    ['logoSizeRange', 'logoSize'], ['logoOpacityRange', 'logoOpacity'], ['logoXRange', 'logoX'],
+    ['logoYRange', 'logoY'], ['visualXRange', 'visualX'], ['visualYRange', 'visualY'],
+    ['textXRange', 'textX'], ['textYRange', 'textY'], ['textSizeRange', 'textSize'],
+    ['vignetteRange', 'vignette'], ['backgroundOpacityRange', 'backgroundOpacity'],
+    ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'],
+    ['particleSpeedRange', 'particleSpeed'], ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing']
+  ];
+  rangeBindings.forEach(function (binding) {
+    const input = $('#' + binding[0]);
+    const key = binding[1];
+    input.addEventListener('input', function () {
+      state[key] = Number(input.value);
+      if (key === 'particleCount') initParticles();
+      if (key === 'smoothing' && state.analyser) state.analyser.smoothingTimeConstant = 0.32 + state.smoothing / 100 * 0.46;
+      updatePositionOutputs();
+    });
+  });
+
+  let canvasDrag = null;
+  canvas.style.touchAction = 'none';
+  canvas.style.cursor = 'grab';
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) / rect.width * canvas.width,
+      y: (event.clientY - rect.top) / rect.height * canvas.height
+    };
+  }
+  function calculatedTextY(h) {
+    const scale = state.textSize / 100;
+    const titleSize = Math.max(14, Math.min(Math.round(canvas.width * 0.048), Math.round(h * 0.085))) * scale;
+    const artistSize = Math.max(10, Math.round(Math.min(canvas.width, h) * 0.022)) * scale;
+    const safeBlockHeight = titleSize * 2.55 + artistSize;
+    return Math.max(10, Math.min(h - safeBlockHeight - h * 0.025, h * state.textY / 100));
+  }
+  canvas.addEventListener('pointerdown', function (event) {
+    const p = canvasPoint(event);
+    const w = canvas.width, h = canvas.height;
+    const lx = w * (state.logoX + state.visualX) / 100;
+    const ly = h * (state.logoY + state.visualY) / 100;
+    const logoRadius = Math.min(w, h) * state.logoSize / 200 * 1.25;
+    let mode = 'visual';
+    if (Math.hypot(p.x - lx, p.y - ly) <= logoRadius) {
+      mode = 'logo';
+    } else if (state.showTitle) {
+      const ty = calculatedTextY(h);
+      const tx = w * state.textX / 100;
+      const left = state.textX > 72 ? tx - w * 0.84 : tx;
+      if (p.x >= left - 20 && p.x <= left + w * 0.84 && p.y >= ty - 14 && p.y <= ty + h * 0.17) mode = 'text';
+    }
+    canvasDrag = { mode: mode, lastX: p.x, lastY: p.y };
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = 'grabbing';
+    event.preventDefault();
+  });
+  canvas.addEventListener('pointermove', function (event) {
+    if (!canvasDrag) return;
+    const p = canvasPoint(event);
+    const dx = (p.x - canvasDrag.lastX) / canvas.width * 100;
+    const dy = (p.y - canvasDrag.lastY) / canvas.height * 100;
+    if (canvasDrag.mode === 'visual') {
+      state.visualX = Math.round(clamp(state.visualX + dx, -30, 30));
+      state.visualY = Math.round(clamp(state.visualY + dy, -30, 30));
+      $('#visualXRange').value = state.visualX;
+      $('#visualYRange').value = state.visualY;
+    } else if (canvasDrag.mode === 'logo') {
+      state.logoX = Math.round(clamp(state.logoX + dx, 10, 90));
+      state.logoY = Math.round(clamp(state.logoY + dy, 10, 90));
+      $('#logoXRange').value = state.logoX;
+      $('#logoYRange').value = state.logoY;
+    } else {
+      state.textX = Math.round(clamp(state.textX + dx, 3, 90));
+      state.textY = Math.round(clamp(state.textY + dy, 5, 94));
+      $('#textXRange').value = state.textX;
+      $('#textYRange').value = state.textY;
+    }
+    canvasDrag.lastX = p.x;
+    canvasDrag.lastY = p.y;
+    updatePositionOutputs();
+    drawFrame(performance.now());
+    event.preventDefault();
+  });
+  function endCanvasDrag(event) {
+    canvasDrag = null;
+    canvas.style.cursor = 'grab';
+    if (event && canvas.hasPointerCapture && canvas.hasPointerCapture(event.pointerId)) {
+      try { canvas.releasePointerCapture(event.pointerId); } catch {}
+    }
+  }
+  canvas.addEventListener('pointerup', endCanvasDrag);
+  canvas.addEventListener('pointercancel', endCanvasDrag);
+  canvas.addEventListener('lostpointercapture', function () { canvasDrag = null; canvas.style.cursor = 'grab'; });
 
   fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) selectAudio(fileInput.files[0]); });
   dropzone.addEventListener('click', function (event) { if (event.target !== fileInput) fileInput.click(); });
@@ -1218,6 +1333,7 @@
   updateSettingsUI();
   setStyle(state.style);
   updateTransport();
+  void restoreSavedAssets();
   window.addEventListener('resize', applyAspect);
   window.requestAnimationFrame(animate);
 })();
