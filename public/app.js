@@ -14,11 +14,11 @@
   const audioBandCount = lowPowerDevice ? 128 : 192;
   const defaults = {
     style: 'spectrum',
-    colorOne: '#d6b57c',
-    colorTwo: '#8b97b0',
-    background: '#08090d',
+    colorOne: '#b8a5ff',
+    colorTwo: '#f5f3ff',
+    background: '#0b0915',
     sensitivity: 1.2,
-    glow: 22,
+    glow: 12,
     aspect: 'landscape',
     showTitle: true,
     showLogo: false,
@@ -30,11 +30,11 @@
     logoHaloStyle: 'radial',
     logoHaloCount: 3,
     logoHaloWidth: 2,
-    logoHaloColor: '#d6b57c',
-    logoGlow: 14,
+    logoHaloColor: '#b8a5ff',
+    logoGlow: 8,
     showVisualizer: true,
     visualizerGradient: true,
-    visualizerShadow: 12,
+    visualizerShadow: 4,
     visualizerFilter: 'none',
     visualizerLayers: [],
     showParticles: true,
@@ -58,14 +58,14 @@
     artistX: 6,
     artistY: 88,
     artistSize: 100,
-    artistColor: '#d6b57c',
+    artistColor: '#b8a5ff',
     artistOpacity: 100,
-    particleCount: lowPowerDevice ? 55 : 85,
+    particleCount: lowPowerDevice ? 45 : 65,
     particleSize: 1,
     particleSpeed: 1,
     particleDirection: 'float',
     particleShape: 'circle',
-    particleColor: '#d6b57c',
+    particleColor: '#b8a5ff',
     particleOpacity: 65,
     particleGlow: 0,
     beatResponse: 1.8,
@@ -79,7 +79,7 @@
   };
 
   const palettes = {
-    acid: { one: '#d6b57c', two: '#8b97b0', bg: '#08090d' },
+    acid: { one: '#b8a5ff', two: '#f5f3ff', bg: '#0b0915' },
     ocean: { one: '#5be7ff', two: '#3475ff', bg: '#06111b' },
     sunset: { one: '#ffb14a', two: '#ff4e91', bg: '#170a16' },
     mono: { one: '#f5f7ff', two: '#8c9aaf', bg: '#080b14' },
@@ -460,25 +460,13 @@
 
     const pulse = audioValues.level(6, 64);
     const glow = ctx.createRadialGradient(w * 0.5, h * 0.48, 4, w * 0.5, h * 0.48, Math.max(w, h) * 0.65);
-    glow.addColorStop(0, rgba(state.colorTwo, 0.10 + pulse * 0.08));
-    glow.addColorStop(0.48, rgba(state.colorOne, 0.025));
+    glow.addColorStop(0, rgba(state.colorTwo, 0.055 + pulse * 0.045));
+    glow.addColorStop(0.48, rgba(state.colorOne, 0.012));
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
 
-    if (!state.backgroundImage) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(220,235,255,0.035)';
-      ctx.lineWidth = 1;
-      const grid = Math.max(48, Math.round(Math.min(w, h) / 17));
-      for (let x = 0; x < w; x += grid) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-      }
-      for (let y = 0; y < h; y += grid) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-      }
-      ctx.restore();
-    }
+    // Minimal background: skip the animated technical grid for a cleaner scene and fewer canvas strokes.
 
     if (state.showParticles && state.particleCount > 0) {
       ctx.save();
@@ -566,55 +554,119 @@
   function drawCenterLogo(w, h, now, values) {
     const baseSize = Math.max(22, Math.min(w, h) * state.logoSize / 100);
     const cx = w * state.logoX / 100, cy = h * state.logoY / 100;
-    const beat = clamp(values && values.beat || 0, 0, 1), bass = clamp((values && values.bass || 0) * 3.6, 0, 1);
+    const beat = clamp(values && values.beat || 0, 0, 1);
+    const bass = clamp((values && values.bass || 0) * 3.6, 0, 1);
     const pulse = state.logoPulseMode === 'beat' ? beat : state.logoPulseMode === 'bass' ? bass : Math.max(beat, bass);
     const pulseAmt = state.logoPulseEnabled ? pulse * state.logoPulseAmount / 100 : 0;
-    const size = baseSize * (1 + pulseAmt * 0.28);
+    const size = baseSize * (1 + pulseAmt * 0.22);
+    const haloCount = Math.max(0, Math.min(6, Math.round(Number(state.logoHaloCount) || 0)));
+    const haloMode = ['radial', 'rings', 'wave', 'spectrum'].includes(state.logoHaloStyle) ? state.logoHaloStyle : 'radial';
     ctx.save();
-    if (state.logoHaloEnabled && state.logoHaloCount > 0) {
-      for (let ring = state.logoHaloCount; ring >= 1; ring--) {
-        const radiusSize = size * (1.18 + ring * 0.19 + pulseAmt * 0.13), count = Math.max(48, 128 - ring * 10);
-        ctx.save(); ctx.globalAlpha = state.logoOpacity / 100 * (0.25 + (state.logoHaloCount - ring + 1) / state.logoHaloCount * 0.62);
-        ctx.lineWidth = Math.max(1, state.logoHaloWidth * (ring === 1 ? 1.35 : 0.8)); ctx.lineCap = 'round';
-        if (state.logoHaloStyle === 'radial') {
-          for (let i = 0; i < count; i++) {
-            const angle = i / count * Math.PI * 2, level = values && values.level ? values.level(i + ring * 11, count) : 0.1;
-            const inner = radiusSize * 0.47, outer = inner + size * (0.03 + level * 0.2 + pulseAmt * 0.08);
-            ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner); ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
-            ctx.strokeStyle = i % 5 === 0 ? state.logoHaloColor : rgba(state.logoHaloColor, 0.78); ctx.shadowColor = state.logoHaloColor; ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.stroke();
-          }
-        } else if (state.logoHaloStyle === 'rings') {
-          ctx.beginPath(); ctx.arc(cx, cy, radiusSize * 0.72, 0, Math.PI * 2);
-          ctx.strokeStyle = rgba(state.logoHaloColor, 0.8); ctx.shadowColor = state.logoHaloColor;
-          ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.lineWidth = Math.max(1, state.logoHaloWidth);
-          ctx.stroke();
-        } else {
+
+    if (state.logoHaloEnabled && haloCount > 0) {
+      const count = lowPowerDevice ? 48 : 72;
+      const lineWidth = Math.max(1, state.logoHaloWidth);
+      const haloOpacity = state.logoOpacity / 100;
+
+      if (haloMode === 'radial' || haloMode === 'spectrum') {
+        // Draw all bars for a layer as one path instead of hundreds of individual strokes.
+        const barCount = haloMode === 'radial' ? count : (lowPowerDevice ? 56 : 88);
+        for (let ring = haloCount; ring >= 1; ring--) {
+          const baseRadius = size * (0.55 + ring * 0.145 + pulseAmt * 0.035);
           ctx.beginPath();
-          const samples = 180;
-          for (let i = 0; i <= samples; i++) {
-            const angle = i / samples * Math.PI * 2;
-            const level = values && values.level ? values.level(i + ring * 17, samples) : 0.1;
-            const radius = radiusSize * 0.62 + size * (level * 0.13 + Math.sin(angle * 8 + now / 250) * 0.012);
-            const x = cx + Math.cos(angle) * radius, y = cy + Math.sin(angle) * radius;
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          for (let i = 0; i < barCount; i++) {
+            const angle = i / barCount * Math.PI * 2;
+            const level = values && values.level ? values.level(i + ring * 9, barCount) : 0.08;
+            let inner, outer;
+            if (haloMode === 'radial') {
+              inner = baseRadius;
+              outer = inner + size * (0.028 + level * 0.19 + pulseAmt * 0.045);
+            } else {
+              inner = baseRadius * 0.93;
+              outer = inner + size * (0.025 + level * 0.24 + pulseAmt * 0.03);
+            }
+            ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+            ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
           }
-          ctx.strokeStyle = rgba(state.logoHaloColor, 0.84); ctx.shadowColor = state.logoHaloColor;
-          ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.lineWidth = Math.max(1, state.logoHaloWidth);
+          ctx.globalAlpha = haloOpacity * (0.3 + (haloCount - ring + 1) / haloCount * 0.55);
+          ctx.strokeStyle = state.logoHaloColor;
+          ctx.lineWidth = lineWidth * (ring === 1 ? 1.2 : 0.85);
+          ctx.lineCap = 'round';
+          ctx.shadowBlur = 0;
           ctx.stroke();
         }
-        ctx.restore();
+      } else if (haloMode === 'rings') {
+        // Every ring responds to a different part of the spectrum.
+        for (let ring = haloCount; ring >= 1; ring--) {
+          const level = values && values.level ? values.level(ring * 13 + 5, haloCount * 8) : 0.08;
+          const radius = size * (0.62 + ring * 0.15 + level * 0.11 + pulseAmt * 0.035);
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.globalAlpha = haloOpacity * (0.32 + level * 0.4 + (haloCount - ring) / Math.max(1, haloCount) * 0.22);
+          ctx.strokeStyle = state.logoHaloColor;
+          ctx.lineWidth = lineWidth * (ring === 1 ? 1.3 : 0.8);
+          ctx.shadowBlur = 0;
+          ctx.stroke();
+        }
+      } else {
+        // A circular waveform uses real time-domain audio when available.
+        const samples = lowPowerDevice ? 72 : 104;
+        for (let ring = haloCount; ring >= 1; ring--) {
+          const baseRadius = size * (0.62 + ring * 0.145 + pulseAmt * 0.03);
+          ctx.beginPath();
+          for (let i = 0; i <= samples; i++) {
+            const angle = i / samples * Math.PI * 2;
+            const wave = values && values.wave ? values.wave(i, samples) : 0;
+            const level = values && values.level ? values.level(i + ring * 7, samples) : 0.05;
+            const radius = baseRadius + size * (wave * 0.095 + level * 0.035);
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.globalAlpha = haloOpacity * (0.3 + (haloCount - ring + 1) / haloCount * 0.5);
+          ctx.strokeStyle = state.logoHaloColor;
+          ctx.lineWidth = lineWidth * (ring === 1 ? 1.2 : 0.75);
+          ctx.lineJoin = 'round';
+          ctx.shadowBlur = 0;
+          ctx.stroke();
+        }
       }
-      for (let ring = 1; ring <= state.logoHaloCount; ring++) {
-        traceLogoShape(cx, cy, size * (1.12 + ring * 0.16 + pulseAmt * 0.1), state.logoShape);
-        ctx.strokeStyle = rgba(state.logoHaloColor, 0.1 + pulseAmt * 0.17); ctx.lineWidth = Math.max(0.8, state.logoHaloWidth * 0.65); ctx.shadowBlur = Math.min(16, state.logoGlow * 0.55); ctx.shadowColor = state.logoHaloColor; ctx.stroke();
-      }
+
+      // One clean contour replaces the old stack of repeated glowing logo outlines.
+      traceLogoShape(cx, cy, size * (1.1 + pulseAmt * 0.035), state.logoShape);
+      ctx.globalAlpha = haloOpacity * 0.42;
+      ctx.strokeStyle = state.logoHaloColor;
+      ctx.lineWidth = Math.max(1, lineWidth * 0.7);
+      ctx.shadowBlur = 0;
+      ctx.stroke();
     }
+
     ctx.globalAlpha = state.logoOpacity / 100;
-    traceLogoShape(cx, cy, size, state.logoShape); ctx.fillStyle = 'rgba(8,11,18,0.86)'; ctx.shadowBlur = state.logoGlow + pulseAmt * 15; ctx.shadowColor = state.logoHaloColor; ctx.fill();
-    ctx.save(); traceLogoShape(cx, cy, Math.max(1, size - 3), state.logoShape); ctx.clip();
+    traceLogoShape(cx, cy, size, state.logoShape);
+    ctx.fillStyle = 'rgba(8,7,18,0.9)';
+    ctx.shadowBlur = lowPowerDevice ? Math.min(4, state.logoGlow * 0.22) : Math.min(12, state.logoGlow * 0.5 + pulseAmt * 3);
+    ctx.shadowColor = state.logoHaloColor;
+    ctx.fill();
+    ctx.save();
+    traceLogoShape(cx, cy, Math.max(1, size - 3), state.logoShape);
+    ctx.clip();
     if (state.logoImage) drawCoverImageInShape(state.logoImage, cx, cy, size);
-    else { ctx.shadowBlur = 0; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f5f6f8'; ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif'; ctx.fillText('НсП', cx, cy); }
-    ctx.restore(); ctx.shadowBlur = 0; traceLogoShape(cx, cy, size, state.logoShape); ctx.strokeStyle = rgba(state.logoHaloColor, 0.9); ctx.lineWidth = Math.max(1.2, size * 0.012); ctx.stroke(); ctx.restore();
+    else {
+      ctx.shadowBlur = 0;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#f7f5ff';
+      ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif';
+      ctx.fillText('НсП', cx, cy);
+    }
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    traceLogoShape(cx, cy, size, state.logoShape);
+    ctx.strokeStyle = rgba(state.logoHaloColor, 0.92);
+    ctx.lineWidth = Math.max(1.2, size * 0.012);
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawCoverImageInShape(image, cx, cy, size) {
@@ -1642,10 +1694,11 @@
       const saved = JSON.parse(localStorage.getItem('nsp-visual-preset') || localStorage.getItem('waveframe-preset') || 'null');
       const v = saved && saved.visualizer;
       if (!v) return;
+      const legacyNspPalette = v.colorOne === '#d6b57c' && v.colorTwo === '#8b97b0' && v.background === '#08090d';
       if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(v.style)) state.style = v.style;
-      if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = v.colorOne;
-      if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = v.colorTwo;
-      if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = v.background;
+      if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = legacyNspPalette ? '#b8a5ff' : v.colorOne;
+      if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = legacyNspPalette ? '#f5f3ff' : v.colorTwo;
+      if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = legacyNspPalette ? '#0b0915' : v.background;
       if (Number.isFinite(Number(v.sensitivity))) state.sensitivity = Math.max(0.5, Math.min(2.5, Number(v.sensitivity)));
       if (Number.isFinite(Number(v.glow))) state.glow = Math.max(0, Math.min(40, Number(v.glow)));
       if (['landscape', 'square', 'portrait'].includes(v.aspect)) state.aspect = v.aspect;
@@ -1654,7 +1707,8 @@
       if (typeof v.showVisualizer === 'boolean') state.showVisualizer = v.showVisualizer;
       if (typeof v.logoPulseEnabled === 'boolean') state.logoPulseEnabled = v.logoPulseEnabled;
       if (typeof v.logoHaloEnabled === 'boolean') state.logoHaloEnabled = v.logoHaloEnabled;
-      if (['radial','rings','wave'].includes(v.logoHaloStyle)) state.logoHaloStyle = v.logoHaloStyle;
+      if (typeof v.logoHaloColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.logoHaloColor)) state.logoHaloColor = legacyNspPalette && v.logoHaloColor === '#d6b57c' ? '#b8a5ff' : v.logoHaloColor;
+      if (['radial','rings','wave','spectrum'].includes(v.logoHaloStyle)) state.logoHaloStyle = v.logoHaloStyle;
       if (['circle','square','diamond','hexagon'].includes(v.logoShape)) state.logoShape = v.logoShape;
       if (['beat','bass','both'].includes(v.logoPulseMode)) state.logoPulseMode = v.logoPulseMode;
       if (['none','punch','mono','warm','cold','bloom'].includes(v.visualizerFilter)) state.visualizerFilter = v.visualizerFilter;
@@ -1666,8 +1720,8 @@
       if (typeof v.cameraShakeEnabled === 'boolean') state.cameraShakeEnabled = v.cameraShakeEnabled;
       if (['beat', 'bass', 'both'].includes(v.cameraShakeMode)) state.cameraShakeMode = v.cameraShakeMode;
       if (typeof v.titleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.titleColor)) state.titleColor = v.titleColor;
-      if (typeof v.artistColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.artistColor)) state.artistColor = v.artistColor;
-      if (typeof v.particleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.particleColor)) state.particleColor = v.particleColor;
+      if (typeof v.artistColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.artistColor)) state.artistColor = legacyNspPalette && v.artistColor === '#d6b57c' ? '#b8a5ff' : v.artistColor;
+      if (typeof v.particleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.particleColor)) state.particleColor = legacyNspPalette && v.particleColor === '#d6b57c' ? '#b8a5ff' : v.particleColor;
       if (['up','down','left','right','out','in','float'].includes(v.particleDirection)) state.particleDirection = v.particleDirection;
       if (['circle','square','diamond','line','star'].includes(v.particleShape)) state.particleShape = v.particleShape;
       const numericSettings = {
@@ -1764,30 +1818,43 @@
     buttons[next].focus();setSettingsTab(buttons[next].dataset.settingsTab);
   });});
 
-  function setSiteWeather(mode,persist) {
-    if(!['off','snow','leaves'].includes(mode))mode='off';
-    const select=$('#siteParticlesMode'),layer=$('#siteWeatherLayer');select.value=mode;layer.innerHTML='';layer.dataset.mode=mode;
-    if(mode!=='off'){
-      const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const total=reduced?6:(lowPowerDevice?18:28);
-      layer.dataset.reduced=reduced?'true':'false';
-      for(let i=0;i<total;i++){
-        const particle=document.createElement('span');
-        particle.className='site-weather-particle';
-        particle.textContent=mode==='snow'?(['❄','✧','·'][i%3]):(['❧','❦','❧'][i%3]);
-        particle.style.left=(2+Math.random()*96).toFixed(1)+'%';
-        particle.style.animationDuration=((mode==='snow'?10:9)+Math.random()*(mode==='snow'?10:11)).toFixed(2)+'s';
-        particle.style.animationDelay=(-Math.random()*18).toFixed(2)+'s';
-        particle.style.fontSize=(mode==='snow'?7+Math.random()*10:11+Math.random()*11)+'px';
-        particle.style.opacity=(.20+Math.random()*.52).toFixed(2);
-        particle.style.setProperty('--drift-mid',((Math.random()-.5)*90).toFixed(1)+'px');
-        particle.style.setProperty('--drift-end',((Math.random()-.5)*130).toFixed(1)+'px');
-        particle.style.setProperty('--turn',((Math.random()>.5?1:-1)*(240+Math.random()*360)).toFixed(0)+'deg');
-        if(reduced) particle.style.top=(Math.random()*92).toFixed(1)+'vh';
+  function setSiteWeather(mode, persist) {
+    if (!['off', 'snow', 'leaves'].includes(mode)) mode = 'off';
+    const select = $('#siteParticlesMode');
+    const layer = $('#siteWeatherLayer');
+    select.value = mode;
+    layer.replaceChildren();
+    layer.dataset.mode = mode;
+    if (mode !== 'off') {
+      const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const leaves = mode === 'leaves';
+      const total = reduced ? (leaves ? 3 : 5) : leaves ? (lowPowerDevice ? 5 : 8) : (lowPowerDevice ? 10 : 16);
+      layer.dataset.reduced = reduced ? 'true' : 'false';
+      for (let i = 0; i < total; i++) {
+        const particle = document.createElement('span');
+        particle.className = 'site-weather-particle';
+        particle.textContent = leaves ? ['🍂', '🍁', '🍂', '🍃'][i % 4] : ['❄', '✧', '❄'][i % 3];
+        particle.style.left = (3 + Math.random() * 94).toFixed(1) + '%';
+        particle.style.animationDuration = leaves
+          ? (18 + Math.random() * 11).toFixed(2) + 's'
+          : (12 + Math.random() * 10).toFixed(2) + 's';
+        particle.style.animationDelay = (-Math.random() * (leaves ? 26 : 22)).toFixed(2) + 's';
+        particle.style.fontSize = leaves
+          ? (lowPowerDevice ? 24 + Math.random() * 12 : 28 + Math.random() * 18) + 'px'
+          : (10 + Math.random() * 8) + 'px';
+        particle.style.opacity = leaves
+          ? (0.62 + Math.random() * 0.28).toFixed(2)
+          : (0.24 + Math.random() * 0.42).toFixed(2);
+        particle.style.setProperty('--drift-mid', ((Math.random() - 0.5) * (leaves ? 110 : 70)).toFixed(1) + 'px');
+        particle.style.setProperty('--drift-end', ((Math.random() - 0.5) * (leaves ? 170 : 100)).toFixed(1) + 'px');
+        particle.style.setProperty('--turn', ((Math.random() > 0.5 ? 1 : -1) * (leaves ? 420 + Math.random() * 540 : 180 + Math.random() * 240)).toFixed(0) + 'deg');
+        if (reduced) particle.style.top = (Math.random() * 88).toFixed(1) + 'vh';
         layer.appendChild(particle);
       }
     }
-    if(persist){try{localStorage.setItem('nsp-site-weather',mode);}catch{}}
+    if (persist) {
+      try { localStorage.setItem('nsp-site-weather', mode); } catch {}
+    }
   }
   $('#siteParticlesMode').addEventListener('change',function(event){setSiteWeather(event.target.value,true);});
   let savedWeather='off';try{savedWeather=localStorage.getItem('nsp-site-weather')||'off';}catch{}
