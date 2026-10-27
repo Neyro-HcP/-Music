@@ -1,0 +1,42 @@
+name: Import TikTok follower avatars
+
+on:
+  push:
+    paths:
+      - "tiktok_followers_local_avatars_bundle.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  import-avatars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Extract and install avatar files
+        run: |
+          test -f tiktok_followers_local_avatars_bundle.zip
+          mkdir -p /tmp/tiktok-avatar-import
+          unzip -o tiktok_followers_local_avatars_bundle.zip -d /tmp/tiktok-avatar-import
+          test -f /tmp/tiktok-avatar-import/public/followers.json
+          test -d /tmp/tiktok-avatar-import/public/avatars/tiktok
+          cp /tmp/tiktok-avatar-import/public/followers.json public/followers.json
+          mkdir -p public/avatars/tiktok
+          cp -f /tmp/tiktok-avatar-import/public/avatars/tiktok/* public/avatars/tiktok/
+          rm tiktok_followers_local_avatars_bundle.zip
+
+      - name: Commit imported avatars
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/followers.json public/avatars/tiktok tiktok_followers_local_avatars_bundle.zip
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Add local TikTok follower avatars"
+            git push
+          fi
