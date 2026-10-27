@@ -47,7 +47,7 @@ app.use(helmet({
       fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
-      imgSrc: ["'self'", 'data:', 'blob:'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tiktokcdn.com', 'https://*.tiktokcdn-us.com', 'https://*.tiktokcdn-eu.com'],
       mediaSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],
       scriptSrc: ["'self'"],
