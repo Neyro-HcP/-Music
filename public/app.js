@@ -263,6 +263,8 @@
     state.colorOne = palette.one;
     state.colorTwo = palette.two;
     state.background = palette.bg;
+    state.particleColor = palette.one;
+    state.artistColor = palette.one;
     updateSettingsUI();
     drawFrame(performance.now());
   }
@@ -784,7 +786,14 @@
   }
 
   function animate(now) {
-    drawFrame(now);
+    if (document.hidden) {
+      window.requestAnimationFrame(animate);
+      return;
+    }
+    if (now - state.lastRenderAt >= 1000 / 30) {
+      drawFrame(now);
+      state.lastRenderAt = now;
+    }
     window.requestAnimationFrame(animate);
   }
 
@@ -1453,6 +1462,11 @@
   $('#colorOne').addEventListener('input', function (event) { state.colorOne = event.target.value; updateSettingsUI(); });
   $('#colorTwo').addEventListener('input', function (event) { state.colorTwo = event.target.value; updateSettingsUI(); });
   $('#backgroundColor').addEventListener('input', function (event) { state.background = event.target.value; updateSettingsUI(); });
+  $('#titleColorInput').addEventListener('input', function (event) { state.titleColor = event.target.value; });
+  $('#artistColorInput').addEventListener('input', function (event) { state.artistColor = event.target.value; });
+  $('#particleColorInput').addEventListener('input', function (event) { state.particleColor = event.target.value; });
+  $('#particleDirectionSelect').addEventListener('change', function (event) { state.particleDirection = event.target.value; });
+  $('#particleShapeSelect').addEventListener('change', function (event) { state.particleShape = event.target.value; });
   $('#sensitivityRange').addEventListener('input', function (event) {
     state.sensitivity = Number(event.target.value); $('#sensitivityOutput').textContent = state.sensitivity.toFixed(1) + '×';
   });
