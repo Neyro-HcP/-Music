@@ -254,7 +254,9 @@
       radial: 'SONIC CORE'
     };
     $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
-    drawFrame(performance.now());
+    const now = performance.now();
+    drawFrame(now);
+    state.lastRenderAt = now;
   }
 
   function setPalette(name) {
@@ -986,7 +988,7 @@
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
-          link.download = 'waveframe-' + new Date().toISOString().slice(0, 10) + '.webm';
+          link.download = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10) + '.webm';
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -1502,8 +1504,8 @@
     if (state.recorder && state.recorder.state !== 'inactive') stopExport(false);
   });
 
-  initParticles();
   loadPreset();
+  initParticles();
   updateSettingsUI();
   setStyle(state.style);
   updateTransport();
