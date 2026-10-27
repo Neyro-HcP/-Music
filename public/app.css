@@ -662,3 +662,14 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
   .two-range-grid label > span { font-size:8px; }
   .mini-action { font-size:8px; padding:5px 7px; }
 }
+
+.drag-hint {
+  margin: 7px 2px 2px;
+  color: #707a8c;
+  font-size: 9px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.drag-hint span { color: var(--acid); font-size: 13px; }
