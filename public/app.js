@@ -576,7 +576,7 @@
           ctx.beginPath();
           for (let i = 0; i < barCount; i++) {
             const angle = i / barCount * Math.PI * 2;
-            const level = values && values.level ? values.level(i + ring * 9, barCount) : 0.08;
+            const level = values && values.level ? values.level((i + ring * 9) % barCount, barCount) : 0.08;
             let inner, outer;
             if (haloMode === 'radial') {
               inner = baseRadius;
@@ -598,7 +598,7 @@
       } else if (haloMode === 'rings') {
         // Every ring responds to a different part of the spectrum.
         for (let ring = haloCount; ring >= 1; ring--) {
-          const level = values && values.level ? values.level(ring * 13 + 5, haloCount * 8) : 0.08;
+          const level = values && values.level ? values.level((ring * 13 + 5) % 32, 32) : 0.08;
           const radius = size * (0.62 + ring * 0.15 + level * 0.11 + pulseAmt * 0.035);
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -617,7 +617,7 @@
           for (let i = 0; i <= samples; i++) {
             const angle = i / samples * Math.PI * 2;
             const wave = values && values.wave ? values.wave(i, samples) : 0;
-            const level = values && values.level ? values.level(i + ring * 7, samples) : 0.05;
+            const level = values && values.level ? values.level((i + ring * 7) % samples, samples) : 0.05;
             const radius = baseRadius + size * (wave * 0.095 + level * 0.035);
             const x = cx + Math.cos(angle) * radius;
             const y = cy + Math.sin(angle) * radius;
@@ -1695,7 +1695,8 @@
       const v = saved && saved.visualizer;
       if (!v) return;
       const legacyNspPalette = v.colorOne === '#d6b57c' && v.colorTwo === '#8b97b0' && v.background === '#08090d';
-      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(v.style)) state.style = v.style;
+      const loadedStyle = v.style === 'matrix' ? 'spectrum' : v.style;
+      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(loadedStyle)) state.style = loadedStyle;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = legacyNspPalette ? '#b8a5ff' : v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = legacyNspPalette ? '#f5f3ff' : v.colorTwo;
       if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = legacyNspPalette ? '#0b0915' : v.background;
@@ -1737,6 +1738,11 @@
       Object.keys(numericSettings).forEach(function (key) {
         if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
       });
+      if (legacyNspPalette) {
+        if (Number(v.glow) === 22) state.glow = 12;
+        if (Number(v.visualizerShadow) === 12) state.visualizerShadow = 4;
+        if (Number(v.logoGlow) === 14) state.logoGlow = 8;
+      }
       if (typeof v.title === 'string') { $('#trackTitle').value = v.title; $('#trackTitle').dataset.autoTitle = 'false'; }
       if (typeof v.artist === 'string') $('#trackArtist').value = v.artist;
     } catch {}
