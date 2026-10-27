@@ -742,7 +742,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function placeSurfaceDrop(record){
     const {item,mesh}=record;
-    let z=.253;
+    let z=item.kind==='ice'?.247:item.kind==='tnt'?.25:.232;
     if(item.kind==='rubber'){
       const r=.22;
       const y=clamp(record.y,-r*.88,r*.88);
@@ -753,7 +753,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function placeSurfaceStream(record){
-    const z=.252;
+    const z=record.item.kind==='ice'?.247:record.item.kind==='tnt'?.25:.232;
     record.mesh.position.set(record.x,record.y,z);
     record.drop.position.set(record.x,record.y-record.height*.47,z+.012);
   }
