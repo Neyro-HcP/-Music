@@ -441,7 +441,7 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
 .swatch { width: 25px; height: 25px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; cursor: pointer; position: relative; transition: transform .18s ease; }
 .swatch:hover { transform: scale(1.09); }
 .swatch.active { outline: 1px solid var(--acid); outline-offset: 3px; }
-.swatch[data-palette="acid"] { background: linear-gradient(135deg, #b8a5ff 0 48%, #8b97b0 50% 100%); }
+.swatch[data-palette="acid"] { background: linear-gradient(135deg, #b8a5ff 0 48%, #f5f3ff 50% 100%); }
 .swatch[data-palette="ocean"] { background: linear-gradient(135deg, #5be7ff 0 48%, #3475ff 50% 100%); }
 .swatch[data-palette="sunset"] { background: linear-gradient(135deg, #ffb14a 0 48%, #ff4e91 50% 100%); }
 .swatch[data-palette="mono"] { background: linear-gradient(135deg, #f5f7ff 0 48%, #8c9aaf 50% 100%); }
