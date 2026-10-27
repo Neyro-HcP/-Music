@@ -21,6 +21,16 @@
       }
     }
   </script>
+  <script>
+    window.addEventListener('error', function(event) {
+      if (/module|webgl|three|cannon|failed to fetch/i.test(String(event.message || ''))) {
+        var status = document.getElementById('phoneEngineStatus');
+        var mode = document.getElementById('phoneRenderMode');
+        if (status) status.textContent = 'Проверь соединение: не удалось загрузить 3D-движок.';
+        if (mode) mode.textContent = 'НЕ УДАЛОСЬ ЗАПУСТИТЬ';
+      }
+    });
+  </script>
   <script type="module" src="./public/rgb-phone-3d.js?v=rgb-phone-3d-20261027"></script>
 </head>
 <body>
