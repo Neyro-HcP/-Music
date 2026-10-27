@@ -50,8 +50,14 @@
     particleColor: '#d6b57c',
     particleOpacity: 65,
     particleGlow: 0,
-    beatResponse: 1.4,
-    smoothing: 45
+    beatResponse: 1.8,
+    smoothing: 45,
+    cameraShakeEnabled: false,
+    cameraShakeMode: 'both',
+    cameraShake: 12,
+    visualizerPulse: 35,
+    particlePulse: 30,
+    vignettePulse: 28
   };
 
   const palettes = {
@@ -86,6 +92,10 @@
     recorder: null,
     recordingStream: null,
     chunks: [],
+    converting: false,
+    currentExportFormat: 'mp4',
+    currentRecorderMimeType: '',
+    ffmpegPromise: null,
     recordingStarted: 0,
     recordingTimer: null,
     toastTimer: null,
@@ -175,6 +185,12 @@
     $('#particleSpeedRange').value = state.particleSpeed;
     $('#beatResponseRange').value = state.beatResponse;
     $('#smoothingRange').value = state.smoothing;
+    $('#cameraShakeEnabled').checked = state.cameraShakeEnabled;
+    $('#cameraShakeModeSelect').value = state.cameraShakeMode;
+    $('#cameraShakeRange').value = state.cameraShake;
+    $('#visualizerPulseRange').value = state.visualizerPulse;
+    $('#particlePulseRange').value = state.particlePulse;
+    $('#vignettePulseRange').value = state.vignettePulse;
     $('#vignetteOutput').textContent = state.vignette + '%';
     $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
     $('#logoSizeOutput').textContent = state.logoSize + '%';
@@ -201,6 +217,10 @@
     $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
     $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
     $('#smoothingOutput').textContent = state.smoothing + '%';
+    $('#cameraShakeOutput').textContent = Number(state.cameraShake).toFixed(0) + ' px';
+    $('#visualizerPulseOutput').textContent = state.visualizerPulse + '%';
+    $('#particlePulseOutput').textContent = state.particlePulse + '%';
+    $('#vignettePulseOutput').textContent = state.vignettePulse + '%';
     $('#sensitivityOutput').textContent = Number(state.sensitivity).toFixed(1) + '×';
     $('#glowOutput').textContent = String(state.glow);
     $$('.preset-card').forEach(function (button) {
@@ -241,7 +261,7 @@
     $('#canvasAspectBadge').textContent = ratio.label;
   }
   function setStyle(style) {
-    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(style)) return;
+    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(style)) return;
     state.style = style;
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === style);
@@ -251,7 +271,11 @@
       orbit: 'ORBITAL FIELD',
       wave: 'PURE WAVEFORM',
       aurora: 'AURORA FLOW',
-      radial: 'SONIC CORE'
+      radial: 'SONIC CORE',
+      impact: 'BASS IMPACT',
+      matrix: 'POWER MATRIX',
+      scope: 'LIVE OSCILLOSCOPE',
+      tunnel: 'SONIC TUNNEL'
     };
     $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
     // The capped animation loop renders the new style on the next frame instead of blocking the click.
@@ -374,7 +398,7 @@
     ctx.drawImage(image, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
 
-  function drawBackground(w, h, now, audioValues) {
+  function drawBackground(w, h, now, audioValues, effects) {
     const bg = ctx.createLinearGradient(0, 0, w, h);
     bg.addColorStop(0, state.background);
     bg.addColorStop(0.55, shadeColor(state.background, 0.22));
@@ -415,6 +439,7 @@
 
     if (state.showParticles && state.particleCount > 0) {
       ctx.save();
+      if (effects && effects.shakeEnabled) ctx.translate(effects.shakeX * 0.58, effects.shakeY * 0.58);
       const travelScale = now * 0.000012 * state.particleSpeed;
       for (let i = 0; i < state.particles.length; i++) {
         const p = state.particles[i];
@@ -439,7 +464,8 @@
         }
         const x = nx * w;
         const y = ny * h;
-        const size = Math.max(0.6, p.size * state.particleSize * Math.max(0.7, w / 1280));
+        const pulseSize = 1 + (effects ? effects.pulse : 0) * state.particlePulse / 100 * 0.8;
+        const size = Math.max(0.6, p.size * state.particleSize * Math.max(0.7, w / 1280) * pulseSize);
         const shimmer = 0.72 + 0.28 * Math.sin(now / 700 * p.speed + p.phase);
         ctx.globalAlpha = state.particleOpacity / 100 * shimmer;
         ctx.fillStyle = state.particleColor;
@@ -472,7 +498,8 @@
     }
 
     if (state.showVignette && state.vignette > 0) {
-      const amount = state.vignette / 100;
+      const pulseVignette = effects ? effects.pulse * state.vignettePulse : 0;
+      const amount = clamp(state.vignette + pulseVignette, 0, 100) / 100;
       const vignette = ctx.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.12, w * 0.5, h * 0.48, Math.max(w, h) * 0.74);
       vignette.addColorStop(0, 'rgba(0,0,0,0)');
       vignette.addColorStop(0.55, 'rgba(0,0,0,' + (amount * 0.15) + ')');
@@ -541,14 +568,14 @@
     const cell = (w - 100) / count;
     const barW = Math.max(1, (cell - gap) * (0.68 + state.visualLineWidth * 0.22));
     const baseline = h * 0.61;
-    const maxH = h * 0.29;
+    const maxH = h * 0.34;
     const gradient = colorGradient(baseline - maxH, baseline + 2);
     ctx.save();
     ctx.fillStyle = gradient;
     ctx.shadowBlur = 0;
     for (let i = 0; i < count; i++) {
       const level = values.level(i, count);
-      const barH = Math.max(2, Math.min(maxH, level * maxH));
+      const barH = Math.max(2, Math.min(maxH, Math.pow(level, 0.82) * maxH * 1.12));
       const x = 50 + i * cell + (cell - barW) * 0.5;
       ctx.globalAlpha = 0.92;
       if (ctx.roundRect) {
@@ -568,27 +595,7 @@
     ctx.shadowBlur = Math.min(18, state.glow * 0.65);
     ctx.beginPath(); ctx.moveTo(36, baseline + 1); ctx.lineTo(w - 36, baseline + 1); ctx.stroke();
     ctx.restore();
-    drawCoreRing(w * 0.5, h * 0.37, Math.min(w, h) * 0.07, now, values);
-  }
 
-  function drawCoreRing(cx, cy, radius, now, values) {
-    const beat = values && Number.isFinite(values.beat) ? values.beat : 0;
-    const breathe = 1 + beat * 0.13;
-    ctx.save();
-    const rings = 3;
-    for (let r = 0; r < rings; r++) {
-      ctx.beginPath();
-      ctx.strokeStyle = r === 0 ? rgba(state.colorOne, 0.62 + beat * 0.22) : rgba(state.colorTwo, 0.23 + beat * 0.12);
-      ctx.lineWidth = r === 0 ? 2 : 1;
-      ctx.arc(cx, cy, (radius * (1 + r * 0.24) + Math.sin(now / 900 + r) * 3) * breathe, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    const dotGradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 2, cx, cy, radius * (1.6 + beat * 0.25));
-    dotGradient.addColorStop(0, rgba(state.colorOne, 0.5 + beat * 0.2));
-    dotGradient.addColorStop(1, rgba(state.colorTwo, 0));
-    ctx.fillStyle = dotGradient;
-    ctx.beginPath(); ctx.arc(cx, cy, radius * (1.8 + beat * 0.25), 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
   }
 
   function drawOrbit(w, h, now, values) {
@@ -608,7 +615,7 @@
     const baseWidth = Math.max(1, w / 900 * 2.0 * state.visualLineWidth);
     for (let i = 0; i < count; i++) {
       const angle = i / count * Math.PI * 2 + now / 24000;
-      const amp = Math.max(2, values.level(i, count) * Math.min(w, h) * 0.12);
+      const amp = Math.max(2, Math.pow(values.level(i, count), 0.82) * Math.min(w, h) * 0.17);
       const inner = radius + 7;
       const outer = inner + amp;
       ctx.beginPath();
@@ -619,13 +626,13 @@
       ctx.stroke();
     }
     ctx.restore();
-    drawCoreRing(cx, cy, radius * 0.57, now, values);
+
   }
 
   function drawWave(w, h, now, values) {
     const mid = h * 0.48;
     const count = 280;
-    const amplitude = h * 0.15;
+    const amplitude = h * 0.19;
     for (let layer = 2; layer >= 0; layer--) {
       ctx.save();
       ctx.beginPath();
@@ -698,7 +705,7 @@
       const angle = i / count * Math.PI * 2 - Math.PI / 2;
       const level = values.level(i, count);
       const inner = radius + Math.sin(now / 1100 + i * 0.17) * 2;
-      const outer = inner + 7 + level * Math.min(w, h) * 0.15;
+      const outer = inner + 7 + Math.pow(level, 0.82) * Math.min(w, h) * 0.21;
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
       ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
@@ -707,7 +714,7 @@
       ctx.stroke();
     }
     ctx.restore();
-    drawCoreRing(cx, cy, radius * 0.75, now, values);
+
     ctx.save();
     ctx.strokeStyle = rgba(state.colorOne, 0.2);
     ctx.lineWidth = Math.max(1, state.visualLineWidth);
@@ -760,16 +767,63 @@
     ctx.restore();
   }
 
+  function drawImpact(w,h,now,values){
+    const cx=w*.5,cy=h*.49,size=Math.min(w,h),beat=values.beat||0;ctx.save();ctx.lineCap='round';
+    for(let ring=0;ring<5;ring++){const base=size*(.07+ring*.061+beat*.035);ctx.beginPath();
+      for(let i=0;i<=180;i++){const a=i/180*Math.PI*2,f=values.level(i+ring*17,180),r=base+f*size*(.022+ring*.002)+Math.sin(a*(7+ring)+now/180+ring)*size*.006;
+        const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+      ctx.strokeStyle=ring%2?rgba(state.colorTwo,.5):rgba(state.colorOne,.8);ctx.lineWidth=Math.max(1,(3.2-ring*.35)*state.visualLineWidth);
+      ctx.shadowColor=ring%2?state.colorTwo:state.colorOne;ctx.shadowBlur=Math.min(28,state.glow*.9);ctx.stroke();}
+    ctx.shadowBlur=0;const rays=Math.min(200,Math.max(100,Math.floor(w/5)));
+    for(let i=0;i<rays;i++){const a=i/rays*Math.PI*2,f=Math.pow(values.level(i,rays),.8),inner=size*(.15+beat*.035),outer=inner+size*(.045+f*.18);
+      ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*inner,cy+Math.sin(a)*inner);ctx.lineTo(cx+Math.cos(a)*outer,cy+Math.sin(a)*outer);
+      ctx.strokeStyle=i%4===0?state.colorOne:rgba(state.colorTwo,.72);ctx.lineWidth=Math.max(.8,(i%4===0?2.2:1.15)*state.visualLineWidth);ctx.stroke();}ctx.restore();
+  }
+
+  function drawMatrix(w,h,now,values){
+    const columns=Math.min(100,Math.max(56,Math.floor(w/11))),gap=Math.max(2,w*.0025),cw=(w-80)/columns-gap,mid=h*.58,maxHeight=h*.37;ctx.save();
+    for(let i=0;i<columns;i++){const level=Math.max(.015,Math.pow(values.level(i,columns),.8)),blocks=Math.max(1,Math.min(18,Math.ceil(level*16))),x=40+i*(cw+gap);
+      for(let b=0;b<blocks;b++){const t=b/Math.max(1,blocks),bh=Math.max(2,h*.012),y=mid-(b+1)*(maxHeight/18);
+        ctx.globalAlpha=.35+t*.65;ctx.fillStyle=b>blocks-3?state.colorOne:state.colorTwo;ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=b===blocks-1?Math.min(18,state.glow):0;
+        ctx.fillRect(x,y,cw,bh);ctx.globalAlpha=.08+t*.16;ctx.fillRect(x,mid+b*maxHeight/18+5,cw,bh*.8);}}
+    ctx.globalAlpha=.55;ctx.shadowBlur=Math.min(18,state.glow*.7);ctx.shadowColor=state.colorOne;ctx.strokeStyle=rgba(state.colorOne,.5);ctx.lineWidth=Math.max(1,state.visualLineWidth);
+    ctx.beginPath();ctx.moveTo(34,mid);ctx.lineTo(w-34,mid);ctx.stroke();ctx.restore();
+  }
+
+  function drawScope(w,h,now,values){
+    const mid=h*.49,count=500;ctx.save();
+    for(let layer=2;layer>=0;layer--){ctx.beginPath();const phase=now/1000*(layer===0?1:.72)+layer*.45;
+      for(let i=0;i<=count;i++){const x=i/count*w,wave=values.wave(i,count),low=values.level(Math.floor(i/count*80),80),y=mid+(wave*.82+Math.sin(i/count*Math.PI*24+phase)*.09)*h*(.22+low*.1);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+      ctx.strokeStyle=layer===0?state.colorOne:rgba(state.colorTwo,.18+layer*.16);ctx.lineWidth=(layer===0?3.8:6-layer)*Math.max(.7,w/1280)*state.visualLineWidth;
+      ctx.shadowColor=layer===0?state.colorOne:state.colorTwo;ctx.shadowBlur=Math.min(24,state.glow*.85);ctx.stroke();}
+    ctx.shadowBlur=0;ctx.globalAlpha=.24;ctx.strokeStyle=state.colorTwo;ctx.lineWidth=1;for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(0,h*i/8);ctx.lineTo(w,h*i/8);ctx.stroke();}ctx.restore();
+  }
+
+  function drawTunnel(w,h,now,values){
+    const cx=w*.5,cy=h*.48,size=Math.min(w,h),sides=10,layers=12;ctx.save();ctx.lineJoin='round';
+    for(let layer=layers-1;layer>=0;layer--){const progress=layer/layers,motion=(now/2800+progress)%1,radius=size*(.035+motion*.49);ctx.beginPath();
+      for(let p=0;p<=sides;p++){const angle=p/sides*Math.PI*2-Math.PI/2+now/17000*(layer%2?1:-1),f=values.level(p*5+layer*13,sides*5),r=radius*(1+f*.11),x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r*(h/w>1.2?1.18:.82);if(p===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
+      ctx.strokeStyle=layer%3===0?rgba(state.colorOne,.82):rgba(state.colorTwo,.36+(1-progress)*.3);ctx.lineWidth=Math.max(.8,(2.3-progress)*state.visualLineWidth);
+      ctx.shadowColor=layer%3===0?state.colorOne:state.colorTwo;ctx.shadowBlur=Math.min(18,state.glow*.65);ctx.stroke();}ctx.restore();
+  }
+
   function drawFrame(now) {
     if (!ctx) return;
     const w = canvas.width;
     const h = canvas.height;
     const values = getAudioValues(now);
-    drawBackground(w, h, now, values);
+    const beatPulse = clamp(values.beat || 0, 0, 1);
+    const bassPulse = clamp((values.bass || 0) * 3.6, 0, 1);
+    const impactPulse = state.cameraShakeMode === 'beat' ? beatPulse : state.cameraShakeMode === 'bass' ? bassPulse : Math.max(beatPulse, bassPulse);
+    const shake = state.cameraShakeEnabled ? state.cameraShake * impactPulse : 0;
+    const shakeX = Math.sin(now * 0.117) * shake;
+    const shakeY = Math.cos(now * 0.151) * shake * 0.72;
+    const effects = { pulse: impactPulse, shakeX: shakeX, shakeY: shakeY, shakeEnabled: state.cameraShakeEnabled };
+    drawBackground(w, h, now, values, effects);
 
-    const dx = w * state.visualX / 100;
-    const dy = h * state.visualY / 100;
-    const scale = state.visualScale / 100;
+    const dx = w * state.visualX / 100 + (state.cameraShakeEnabled ? shakeX : 0);
+    const dy = h * state.visualY / 100 + (state.cameraShakeEnabled ? shakeY : 0);
+    const scale = state.visualScale / 100 * (1 + impactPulse * state.visualizerPulse / 100 * 0.34);
     ctx.save();
     ctx.translate(w * 0.5 + dx, h * 0.5 + dy);
     ctx.scale(scale, scale);
@@ -779,11 +833,18 @@
     else if (state.style === 'orbit') drawOrbit(w, h, now, values);
     else if (state.style === 'wave') drawWave(w, h, now, values);
     else if (state.style === 'aurora') drawAurora(w, h, now, values);
-    else drawRadial(w, h, now, values);
+    else if (state.style === 'radial') drawRadial(w, h, now, values);
+    else if (state.style === 'impact') drawImpact(w, h, now, values);
+    else if (state.style === 'matrix') drawMatrix(w, h, now, values);
+    else if (state.style === 'scope') drawScope(w, h, now, values);
+    else if (state.style === 'tunnel') drawTunnel(w, h, now, values);
     ctx.restore();
 
+    ctx.save();
+    if (state.cameraShakeEnabled) ctx.translate(shakeX * 0.32, shakeY * 0.32);
     drawCenterLogo(w, h);
     drawTypography(w, h);
+    ctx.restore();
     state.lastFrameTime = now;
   }
 
@@ -1070,6 +1131,10 @@
     $('#particleGlowOutput').textContent = String(state.particleGlow);
     $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
     $('#smoothingOutput').textContent = state.smoothing + '%';
+    $('#cameraShakeOutput').textContent = Number(state.cameraShake).toFixed(0) + ' px';
+    $('#visualizerPulseOutput').textContent = state.visualizerPulse + '%';
+    $('#particlePulseOutput').textContent = state.particlePulse + '%';
+    $('#vignettePulseOutput').textContent = state.vignettePulse + '%';
   }
 
     function openAssetDatabase() {
@@ -1239,6 +1304,12 @@
         particleGlow: state.particleGlow,
         beatResponse: state.beatResponse,
         smoothing: state.smoothing,
+        cameraShakeEnabled: state.cameraShakeEnabled,
+        cameraShakeMode: state.cameraShakeMode,
+        cameraShake: state.cameraShake,
+        visualizerPulse: state.visualizerPulse,
+        particlePulse: state.particlePulse,
+        vignettePulse: state.vignettePulse,
         title: $('#trackTitle').value,
         artist: $('#trackArtist').value
       },
@@ -1270,7 +1341,7 @@
       const saved = JSON.parse(localStorage.getItem('nsp-visual-preset') || localStorage.getItem('waveframe-preset') || 'null');
       const v = saved && saved.visualizer;
       if (!v) return;
-      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(v.style)) state.style = v.style;
+      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(v.style)) state.style = v.style;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = v.colorTwo;
       if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = v.background;
@@ -1281,6 +1352,8 @@
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
+      if (typeof v.cameraShakeEnabled === 'boolean') state.cameraShakeEnabled = v.cameraShakeEnabled;
+      if (['beat', 'bass', 'both'].includes(v.cameraShakeMode)) state.cameraShakeMode = v.cameraShakeMode;
       if (typeof v.titleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.titleColor)) state.titleColor = v.titleColor;
       if (typeof v.artistColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.artistColor)) state.artistColor = v.artistColor;
       if (typeof v.particleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.particleColor)) state.particleColor = v.particleColor;
@@ -1293,7 +1366,8 @@
         titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
         particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3],
-        particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90]
+        particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90],
+        cameraShake: [0, 24], visualizerPulse: [0, 100], particlePulse: [0, 100], vignettePulse: [0, 100]
       };
       Object.keys(numericSettings).forEach(function (key) {
         if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
@@ -1342,7 +1416,9 @@
     ['vignetteRange', 'vignette'], ['backgroundOpacityRange', 'backgroundOpacity'],
     ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'], ['particleSpeedRange', 'particleSpeed'],
     ['particleOpacityRange', 'particleOpacity'], ['particleGlowRange', 'particleGlow'],
-    ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing']
+    ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing'],
+    ['cameraShakeRange', 'cameraShake'], ['visualizerPulseRange', 'visualizerPulse'],
+    ['particlePulseRange', 'particlePulse'], ['vignettePulseRange', 'vignettePulse']
   ];
   rangeBindings.forEach(function (binding) {
     const input = $('#' + binding[0]);
@@ -1481,6 +1557,8 @@
   $('#showTitle').addEventListener('change', function (event) { state.showTitle = event.target.checked; });
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
+  $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
+  $('#cameraShakeModeSelect').addEventListener('change', function (event) { state.cameraShakeMode = event.target.value; });
   $('#trackTitle').addEventListener('input', function () { $('#trackTitle').dataset.autoTitle = 'false'; });
   $('#playButton').addEventListener('click', togglePlay);
   $('#stopButton').addEventListener('click', stopPlayback);
