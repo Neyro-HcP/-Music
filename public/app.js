@@ -28,12 +28,17 @@
     logoPulseAmount: 45,
     logoHaloEnabled: true,
     logoHaloStyle: 'radial',
+    logoHaloRotationSpeed: 0.22,
     logoHaloCount: 3,
     logoHaloWidth: 2,
     logoHaloColor: '#b8a5ff',
     logoGlow: 8,
     showVisualizer: true,
     visualizerGradient: true,
+    gradientMidEnabled: true,
+    gradientMidColor: '#8c79df',
+    gradientMidPosition: 38,
+    gradientAngle: 90,
     visualizerShadow: 4,
     visualizerFilter: 'none',
     visualizerLayers: [],
@@ -53,12 +58,16 @@
     titleX: 6,
     titleY: 78,
     titleSize: 100,
-    titleColor: '#f5f6f8',
+    titleColor: '#f5f3ff',
+    titleFont: 'manrope',
+    titleCase: 'normal',
     titleOpacity: 100,
     artistX: 6,
     artistY: 88,
     artistSize: 100,
     artistColor: '#b8a5ff',
+    artistFont: 'manrope',
+    artistCase: 'normal',
     artistOpacity: 100,
     particleCount: lowPowerDevice ? 45 : 65,
     particleSize: 1,
@@ -79,11 +88,11 @@
   };
 
   const palettes = {
-    acid: { one: '#b8a5ff', two: '#f5f3ff', bg: '#0b0915' },
-    ocean: { one: '#5be7ff', two: '#3475ff', bg: '#06111b' },
-    sunset: { one: '#ffb14a', two: '#ff4e91', bg: '#170a16' },
-    mono: { one: '#f5f7ff', two: '#8c9aaf', bg: '#080b14' },
-    pink: { one: '#ff58c8', two: '#50a3ff', bg: '#10091b' }
+    acid: { one: '#b8a5ff', two: '#f5f3ff', mid: '#8c79df', bg: '#0b0915' },
+    ocean: { one: '#5be7ff', two: '#3475ff', mid: '#826cff', bg: '#06111b' },
+    sunset: { one: '#ffb14a', two: '#ff4e91', mid: '#ff80c8', bg: '#170a16' },
+    mono: { one: '#f5f7ff', two: '#8c9aaf', mid: '#c0b7e5', bg: '#080b14' },
+    pink: { one: '#ff58c8', two: '#50a3ff', mid: '#9e68ff', bg: '#10091b' }
   };
 
   const state = {
@@ -166,6 +175,17 @@
   function updateSettingsUI() {
     $('#colorOne').value = state.colorOne;
     $('#colorTwo').value = state.colorTwo;
+    $('#gradientMidColorInput').value = state.gradientMidColor;
+    $('#gradientMidEnabled').checked = state.gradientMidEnabled;
+    $('#gradientMidPositionRange').value = state.gradientMidPosition;
+    $('#gradientAngleRange').value = state.gradientAngle;
+    $('#gradientMidPositionOutput').textContent = state.gradientMidPosition + '%';
+    $('#gradientAngleOutput').textContent = state.gradientAngle + '°';
+    $('#gradientMidColorInput').disabled = !state.gradientMidEnabled;
+    $('#gradientMidPositionRange').disabled = !state.gradientMidEnabled;
+    $('#gradientPreview').style.background = state.visualizerGradient
+      ? 'linear-gradient(' + state.gradientAngle + 'deg, ' + state.colorOne + ' 0%, ' + (state.gradientMidEnabled ? state.gradientMidColor + ' ' + state.gradientMidPosition + '%, ' : '') + state.colorTwo + ' 100%)'
+      : state.colorOne;
     $('#backgroundColor').value = state.background;
     $('#sensitivityRange').value = state.sensitivity;
     $('#glowRange').value = state.glow;
@@ -179,6 +199,8 @@
     $('#logoPulseAmountRange').value = state.logoPulseAmount;
     $('#logoHaloEnabled').checked = state.logoHaloEnabled;
     $('#logoHaloStyleSelect').value = state.logoHaloStyle;
+    $('#logoHaloRotationSpeedRange').value = state.logoHaloRotationSpeed;
+    $('#logoHaloRotationSpeedOutput').textContent = Number(state.logoHaloRotationSpeed).toFixed(2) + '×';
     $('#logoHaloCountRange').value = state.logoHaloCount;
     $('#logoHaloWidthRange').value = state.logoHaloWidth;
     $('#logoHaloColorInput').value = state.logoHaloColor;
@@ -204,11 +226,15 @@
     $('#titleYRange').value = state.titleY;
     $('#titleSizeRange').value = state.titleSize;
     $('#titleColorInput').value = state.titleColor;
+    $('#titleFontSelect').value = state.titleFont;
+    $('#titleCaseSelect').value = state.titleCase;
     $('#titleOpacityRange').value = state.titleOpacity;
     $('#artistXRange').value = state.artistX;
     $('#artistYRange').value = state.artistY;
     $('#artistSizeRange').value = state.artistSize;
     $('#artistColorInput').value = state.artistColor;
+    $('#artistFontSelect').value = state.artistFont;
+    $('#artistCaseSelect').value = state.artistCase;
     $('#artistOpacityRange').value = state.artistOpacity;
     $('#particleDirectionSelect').value = state.particleDirection;
     $('#particleShapeSelect').value = state.particleShape;
@@ -328,6 +354,7 @@
     if (!palette) return;
     state.colorOne = palette.one;
     state.colorTwo = palette.two;
+    state.gradientMidColor = palette.mid || palette.two;
     state.background = palette.bg;
     state.particleColor = palette.one;
     state.artistColor = palette.one;
@@ -564,6 +591,11 @@
     ctx.save();
 
     if (state.logoHaloEnabled && haloCount > 0) {
+      ctx.save();
+      const rotation = now / 1000 * Number(state.logoHaloRotationSpeed || 0);
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.translate(-cx, -cy);
       const count = lowPowerDevice ? 48 : 72;
       const lineWidth = Math.max(1, state.logoHaloWidth);
       const haloOpacity = state.logoOpacity / 100;
@@ -641,6 +673,7 @@
       ctx.lineWidth = Math.max(1, lineWidth * 0.7);
       ctx.shadowBlur = 0;
       ctx.stroke();
+      ctx.restore();
     }
 
     ctx.globalAlpha = state.logoOpacity / 100;
@@ -678,12 +711,30 @@
 
 
   function colorGradient(y1, y2) {
-    const gradient = ctx.createLinearGradient(0, y1, 0, y2);
+    const width = canvas.width || 1280;
+    const height = canvas.height || 720;
+    const angle = ((Number(state.gradientAngle) || 0) % 360) * Math.PI / 180;
+    const length = Math.hypot(width, height);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const dx = Math.cos(angle) * length / 2;
+    const dy = Math.sin(angle) * length / 2;
+    const gradient = ctx.createLinearGradient(centerX - dx, centerY - dy, centerX + dx, centerY + dy);
+
     if (!state.visualizerGradient) {
-      gradient.addColorStop(0, state.colorOne); gradient.addColorStop(0.52, state.colorOne); gradient.addColorStop(1, rgba(state.colorOne, 0.08));
-    } else {
-      gradient.addColorStop(0, state.colorOne); gradient.addColorStop(0.52, state.colorTwo); gradient.addColorStop(1, rgba(state.colorTwo, 0.08));
+      gradient.addColorStop(0, state.colorOne);
+      gradient.addColorStop(0.72, state.colorOne);
+      gradient.addColorStop(1, rgba(state.colorOne, 0.08));
+      return gradient;
     }
+
+    gradient.addColorStop(0, state.colorOne);
+    if (state.gradientMidEnabled) {
+      const midPosition = clamp(Number(state.gradientMidPosition) / 100 || 0.38, 0.1, 0.6);
+      gradient.addColorStop(midPosition, state.gradientMidColor);
+    }
+    gradient.addColorStop(0.72, state.colorTwo);
+    gradient.addColorStop(1, rgba(state.colorTwo, 0.08));
     return gradient;
   }
 
@@ -846,10 +897,36 @@
     return xPercent > 72 ? { x: Math.min(w - 12, w * xPercent / 100), align: 'right' } : { x: Math.max(12, Math.min(w - 12, w * xPercent / 100)), align: 'left' };
   }
 
+  function transformDisplayText(text, mode) {
+    const value = String(text == null ? '' : text);
+    if (mode === 'uppercase') return value.toLocaleUpperCase();
+    if (mode === 'lowercase') return value.toLocaleLowerCase();
+    if (mode === 'titlecase') return value.toLocaleLowerCase().replace(/(^|[\\s\\-–—])([\\p{L}\\p{N}])/gu, function (_, prefix, letter) {
+      return prefix + letter.toLocaleUpperCase();
+    });
+    return value;
+  }
+
+  function fontStack(id) {
+    const stacks = {
+      manrope: '"Manrope", system-ui, sans-serif',
+      system: 'system-ui, sans-serif',
+      arial: 'Arial, Helvetica, sans-serif',
+      georgia: 'Georgia, serif',
+      trebuchet: '"Trebuchet MS", sans-serif',
+      courier: '"Courier New", monospace',
+      impact: 'Impact, "Arial Narrow", sans-serif',
+      times: '"Times New Roman", serif'
+    };
+    return stacks[id] || stacks.manrope;
+  }
+
   function drawTypography(w, h) {
     if (!state.showTitle) return;
-    const title = ($('#trackTitle').value || 'Без названия').trim();
-    const artist = ($('#trackArtist').value || 'НсП').trim();
+    const rawTitle = ($('#trackTitle').value || 'Без названия').trim();
+    const rawArtist = ($('#trackArtist').value || 'НсП').trim();
+    const title = transformDisplayText(rawTitle, state.titleCase);
+    const artist = transformDisplayText(rawArtist, state.artistCase);
     const base = Math.min(w, h);
     const titlePx = Math.max(16, Math.min(Math.round(w * 0.048), Math.round(h * 0.085))) * state.titleSize / 100;
     const artistPx = Math.max(10, Math.round(base * 0.022)) * state.artistSize / 100;
@@ -862,12 +939,12 @@
     ctx.save();
     ctx.textBaseline = 'top';
     ctx.textAlign = titleAnchorPos.align;
-    ctx.font = '800 ' + Math.round(titlePx) + 'px Manrope, sans-serif';
+    ctx.font = '700 ' + Math.round(titlePx) + 'px ' + fontStack(state.titleFont);
     let shownTitle = title;
     while (shownTitle.length > 2 && ctx.measureText(shownTitle).width > maxWidth) shownTitle = shownTitle.slice(0, -2).trimEnd() + '…';
     ctx.globalAlpha = state.titleOpacity / 100;
     ctx.fillStyle = state.titleColor;
-    ctx.shadowBlur = Math.min(10, state.glow * 0.35);
+    ctx.shadowBlur = lowPowerDevice ? 0 : Math.min(5, state.glow * 0.18);
     ctx.shadowColor = state.titleColor;
     ctx.fillText(shownTitle, titleAnchorPos.x, titleY, maxWidth);
     ctx.restore();
@@ -875,8 +952,8 @@
     ctx.save();
     ctx.textBaseline = 'top';
     ctx.textAlign = artistAnchorPos.align;
-    ctx.font = '600 ' + Math.round(artistPx) + 'px Manrope, sans-serif';
-    let shownArtist = artist.toUpperCase();
+    ctx.font = '500 ' + Math.round(artistPx) + 'px ' + fontStack(state.artistFont);
+    let shownArtist = artist;
     while (shownArtist.length > 2 && ctx.measureText(shownArtist).width > maxWidth) shownArtist = shownArtist.slice(0, -2).trimEnd() + '…';
     ctx.globalAlpha = state.artistOpacity / 100;
     ctx.fillStyle = state.artistColor;
@@ -1077,7 +1154,8 @@
     const effects = { pulse: impactPulse, shakeX: shakeX, shakeY: shakeY, shakeEnabled: state.cameraShakeEnabled };
     drawBackground(w, h, now, values, effects);
 
-    if (state.showVisualizer) {
+    const logoRingMode = state.showLogo && state.logoHaloEnabled && state.logoHaloCount > 0;
+    if (state.showVisualizer && !logoRingMode) {
       drawVisualizerLayer(w,h,now,values,null);
       for (let layerIndex = 0; layerIndex < state.visualizerLayers.length; layerIndex++) {
         const layer = state.visualizerLayers[layerIndex];
@@ -1616,6 +1694,10 @@
         style: state.style,
         colorOne: state.colorOne,
         colorTwo: state.colorTwo,
+        gradientMidEnabled: state.gradientMidEnabled,
+        gradientMidColor: state.gradientMidColor,
+        gradientMidPosition: state.gradientMidPosition,
+        gradientAngle: state.gradientAngle,
         background: state.background,
         sensitivity: Number(state.sensitivity),
         glow: Number(state.glow),
@@ -1623,7 +1705,7 @@
         showTitle: state.showTitle,
         showLogo: state.showLogo,
         logoShape: state.logoShape, logoPulseEnabled: state.logoPulseEnabled, logoPulseMode: state.logoPulseMode, logoPulseAmount: state.logoPulseAmount,
-        logoHaloEnabled: state.logoHaloEnabled, logoHaloStyle: state.logoHaloStyle, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
+        logoHaloEnabled: state.logoHaloEnabled, logoHaloStyle: state.logoHaloStyle, logoHaloRotationSpeed: state.logoHaloRotationSpeed, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
         showVisualizer: state.showVisualizer, visualizerGradient: state.visualizerGradient, visualizerShadow: state.visualizerShadow, visualizerFilter: state.visualizerFilter, visualizerLayers: state.visualizerLayers,
         showParticles: state.showParticles,
         showVignette: state.showVignette,
@@ -1642,11 +1724,15 @@
         titleY: state.titleY,
         titleSize: state.titleSize,
         titleColor: state.titleColor,
+        titleFont: state.titleFont,
+        titleCase: state.titleCase,
         titleOpacity: state.titleOpacity,
         artistX: state.artistX,
         artistY: state.artistY,
         artistSize: state.artistSize,
         artistColor: state.artistColor,
+        artistFont: state.artistFont,
+        artistCase: state.artistCase,
         artistOpacity: state.artistOpacity,
         particleCount: state.particleCount,
         particleSize: state.particleSize,
@@ -1700,6 +1786,12 @@
       if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(loadedStyle)) state.style = loadedStyle;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = legacyNspPalette ? '#b8a5ff' : v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = legacyNspPalette ? '#f5f3ff' : v.colorTwo;
+      if (/^#[0-9a-f]{6}$/i.test(v.gradientMidColor || '')) state.gradientMidColor = v.gradientMidColor;
+      if (typeof v.gradientMidEnabled === 'boolean') state.gradientMidEnabled = v.gradientMidEnabled;
+      if (['manrope','system','arial','georgia','trebuchet','courier','impact','times'].includes(v.titleFont)) state.titleFont = v.titleFont;
+      if (['normal','uppercase','lowercase','titlecase'].includes(v.titleCase)) state.titleCase = v.titleCase;
+      if (['manrope','system','arial','georgia','trebuchet','courier','impact','times'].includes(v.artistFont)) state.artistFont = v.artistFont;
+      if (['normal','uppercase','lowercase','titlecase'].includes(v.artistCase)) state.artistCase = v.artistCase;
       if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = legacyNspPalette ? '#0b0915' : v.background;
       if (Number.isFinite(Number(v.sensitivity))) state.sensitivity = Math.max(0.5, Math.min(2.5, Number(v.sensitivity)));
       if (Number.isFinite(Number(v.glow))) state.glow = Math.max(0, Math.min(40, Number(v.glow)));
@@ -1711,6 +1803,7 @@
       if (typeof v.logoHaloEnabled === 'boolean') state.logoHaloEnabled = v.logoHaloEnabled;
       if (typeof v.logoHaloColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.logoHaloColor)) state.logoHaloColor = legacyNspPalette && v.logoHaloColor === '#d6b57c' ? '#b8a5ff' : v.logoHaloColor;
       if (['radial','rings','wave','spectrum'].includes(v.logoHaloStyle)) state.logoHaloStyle = v.logoHaloStyle;
+      if (Number.isFinite(Number(v.logoHaloRotationSpeed))) state.logoHaloRotationSpeed = clamp(Number(v.logoHaloRotationSpeed), 0, 2);
       if (['circle','square','diamond','hexagon'].includes(v.logoShape)) state.logoShape = v.logoShape;
       if (['beat','bass','both'].includes(v.logoPulseMode)) state.logoPulseMode = v.logoPulseMode;
       if (['none','punch','mono','warm','cold','bloom'].includes(v.visualizerFilter)) state.visualizerFilter = v.visualizerFilter;
@@ -1732,7 +1825,7 @@
         visualScale: [35, 175], visualOpacity: [10, 100], visualLineWidth: [0.5, 3],
         titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
-        particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3],
+        particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3], gradientAngle: [0, 345], gradientMidPosition: [10, 60],
         particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90],
         cameraShake: [0, 24], visualizerPulse: [0, 100], particlePulse: [0, 100], vignettePulse: [0, 100], logoPulseAmount:[0,100], logoHaloCount:[0,6], logoHaloWidth:[1,8], logoGlow:[0,30], visualizerShadow:[0,40]
       };
@@ -2017,9 +2110,17 @@
   $$('.swatch').forEach(function (button) { button.addEventListener('click', function () { setPalette(button.dataset.palette); }); });
   $('#colorOne').addEventListener('input', function (event) { state.colorOne = event.target.value; updateSettingsUI(); });
   $('#colorTwo').addEventListener('input', function (event) { state.colorTwo = event.target.value; updateSettingsUI(); });
+  $('#gradientMidColorInput').addEventListener('input', function (event) { state.gradientMidColor = event.target.value; updateSettingsUI(); drawFrame(performance.now()); });
+  $('#gradientMidEnabled').addEventListener('change', function (event) { state.gradientMidEnabled = event.target.checked; updateSettingsUI(); drawFrame(performance.now()); });
+  $('#gradientMidPositionRange').addEventListener('input', function (event) { state.gradientMidPosition = Number(event.target.value); updateSettingsUI(); drawFrame(performance.now()); });
+  $('#gradientAngleRange').addEventListener('input', function (event) { state.gradientAngle = Number(event.target.value); updateSettingsUI(); drawFrame(performance.now()); });
   $('#backgroundColor').addEventListener('input', function (event) { state.background = event.target.value; updateSettingsUI(); });
   $('#titleColorInput').addEventListener('input', function (event) { state.titleColor = event.target.value; });
+  $('#titleFontSelect').addEventListener('change', function (event) { state.titleFont = event.target.value; drawFrame(performance.now()); });
+  $('#titleCaseSelect').addEventListener('change', function (event) { state.titleCase = event.target.value; drawFrame(performance.now()); });
   $('#artistColorInput').addEventListener('input', function (event) { state.artistColor = event.target.value; });
+  $('#artistFontSelect').addEventListener('change', function (event) { state.artistFont = event.target.value; drawFrame(performance.now()); });
+  $('#artistCaseSelect').addEventListener('change', function (event) { state.artistCase = event.target.value; drawFrame(performance.now()); });
   $('#particleColorInput').addEventListener('input', function (event) { state.particleColor = event.target.value; });
   $('#particleDirectionSelect').addEventListener('change', function (event) { state.particleDirection = event.target.value; });
   $('#particleShapeSelect').addEventListener('change', function (event) { state.particleShape = event.target.value; });
@@ -2037,7 +2138,10 @@
   $('#logoShapeSelect').addEventListener('change', function(event){state.logoShape=event.target.value;$('#logoPreview').dataset.shape=state.logoShape;});
   $('#logoPulseEnabled').addEventListener('change', function(event){state.logoPulseEnabled=event.target.checked;});
   $('#logoPulseModeSelect').addEventListener('change', function(event){state.logoPulseMode=event.target.value;});
-  $('#logoHaloEnabled').addEventListener('change', function(event){state.logoHaloEnabled=event.target.checked;});
+  $('#logoHaloEnabled').addEventListener('change', function(event){state.logoHaloEnabled=event.target.checked;drawFrame(performance.now());});
+  $('#logoHaloRotationSpeedRange').addEventListener('input', function(event){state.logoHaloRotationSpeed=Number(event.target.value);$('#logoHaloRotationSpeedOutput').textContent=state.logoHaloRotationSpeed.toFixed(2)+'×';});
+  $('#logoHaloStyleSelect').addEventListener('change', function(event){state.logoHaloStyle=event.target.value;drawFrame(performance.now());});
+  $('#logoHaloCountRange').addEventListener('input', function(event){state.logoHaloCount=Number(event.target.value);$('#logoHaloCountOutput').textContent=String(state.logoHaloCount);drawFrame(performance.now());});
   $('#logoHaloColorInput').addEventListener('input', function(event){state.logoHaloColor=event.target.value;});
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVisualizer').addEventListener('change', function(event){state.showVisualizer=event.target.checked;});
