@@ -696,3 +696,6 @@ input[type="range"]::-moz-range-thumb { height: 8px; width: 8px; border-radius: 
   .color-control input[type="range"] { width: 41px; flex-basis: 41px; }
   .color-control input[type="color"] { width: 23px; height: 25px; flex-basis: 23px; }
 }
+
+/* Avoid a full-screen SVG turbulence layer competing with the live canvas. */
+.site-noise { display: none !important; }
