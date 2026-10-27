@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="Интерактивная 3D-физическая песочница с кубиками льда, прыгающими шариками, звуками и наклоном телефона.">
+  <title>RGB Phone</title>
+  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./public/app.css?v=followers-grid-20261027">
+  <link rel="stylesheet" href="./public/site-nav.css?v=site-tabs-20261027">
+  <link rel="stylesheet" href="./public/rgb-phone-3d.css?v=rgb-phone-3d-20261027">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./public/rgb-phone-3d.js?v=rgb-phone-3d-20261027"></script>
+</head>
+<body>
+  <div class="site-noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Главная"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span></a>
+    <nav class="site-tabs" aria-label="Разделы сайта">
+      <a class="site-tab" href="./">Визуализатор</a>
+      <a class="site-tab" href="./phone.html" aria-current="page">RGB Phone</a>
+      <a class="site-tab" href="./tools.html">Инструменты</a>
+      <a class="site-tab" href="./games.html">Игры</a>
+    </nav>
+    <div class="topbar-actions">
+      <a class="top-export phone-nav-link" href="./">К визуализатору ↗</a>
+    </div>
+  </header>
+  <main class="phone-page">
+    <div class="phone-page-intro">
+      <div>
+        <div class="phone-kicker">INTERACTIVE PHYSICS</div>
+        <h1>RGB PHONE</h1>
+        <p>Бросай, сталкивай, наклоняй. Лёд звенит и потрескивает, резиновые шарики пружинят, а каждый предмет подчиняется физике.</p>
+      </div>
+      <div class="phone-intro-meta"><i></i><span id="phoneRenderMode">3D ENGINE · ЗАПУСК</span></div>
+    </div>
+    <section class="phone-workspace" aria-label="3D физическая песочница">
+      <div class="phone-device-panel">
+        <div class="phone-device-stage">
+          <div class="phone-device" aria-label="Телефон с RGB-подсветкой">
+            <div class="phone-bezel">
+              <div class="phone-notch" aria-hidden="true"><span></span></div>
+              <div class="phone-screen" id="phoneScreen">
+                <canvas id="phoneCanvas" tabindex="0" aria-label="3D-сцена. Перетаскивай предметы, бросай их и нажимай на TNT."></canvas>
+              </div>
+              <div class="phone-home" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="phone-side-panel">
+        <h2 class="phone-side-title">Добавить предметы</h2>
+        <p class="phone-side-copy">Зажми предмет, оттяни и отпусти. Столкновения передают импульс другим объектам.</p>
+        <div class="phone-action-grid">
+          <button class="phone-action" type="button" data-phone-add="rubber"><span class="phone-action-icon">●</span> Шарики</button>
+          <button class="phone-action" type="button" data-phone-add="ice"><span class="phone-action-icon">◇</span> Лёд</button>
+          <button class="phone-action" type="button" data-phone-add="cube"><span class="phone-action-icon">◈</span> Кубики</button>
+          <button class="phone-action" type="button" data-phone-add="tnt"><span class="phone-action-icon">▦</span> TNT</button>
+        </div>
+        <div class="phone-divider"></div>
+        <h2 class="phone-side-title">Управление</h2>
+        <div class="phone-action-grid">
+          <button class="phone-action" id="phoneSound" type="button" aria-pressed="true"><span class="phone-action-icon">♫</span><span id="phoneSoundLabel">Звук</span></button>
+          <button class="phone-action" id="phoneTilt" type="button" aria-pressed="false"><span class="phone-action-icon">↻</span><span id="phoneTiltLabel">Наклон</span></button>
+          <button class="phone-action phone-action-wide" id="phoneClear" type="button">Очистить экран</button>
+          <button class="phone-action phone-action-primary phone-action-wide" id="phoneReset" type="button">Восстановить сцену</button>
+        </div>
+        <p class="phone-hint">Нажми на TNT, чтобы мгновенно взорвать. Брошенная шашка срабатывает через несколько секунд.</p>
+        <div class="phone-engine-status"><i></i><span id="phoneEngineStatus">Подготовка 3D-сцены…</span></div>
+      </aside>
+    </section>
+    <p class="phone-footer-note">Наклон доступен в браузерах с датчиком ориентации и после разрешения доступа. Звук активируется после первого нажатия.</p>
+  </main>
+</body>
+</html>
