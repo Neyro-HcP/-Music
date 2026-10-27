@@ -12,9 +12,9 @@
   const toastEl = $('#toast');
   const defaults = {
     style: 'spectrum',
-    colorOne: '#b8ff4f',
-    colorTwo: '#7865ff',
-    background: '#080b14',
+    colorOne: '#d6b57c',
+    colorTwo: '#8b97b0',
+    background: '#08090d',
     sensitivity: 1.2,
     glow: 22,
     aspect: 'landscape',
@@ -40,7 +40,7 @@
   };
 
   const palettes = {
-    acid: { one: '#b8ff4f', two: '#7865ff', bg: '#080b14' },
+    acid: { one: '#d6b57c', two: '#8b97b0', bg: '#08090d' },
     ocean: { one: '#5be7ff', two: '#3475ff', bg: '#06111b' },
     sunset: { one: '#ffb14a', two: '#ff4e91', bg: '#170a16' },
     mono: { one: '#f5f7ff', two: '#8c9aaf', bg: '#080b14' },
@@ -696,8 +696,8 @@
     if (!state.source) {
       state.source = state.audioContext.createMediaElementSource(audio);
       state.analyser = state.audioContext.createAnalyser();
-      state.analyser.fftSize = 2048;
-      state.analyser.smoothingTimeConstant = 0.83;
+      state.analyser.fftSize = 4096;
+      state.analyser.smoothingTimeConstant = 0.32 + state.smoothing / 100 * 0.46;
       state.analyser.minDecibels = -90;
       state.analyser.maxDecibels = -15;
       state.mediaDestination = state.audioContext.createMediaStreamDestination();
@@ -922,7 +922,7 @@
 
   function currentProject() {
     return {
-      app: 'WAVEFRAME',
+      app: 'НсП Visual Lab',
       version: 1,
       savedAt: new Date().toISOString(),
       visualizer: {
@@ -935,6 +935,23 @@
         aspect: state.aspect,
         showTitle: state.showTitle,
         showParticles: state.showParticles,
+        showVignette: state.showVignette,
+        vignette: state.vignette,
+        backgroundOpacity: state.backgroundOpacity,
+        logoSize: state.logoSize,
+        logoOpacity: state.logoOpacity,
+        logoX: state.logoX,
+        logoY: state.logoY,
+        visualX: state.visualX,
+        visualY: state.visualY,
+        textX: state.textX,
+        textY: state.textY,
+        textSize: state.textSize,
+        particleCount: state.particleCount,
+        particleSize: state.particleSize,
+        particleSpeed: state.particleSpeed,
+        beatResponse: state.beatResponse,
+        smoothing: state.smoothing,
         title: $('#trackTitle').value,
         artist: $('#trackArtist').value
       },
@@ -956,14 +973,14 @@
 
   function savePreset() {
     try {
-      localStorage.setItem('waveframe-preset', JSON.stringify(currentProject()));
+      localStorage.setItem('nsp-visual-preset', JSON.stringify(currentProject()));
       toast('Настройки сохранены на этом устройстве.');
     } catch { toast('Браузер не разрешил сохранить настройки.', true); }
   }
 
   function loadPreset() {
     try {
-      const saved = JSON.parse(localStorage.getItem('waveframe-preset') || 'null');
+      const saved = JSON.parse(localStorage.getItem('nsp-visual-preset') || localStorage.getItem('waveframe-preset') || 'null');
       const v = saved && saved.visualizer;
       if (!v) return;
       if (['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(v.style)) state.style = v.style;
@@ -975,6 +992,16 @@
       if (['landscape', 'square', 'portrait'].includes(v.aspect)) state.aspect = v.aspect;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
+      if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
+      const numericSettings = {
+        vignette: [0, 100], backgroundOpacity: [0, 100], logoSize: [6, 34], logoOpacity: [20, 100],
+        logoX: [10, 90], logoY: [10, 90], visualX: [-30, 30], visualY: [-30, 30],
+        textX: [3, 90], textY: [5, 94], textSize: [55, 180], particleCount: [0, 250],
+        particleSize: [0.4, 3], particleSpeed: [0, 3], beatResponse: [0.4, 3], smoothing: [0, 90]
+      };
+      Object.keys(numericSettings).forEach(function (key) {
+        if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
+      });
       if (typeof v.title === 'string') { $('#trackTitle').value = v.title; $('#trackTitle').dataset.autoTitle = 'false'; }
       if (typeof v.artist === 'string') $('#trackArtist').value = v.artist;
     } catch {}
@@ -1023,6 +1050,7 @@
   });
   $('#showTitle').addEventListener('change', function (event) { state.showTitle = event.target.checked; });
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
+  $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
   $('#trackTitle').addEventListener('input', function () { $('#trackTitle').dataset.autoTitle = 'false'; });
   $('#playButton').addEventListener('click', togglePlay);
   $('#stopButton').addEventListener('click', stopPlayback);
@@ -1032,7 +1060,7 @@
   $('#topExportButton').addEventListener('click', startExport);
   $('#pngButton').addEventListener('click', exportPng);
   $('#projectButton').addEventListener('click', function () {
-    downloadText('waveframe-project.json', JSON.stringify(currentProject(), null, 2), 'application/json');
+    downloadText('nsp-visual-project.json', JSON.stringify(currentProject(), null, 2), 'application/json');
     toast('Настройки проекта сохранены в JSON.');
   });
   $('#savePresetButton').addEventListener('click', savePreset);
