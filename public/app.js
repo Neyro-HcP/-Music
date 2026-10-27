@@ -920,6 +920,145 @@
     } catch (error) { toast('Не удалось сохранить кадр: ' + error.message, true); }
   }
 
+  function updatePositionOutputs() {
+    $('#logoSizeOutput').textContent = state.logoSize + '%';
+    $('#logoOpacityOutput').textContent = state.logoOpacity + '%';
+    $('#logoXOutput').textContent = state.logoX + '%';
+    $('#logoYOutput').textContent = state.logoY + '%';
+    $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
+    $('#visualYOutput').textContent = (state.visualY > 0 ? '+' : '') + state.visualY + '%';
+    $('#textXOutput').textContent = state.textX + '%';
+    $('#textYOutput').textContent = state.textY + '%';
+    $('#textSizeOutput').textContent = state.textSize + '%';
+    $('#vignetteOutput').textContent = state.vignette + '%';
+    $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
+    $('#particleCountOutput').textContent = String(state.particleCount);
+    $('#particleSizeOutput').textContent = Number(state.particleSize).toFixed(1) + '×';
+    $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
+    $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
+    $('#smoothingOutput').textContent = state.smoothing + '%';
+  }
+
+  function openAssetDatabase() {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('Хранилище изображений недоступно')); return; }
+      const request = indexedDB.open('nsp-visual-assets', 1);
+      request.onupgradeneeded = function () {
+        if (!request.result.objectStoreNames.contains('assets')) request.result.createObjectStore('assets');
+      };
+      request.onsuccess = function () { resolve(request.result); };
+      request.onerror = function () { reject(request.error || new Error('IndexedDB error')); };
+    });
+  }
+
+  async function storeImageAsset(key, blob) {
+    try {
+      const db = await openAssetDatabase();
+      await new Promise(function (resolve, reject) {
+        const tx = db.transaction('assets', 'readwrite');
+        tx.objectStore('assets').put(blob, key);
+        tx.oncomplete = resolve;
+        tx.onerror = function () { reject(tx.error); };
+        tx.onabort = function () { reject(tx.error); };
+      });
+      db.close();
+    } catch (error) {
+      toast('Изображение работает, но браузер не смог сохранить его после перезагрузки.', true);
+    }
+  }
+
+  async function readImageAsset(key) {
+    const db = await openAssetDatabase();
+    const blob = await new Promise(function (resolve, reject) {
+      const tx = db.transaction('assets', 'readonly');
+      const request = tx.objectStore('assets').get(key);
+      request.onsuccess = function () { resolve(request.result || null); };
+      request.onerror = function () { reject(request.error); };
+    });
+    db.close();
+    return blob;
+  }
+
+  async function deleteImageAsset(key) {
+    try {
+      const db = await openAssetDatabase();
+      await new Promise(function (resolve, reject) {
+        const tx = db.transaction('assets', 'readwrite');
+        tx.objectStore('assets').delete(key);
+        tx.oncomplete = resolve;
+        tx.onerror = function () { reject(tx.error); };
+      });
+      db.close();
+    } catch {}
+  }
+
+  function useLocalImage(file, kind, fromStorage) {
+    if (!file) return;
+    const isLogo = kind === 'logo';
+    const maxBytes = isLogo ? 8 * 1024 * 1024 : 20 * 1024 * 1024;
+    if (!fromStorage && file.size > maxBytes) {
+      toast(isLogo ? 'Логотип слишком большой. Максимум — 8 МБ.' : 'Изображение фона слишком большое. Максимум — 20 МБ.', true);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function () {
+      if (isLogo) {
+        if (state.logoObjectUrl) URL.revokeObjectURL(state.logoObjectUrl);
+        state.logoObjectUrl = url;
+        state.logoImage = img;
+        $('#logoPreview').innerHTML = '<img src="' + url + '" alt="">';
+        $('#logoFileName').textContent = file.name || 'Логотип НсП';
+        if (!fromStorage) void storeImageAsset('logo', file);
+      } else {
+        if (state.backgroundObjectUrl) URL.revokeObjectURL(state.backgroundObjectUrl);
+        state.backgroundObjectUrl = url;
+        state.backgroundImage = img;
+        $('#backgroundPickButton').innerHTML = '<span>✓</span> Фон загружен';
+        if (!fromStorage) void storeImageAsset('background', file);
+      }
+      drawFrame(performance.now());
+      if (!fromStorage) toast(isLogo ? 'Круглый логотип добавлен в сцену.' : 'Собственный фон добавлен в сцену.');
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      toast('Не удалось открыть это изображение.', true);
+    };
+    img.src = url;
+  }
+
+  function removeLogo() {
+    state.logoImage = null;
+    if (state.logoObjectUrl) URL.revokeObjectURL(state.logoObjectUrl);
+    state.logoObjectUrl = null;
+    $('#logoPreview').innerHTML = '<span>НсП</span>';
+    $('#logoFileName').textContent = 'Логотип НсП';
+    $('#logoFile').value = '';
+    void deleteImageAsset('logo');
+    drawFrame(performance.now());
+  }
+
+  function removeBackground() {
+    state.backgroundImage = null;
+    if (state.backgroundObjectUrl) URL.revokeObjectURL(state.backgroundObjectUrl);
+    state.backgroundObjectUrl = null;
+    $('#backgroundPickButton').innerHTML = '<span>＋</span> Загрузить изображение';
+    $('#backgroundFile').value = '';
+    void deleteImageAsset('background');
+    drawFrame(performance.now());
+  }
+
+  async function restoreSavedAssets() {
+    try {
+      const logo = await readImageAsset('logo');
+      if (logo) useLocalImage(new File([logo], 'logo-image', { type: logo.type || 'image/png' }), 'logo', true);
+    } catch {}
+    try {
+      const background = await readImageAsset('background');
+      if (background) useLocalImage(new File([background], 'background-image', { type: background.type || 'image/jpeg' }), 'background', true);
+    } catch {}
+  }
+
   function currentProject() {
     return {
       app: 'НсП Visual Lab',
