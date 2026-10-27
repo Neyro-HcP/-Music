@@ -445,7 +445,7 @@
         ctx.fillStyle = state.particleColor;
         ctx.strokeStyle = state.particleColor;
         ctx.shadowColor = state.particleColor;
-        ctx.shadowBlur = state.particleGlow > 0 && i % 3 === 0 ? Math.min(12, state.particleGlow) : 0;
+        ctx.shadowBlur = state.particleGlow > 0 && i % 3 === 0 ? Math.min(20, state.particleGlow) : 0;
         ctx.lineWidth = Math.max(0.8, size * 0.55);
         if (state.particleShape === 'square') {
           ctx.fillRect(x - size, y - size, size * 2, size * 2);
@@ -565,7 +565,7 @@
     ctx.strokeStyle = rgba(state.colorOne, 0.38);
     ctx.lineWidth = Math.max(1, state.visualLineWidth);
     ctx.shadowColor = state.colorOne;
-    ctx.shadowBlur = Math.min(8, state.glow * 0.4);
+    ctx.shadowBlur = Math.min(18, state.glow * 0.65);
     ctx.beginPath(); ctx.moveTo(36, baseline + 1); ctx.lineTo(w - 36, baseline + 1); ctx.stroke();
     ctx.restore();
     drawCoreRing(w * 0.5, h * 0.37, Math.min(w, h) * 0.07, now, values);
@@ -597,7 +597,7 @@
     const radius = Math.min(w, h) * 0.19;
     ctx.save();
     ctx.lineWidth = Math.max(1, state.visualLineWidth);
-    ctx.shadowBlur = Math.min(10, state.glow * 0.45);
+    ctx.shadowBlur = Math.min(18, state.glow * 0.6);
     ctx.shadowColor = state.colorTwo;
     ctx.strokeStyle = rgba(state.colorTwo, 0.58);
     ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
@@ -639,7 +639,7 @@
       }
       ctx.strokeStyle = layer === 0 ? state.colorOne : rgba(state.colorTwo, 0.6 - layer * 0.13);
       ctx.lineWidth = (layer === 0 ? 3 : 6 - layer) * Math.max(0.6, w / 1280) * state.visualLineWidth;
-      ctx.shadowBlur = Math.min(12, state.glow * 0.55);
+      ctx.shadowBlur = Math.min(18, state.glow * 0.6);
       ctx.shadowColor = layer === 0 ? state.colorOne : state.colorTwo;
       ctx.stroke();
       ctx.restore();
@@ -670,7 +670,7 @@
       }
       ctx.strokeStyle = rgba(band.color, band.alpha);
       ctx.lineWidth = (index === 0 ? 4 : 2.6) * Math.max(0.8, w / 1280) * state.visualLineWidth;
-      ctx.shadowBlur = Math.min(12, state.glow * 0.6);
+      ctx.shadowBlur = Math.min(18, state.glow * 0.6);
       ctx.shadowColor = band.color;
       ctx.stroke();
       ctx.lineTo(w, h * 0.88);
@@ -711,6 +711,8 @@
     ctx.save();
     ctx.strokeStyle = rgba(state.colorOne, 0.2);
     ctx.lineWidth = Math.max(1, state.visualLineWidth);
+    ctx.shadowColor = state.colorOne;
+    ctx.shadowBlur = Math.min(18, state.glow * 0.6);
     ctx.beginPath(); ctx.arc(cx, cy, radius * 1.9, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
