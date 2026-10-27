@@ -30,7 +30,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let floorY = -2.65, ceilY = 2.65, sideX = 1.55;
   let soundEnabled = true, audioContext = null, masterGain = null, compressor = null;
   let liquidSoundSource = null, liquidSoundFilter = null, liquidSoundGain = null;
-  let tiltEnabled = false, tiltReference = null;
+  let tiltEnabled = false;
   let gravityX = 0, gravityY = -12, gravityZ = 0;
   let targetGravityX = 0, targetGravityY = -12;
   let lastWakeGravity = {x:0,y:-12,z:0}, lastWakeAt = 0, lastCollisionSweep = 0;
@@ -1159,7 +1159,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   async function toggleTilt(){
     if(tiltEnabled){
-      tiltEnabled=false;tiltReference=null;
+      tiltEnabled=false;
       window.removeEventListener('deviceorientation',updateTilt,true);
       gravityX=0;gravityY=-12;gravityZ=0;
       targetGravityX=0;targetGravityY=-12;
@@ -1175,13 +1175,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
             const result=await DeviceOrientationEvent.requestPermission();
         if(result!=='granted'){status('Разреши доступ к датчику в браузере');return;}
       }
-      tiltEnabled=true;tiltReference=null;
+      tiltEnabled=true;
       gravityX=0;gravityY=-12;gravityZ=0;
       lastWakeGravity={x:0,y:-12,z:0};
       world.gravity.set(gravityX,gravityY,gravityZ);
       window.addEventListener('deviceorientation',updateTilt,true);
       tiltButton.setAttribute('aria-pressed','true');tiltLabel.textContent='Наклон включён';
-      status('Наклоняй телефон — гравитация меняется');
+      status('Наклоняй телефон — предметы реагируют по X и Y');
     }catch(_){status('Не удалось включить датчик наклона');}
   }
 
@@ -1193,7 +1193,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     canvas.addEventListener('lostpointercapture',()=>{if(dragging)pointerUp();});
     window.addEventListener('resize',resize,{passive:true});
     window.addEventListener('orientationchange',()=>{
-      if(tiltEnabled)tiltReference=null;
       setTimeout(resize,120);
     },{passive:true});
     document.addEventListener('visibilitychange',()=>{
