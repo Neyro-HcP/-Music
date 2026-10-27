@@ -38,6 +38,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   const activeEffects = [];
   const collisionTimes = new Map();
   let maxDpr = coarsePointer ? 1.25 : 1.5;
+  let animationHandle = 0;
   let fpsSamples = 0, fpsElapsed = 0, fpsScale = 1;
   const geometries = {};
   const materials = {};
@@ -814,8 +815,16 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     window.addEventListener('resize',resize,{passive:true});
     window.addEventListener('orientationchange',()=>setTimeout(resize,120),{passive:true});
     document.addEventListener('visibilitychange',()=>{
-      if(document.hidden){lastRender=0;clock.stop();}
-      else{clock.start();lastRender=0;}
+      if(document.hidden){
+        lastRender=0;
+        clock.stop();
+        if(animationHandle)cancelAnimationFrame(animationHandle);
+        animationHandle=0;
+      }else{
+        clock.start();
+        lastRender=0;
+        if(!animationHandle)animationHandle=requestAnimationFrame(animate);
+      }
     });
     document.querySelectorAll('[data-phone-add]').forEach(button=>button.addEventListener('click',()=>{
       const kind=button.dataset.phoneAdd;
@@ -840,8 +849,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function animate(){
-    requestAnimationFrame(animate);
-    if(document.hidden||!renderer||!world)return;
+    if(document.hidden||!renderer||!world){animationHandle=0;return;}
+    animationHandle=requestAnimationFrame(animate);
     const frameNow=performance.now();
     let delta=clock.getDelta();
     if(!delta||delta<0)delta=1/60;
@@ -866,7 +875,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       dragging.item.body.updateMassProperties();
     }
     world.step(FIXED_STEP,delta,8);
-    for(const item of [...items]){
+    for(let i=items.length-1;i>=0;i--){
+      const item=items[i];
       boundsFor(item);
       if(item.fuseAt&&performance.now()>item.fuseAt)createExplosion(item);
     }
@@ -887,7 +897,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       resetScene();
       if(renderMode)renderMode.textContent='3D PHYSICS · 120 HZ';
       status('3D-сцена готова');
-      requestAnimationFrame(animate);
+      animationHandle=requestAnimationFrame(animate);
     }catch(error){
       console.error('RGB Phone failed to initialise',error);
       status('Не удалось запустить 3D. Обнови страницу или проверь соединение.');
