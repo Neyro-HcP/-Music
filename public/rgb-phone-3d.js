@@ -1049,11 +1049,22 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       scatter(kind,kind==='rubber'?5:kind==='ice'?3:kind==='cube'?4:1);
     }));
     document.getElementById('phoneClear').addEventListener('click',()=>{
-      for(const item of [...items])removeItem(item);
+      for(let i=items.length-1;i>=0;i--)removeItem(items[i]);
       clearEffects();
       status('Экран очищен');
     });
     document.getElementById('phoneReset').addEventListener('click',resetScene);
+    const paintColor=document.getElementById('phonePaintColor');
+    const paintButton=document.getElementById('phonePaintMode');
+    if(paintColor)paintColor.addEventListener('input',()=>{selectedPaintColor=paintColor.value;});
+    if(paintButton)paintButton.addEventListener('click',()=>{
+      paintMode=!paintMode;
+      paintButton.setAttribute('aria-pressed',String(paintMode));
+      paintButton.textContent=paintMode?'✦ Кисть: включена':'✦ Кисть: выкл.';
+      canvas.style.cursor=paintMode?'crosshair':'grab';
+      status(paintMode?'Нажимай на предметы, чтобы перекрасить':'Кисть выключена');
+    });
+    document.querySelectorAll('[data-liquid]').forEach(button=>button.addEventListener('click',()=>setLiquidMode(button.dataset.liquid)));
     soundButton.addEventListener('click',()=>{
       soundEnabled=!soundEnabled;
       soundButton.setAttribute('aria-pressed',String(soundEnabled));
@@ -1100,6 +1111,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     }
     syncObjects();
     updateEffects(Math.min(delta,.034));
+    updateLiquids(Math.min(delta,.034));
     renderer.render(scene,camera);
     lastRender=frameNow;
   }
