@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="WAVEFRAME — бесплатный онлайн-конструктор аудиовизуализаторов. Создавай неоновые визуалы и экспортируй видео прямо в браузере.">
+  <title>WAVEFRAME — Visual Lab</title>
+  <link rel="icon" href="./public/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./public/app.css">
+  <script src="./public/app.js" defer></script>
+</head>
+<body>
+  <div class="site-noise" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="WAVEFRAME — начало">
+      <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
+      <span class="brand-text"><b>WAVEFRAME</b><small>VISUAL LAB <em>01</em></small></span>
+    </a>
+    <div class="topbar-center"><span class="live-dot"></span> STUDIO RUNS IN YOUR BROWSER</div>
+    <div class="topbar-actions">
+      <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить стиль</button>
+      <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="intro">
+      <div>
+        <div class="eyebrow"><span>ИНСТРУМЕНТ ДЛЯ ЗВУКА</span><i></i><span>NO CLOUD RENDER</span></div>
+        <h1>СДЕЛАЙ ЗВУК<br><span>ВИДИМЫМ.</span></h1>
+        <p class="intro-copy">Собери собственный аудиовизуализатор: от чистой волны до неонового космоса. Настраивай сцену, слушай и экспортируй видео — прямо здесь.</p>
+      </div>
+      <div class="intro-stamp"><span class="stamp-orbit"></span><b>WF / 001</b><small>CREATE<br>YOUR FREQUENCY</small></div>
+    </section>
+
+    <section class="workspace" id="workspace">
+      <aside class="style-panel panel">
+        <div class="panel-kicker"><span>01</span> ВИЗУАЛЬНЫЙ ДВИЖОК</div>
+        <div class="section-title-row"><h2>Выбери стиль</h2><span class="micro-label">PRESETS</span></div>
+        <div class="preset-list" id="presetList">
+          <button class="preset-card active" type="button" data-style="spectrum">
+            <span class="preset-thumb thumb-spectrum"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>NEON SPECTRUM</b><small>Пульсирующие частоты</small></span><span class="preset-index">01</span>
+          </button>
+          <button class="preset-card" type="button" data-style="orbit">
+            <span class="preset-thumb thumb-orbit"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>ORBITAL</b><small>Кольцо вокруг звука</small></span><span class="preset-index">02</span>
+          </button>
+          <button class="preset-card" type="button" data-style="wave">
+            <span class="preset-thumb thumb-wave"><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>PURE WAVE</b><small>Живая аудиоволна</small></span><span class="preset-index">03</span>
+          </button>
+          <button class="preset-card" type="button" data-style="aurora">
+            <span class="preset-thumb thumb-aurora"><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>AURORA</b><small>Текучие световые слои</small></span><span class="preset-index">04</span>
+          </button>
+          <button class="preset-card" type="button" data-style="radial">
+            <span class="preset-thumb thumb-radial"><i></i><i></i><i></i><i></i></span>
+            <span class="preset-info"><b>SONIC CORE</b><small>Радиальный импульс</small></span><span class="preset-index">05</span>
+          </button>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="local-card"><span class="local-icon">⌁</span><div><b>ЛОКАЛЬНАЯ СТУДИЯ</b><p>Музыка не отправляется на сервер. Файл остаётся на твоём устройстве.</p></div></div>
+        <div class="side-foot"><span>WAVEFRAME STUDIO</span><span>BUILD 1.0</span></div>
+      </aside>
+
+      <section class="preview-column">
+        <div class="preview-header">
+          <div><div class="panel-kicker"><span>02</span> КОМПОЗИЦИЯ</div><h2>Live preview<span class="accent-dot">.</span></h2></div>
+          <div class="preview-status"><span class="live-dot"></span><span id="previewStatus">DEMO MODE</span></div>
+        </div>
+        <div class="canvas-shell" id="canvasShell">
+          <canvas id="visualizer" width="1280" height="720" aria-label="Предпросмотр аудиовизуализатора"></canvas>
+          <div class="canvas-corner canvas-corner-tl">WF<span> / LIVE SIGNAL</span></div>
+          <div class="canvas-corner canvas-corner-tr" id="canvasAspectBadge">16:9 · 1280 × 720</div>
+          <div class="canvas-corner canvas-corner-bl">AUDIO REACTIVE <i></i></div>
+          <div class="canvas-corner canvas-corner-br">30 FPS TARGET</div>
+        </div>
+        <div class="track-transport">
+          <div class="transport-file">
+            <div class="file-art"><span>♫</span><i></i></div>
+            <div class="file-copy"><b id="loadedTrackName">Сначала добавь аудио</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
+          </div>
+          <div class="transport-controls">
+            <button class="round-control" id="rewindButton" type="button" aria-label="В начало" title="В начало">↺</button>
+            <button class="play-control" id="playButton" type="button" aria-label="Воспроизвести" disabled><span id="playGlyph">▶</span></button>
+            <button class="round-control" id="stopButton" type="button" aria-label="Остановить" title="Остановить" disabled>■</button>
+          </div>
+          <div class="transport-time"><span id="currentTime">0:00</span><span class="time-separator">/</span><span id="durationTime">0:00</span></div>
+        </div>
+        <div class="seek-row"><input id="seekRange" type="range" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" disabled></div>
+        <div class="preview-bottom">
+          <div class="preview-hint"><span class="hint-spark">✳</span><span id="previewHint">Загрузи аудио, чтобы визуал реагировал на частоты.</span></div>
+          <div class="preview-actions"><button class="outline-button" id="pngButton" type="button">↓ PNG кадр</button><button class="primary-button" id="exportButton" type="button" disabled><span class="export-icon">●</span> Экспорт WebM</button></div>
+        </div>
+        <div class="export-progress-wrap" id="exportProgressWrap" hidden><div class="export-progress-label"><span id="exportStatus">Идёт запись...</span><span id="exportElapsed">00:00</span></div><div class="export-progress-track"><i id="exportProgress"></i></div><p>Видео записывается в реальном времени. Не закрывай вкладку до завершения трека.</p></div>
+      </section>
+
+      <aside class="controls-panel panel">
+        <div class="panel-kicker"><span>03</span> НАСТРОЙКА СЦЕНЫ</div>
+        <div class="section-title-row"><h2>Твоя композиция</h2><span class="micro-label">EDITOR</span></div>
+        <div class="control-section">
+          <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
+          <button class="dropzone" id="dropzone" type="button">
+            <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm" hidden>
+            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
+          </button>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="trackTitle">Название</label><span class="micro-label">TEXT</span></div>
+          <input class="text-field" id="trackTitle" type="text" maxlength="80" placeholder="Название трека">
+          <input class="text-field secondary-field" id="trackArtist" type="text" maxlength="60" placeholder="Исполнитель / подпись">
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section">
+          <div class="control-heading"><span>Цветовая палитра</span><span class="micro-label">COLOR</span></div>
+          <div class="color-row"><label class="color-control"><input id="colorOne" type="color" value="#b8ff4f"><span><b>NEON</b><small>Основной</small></span></label><label class="color-control"><input id="colorTwo" type="color" value="#7865ff"><span><b>GLOW</b><small>Вторичный</small></span></label></div>
+          <label class="background-color-row"><span><i></i>Цвет фона</span><input id="backgroundColor" type="color" value="#080b14"></label>
+          <div class="swatches" aria-label="Быстрые цветовые темы">
+            <button type="button" class="swatch active" data-palette="acid" title="Acid lime" aria-label="Лайм и фиолетовый"></button>
+            <button type="button" class="swatch" data-palette="ocean" title="Deep ocean" aria-label="Голубой и бирюзовый"></button>
+            <button type="button" class="swatch" data-palette="sunset" title="Sunset" aria-label="Оранжевый и розовый"></button>
+            <button type="button" class="swatch" data-palette="mono" title="Monochrome" aria-label="Монохром"></button>
+            <button type="button" class="swatch" data-palette="pink" title="Cyber pink" aria-label="Розовый и синий"></button>
+          </div>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section">
+          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
+          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
+          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="glowRange">Свечение</label><output id="glowOutput">22</output></div>
+          <input id="glowRange" class="range-input" type="range" min="0" max="40" step="1" value="22">
+          <div class="range-labels"><span>Чётко</span><span>NEON GLOW</span></div>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><label for="aspectSelect">Формат кадра</label><span class="micro-label">RATIO</span></div>
+          <select id="aspectSelect" class="select-field"><option value="landscape">16:9 · YouTube</option><option value="square">1:1 · пост</option><option value="portrait">9:16 · Shorts / Reels</option></select>
+        </div>
+        <div class="toggle-list">
+          <label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label>
+          <label class="toggle-row"><span><b>Звёздная пыль</b><small>Частицы на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div>
+      </aside>
+    </section>
+
+    <section class="bottom-strip">
+      <div class="bottom-feature"><span>01</span><div><b>СОЗДАВАЙ БЕЗ ОГРАНИЧЕНИЙ</b><small>Стили, палитры, типографика и формат кадра.</small></div></div>
+      <div class="bottom-feature"><span>02</span><div><b>ЗВУК ОСТАЁТСЯ ТВОИМ</b><small>Аудио обрабатывается локально, без загрузки на сервер.</small></div></div>
+      <div class="bottom-feature"><span>03</span><div><b>СРАЗУ В ВИДЕО</b><small>Экспорт WebM в браузере и PNG-кадр обложки.</small></div></div>
+    </section>
+    <footer class="footer"><span><b>WAVEFRAME</b> <i>•</i> VISUAL LAB</span><span>BUILT FOR THE FREQUENCY <b>↗</b></span></footer>
+  </main>
+
+  <audio id="audio" preload="metadata"></audio>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
