@@ -1116,3 +1116,23 @@ body {
   .friend-rgb-frame { background-position:50% 50%; }
   .friend-particle { opacity:.55; }
 }
+
+
+/* Final presentation override: keep only the RGB nickname frame. */
+.nsp-friend-card {
+  min-height:0 !important;
+  margin:10px auto 24px !important;
+  padding:18px 14px 22px !important;
+  overflow:visible !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.nsp-friend-card::before,
+.nsp-friend-card::after,
+.friend-card-top,
+.friend-dot,
+.friend-card-orbit {
+  display:none !important;
+}
