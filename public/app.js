@@ -284,7 +284,7 @@
   function getAudioValues(now) {
     const bandCount = state.smoothedBands.length;
     const active = Boolean(state.file && state.analyser && state.frequencyData && !audio.ended);
-    const dt = Math.max(0.008, Math.min(0.07, (now - (state.lastAudioTime || now - 16.7)) / 1000));
+    const dt = Math.max(0.008, Math.min(0.06, (now - (state.lastAudioTime || now - 33.3)) / 1000));
     state.lastAudioTime = now;
     if (state.analyser && state.frequencyData) {
       state.analyser.getByteFrequencyData(state.frequencyData);
@@ -294,59 +294,49 @@
     let bassEnergy = 0;
     let bassSamples = 0;
     if (active && state.frequencyData && state.audioContext) {
-      const nyquist = state.audioContext.sampleRate / 2;
-      const binCount = state.frequencyData.length;
-      const minHz = 28;
-      const maxHz = Math.min(18000, nyquist * 0.94);
-      const logSpan = Math.log(maxHz / minHz);
+      const bins = state.frequencyData;
+      const bands = state.frequencyBands;
       for (let i = 0; i < bandCount; i++) {
-        const f0 = minHz * Math.exp((i / bandCount) * logSpan);
-        const f1 = minHz * Math.exp(((i + 1) / bandCount) * logSpan);
-        let b0 = Math.max(0, Math.floor(f0 / nyquist * binCount));
-        let b1 = Math.min(binCount - 1, Math.max(b0 + 1, Math.ceil(f1 / nyquist * binCount)));
+        const band = bands[i];
         let sum = 0;
         let count = 0;
-        for (let b = b0; b <= b1; b++) {
-          sum += state.frequencyData[b];
+        for (let b = band.start; b <= band.end; b++) {
+          sum += bins[b];
           count++;
         }
         const raw = count ? sum / count : 0;
-        const normalized = Math.max(0, Math.min(1, (raw - 9) / 220));
-        let target = Math.pow(normalized, 0.72) * state.sensitivity;
-        if (i < 55) {
+        const normalized = Math.max(0, Math.min(1, (raw - 7) / 210));
+        const target = Math.max(0, Math.min(1.5, Math.pow(normalized, 0.68) * state.sensitivity));
+        if (i < 46) {
           bassEnergy += normalized;
           bassSamples++;
         }
-        target = Math.max(0, Math.min(1.45, target));
         const previous = state.smoothedBands[i];
-        const attack = 0.35 + (1 - state.smoothing / 100) * 0.58;
-        const release = 0.32 - (state.smoothing / 100) * 0.25;
-        const coefficient = target > previous ? attack : release;
-        const smoothed = previous + (target - previous) * Math.min(0.96, coefficient);
-        state.smoothedBands[i] = smoothed;
-        state.peakBands[i] = Math.max(smoothed, state.peakBands[i] - dt * (1.5 + state.smoothing / 60));
+        const attack = 0.42 + (1 - state.smoothing / 100) * 0.52;
+        const release = 0.38 - (state.smoothing / 100) * 0.27;
+        state.smoothedBands[i] = previous + (target - previous) * Math.min(0.96, target > previous ? attack : release);
+        state.peakBands[i] = Math.max(state.smoothedBands[i], state.peakBands[i] - dt * (1.2 + state.smoothing / 42));
       }
       bassEnergy = bassSamples ? bassEnergy / bassSamples : 0;
       const flux = Math.max(0, bassEnergy - state.lastBassEnergy);
-      const transient = Math.max(0, bassEnergy - state.bassEnvelope * 1.06);
-      const hit = Math.max(flux * 4.8, transient * 1.8) * state.beatResponse;
-      state.beatPulse = Math.max(hit, state.beatPulse * Math.exp(-dt * 5.2));
-      state.bassEnvelope = state.bassEnvelope * 0.91 + bassEnergy * 0.09;
+      const transient = Math.max(0, bassEnergy - state.bassEnvelope * 1.04);
+      const hit = Math.max(flux * 5.2, transient * 1.7) * state.beatResponse;
+      state.beatPulse = Math.max(Math.min(1, hit), state.beatPulse * Math.exp(-dt * 5.6));
+      state.bassEnvelope = state.bassEnvelope * 0.89 + bassEnergy * 0.11;
       state.lastBassEnergy = bassEnergy;
     } else {
       state.beatPulse *= Math.exp(-dt * 3.5);
       for (let i = 0; i < bandCount; i++) {
         state.smoothedBands[i] *= 0.94;
-        state.peakBands[i] *= 0.93;
+        state.peakBands[i] *= 0.92;
       }
     }
 
     const demo = function (index, count) {
       const t = now / 1000;
       const position = index / Math.max(1, count);
-      const wave = 0.12 + Math.max(0, Math.sin(t * 1.25 + position * 13)) * 0.13
-        + Math.max(0, Math.sin(t * 2.1 - position * 7)) * 0.08;
-      return wave * state.sensitivity;
+      return (0.06 + Math.max(0, Math.sin(t * 1.35 + position * 17)) * 0.28
+        + Math.max(0, Math.sin(t * 2.25 - position * 7.4)) * 0.18) * state.sensitivity;
     };
     return {
       available: active && !audio.paused,
@@ -358,9 +348,8 @@
         if (!active) return Math.max(0.015, demo(index, count));
         const smooth = state.smoothedBands[band] || 0;
         const peak = state.peakBands[band] || 0;
-        const lowBoost = 1 - pos;
-        const beatBoost = state.beatPulse * state.beatResponse * lowBoost * 0.24;
-        return Math.max(0, Math.min(1.4, smooth + Math.max(0, peak - smooth) * 0.25 + beatBoost));
+        const bassBoost = Math.max(0, state.beatPulse * (1 - pos) * 0.18);
+        return Math.max(0, Math.min(1.45, smooth + Math.max(0, peak - smooth) * 0.2 + bassBoost));
       },
       wave: function (index, count) {
         if (active && state.timeData && state.timeData.length && !audio.paused) {
@@ -373,6 +362,7 @@
       }
     };
   }
+
 
   function drawCoverImage(image, w, h) {
     if (!image || !image.width || !image.height) return;
@@ -423,14 +413,58 @@
 
     if (state.showParticles && state.particleCount > 0) {
       ctx.save();
+      const travelScale = now * 0.000012 * state.particleSpeed;
       for (let i = 0; i < state.particles.length; i++) {
         const p = state.particles[i];
-        const flicker = 0.12 + (Math.sin(now / 700 * p.speed * state.particleSpeed + p.phase) + 1) * 0.16;
-        ctx.beginPath();
-        ctx.fillStyle = i % 3 === 0 ? rgba(state.colorOne, flicker) : 'rgba(224,236,255,' + flicker + ')';
-        const y = (p.y * h + now * p.speed * state.particleSpeed * 0.002) % h;
-        ctx.arc(p.x * w, y, p.size * state.particleSize * Math.max(0.7, w / 1280), 0, Math.PI * 2);
-        ctx.fill();
+        const travel = ((travelScale * p.speed) % 1 + 1) % 1;
+        let nx = p.x;
+        let ny = p.y;
+        if (state.particleDirection === 'up') ny = (p.y - travel + 1) % 1;
+        else if (state.particleDirection === 'down') ny = (p.y + travel) % 1;
+        else if (state.particleDirection === 'left') nx = (p.x - travel + 1) % 1;
+        else if (state.particleDirection === 'right') nx = (p.x + travel) % 1;
+        else if (state.particleDirection === 'out' || state.particleDirection === 'in') {
+          const angle = p.phase;
+          let radius = Math.hypot(p.x - 0.5, p.y - 0.5) + travel * 0.68;
+          if (state.particleDirection === 'in') radius = Math.hypot(p.x - 0.5, p.y - 0.5) - travel * 0.68;
+          radius = (radius % 0.74 + 0.74) % 0.74;
+          nx = 0.5 + Math.cos(angle) * radius;
+          ny = 0.5 + Math.sin(angle) * radius;
+          if (nx < 0 || nx > 1 || ny < 0 || ny > 1) { nx = p.x; ny = p.y; }
+        } else {
+          nx = (p.x + Math.sin(now / 1600 * p.speed * state.particleSpeed + p.phase) * 0.025 + 1) % 1;
+          ny = (p.y + Math.cos(now / 1850 * p.speed * state.particleSpeed + p.phase) * 0.025 + 1) % 1;
+        }
+        const x = nx * w;
+        const y = ny * h;
+        const size = Math.max(0.6, p.size * state.particleSize * Math.max(0.7, w / 1280));
+        const shimmer = 0.72 + 0.28 * Math.sin(now / 700 * p.speed + p.phase);
+        ctx.globalAlpha = state.particleOpacity / 100 * shimmer;
+        ctx.fillStyle = state.particleColor;
+        ctx.strokeStyle = state.particleColor;
+        ctx.shadowColor = state.particleColor;
+        ctx.shadowBlur = state.particleGlow > 0 && i % 3 === 0 ? Math.min(12, state.particleGlow) : 0;
+        ctx.lineWidth = Math.max(0.8, size * 0.55);
+        if (state.particleShape === 'square') {
+          ctx.fillRect(x - size, y - size, size * 2, size * 2);
+        } else if (state.particleShape === 'diamond') {
+          ctx.beginPath(); ctx.moveTo(x, y - size * 1.5); ctx.lineTo(x + size, y); ctx.lineTo(x, y + size * 1.5); ctx.lineTo(x - size, y); ctx.closePath(); ctx.fill();
+        } else if (state.particleShape === 'line') {
+          const angle = p.phase + ((state.particleDirection === 'left' || state.particleDirection === 'right') ? 0 : Math.PI / 2);
+          ctx.beginPath(); ctx.moveTo(x - Math.cos(angle) * size * 2.2, y - Math.sin(angle) * size * 2.2); ctx.lineTo(x + Math.cos(angle) * size * 2.2, y + Math.sin(angle) * size * 2.2); ctx.stroke();
+        } else if (state.particleShape === 'star') {
+          ctx.beginPath();
+          for (let point = 0; point < 10; point++) {
+            const radius = point % 2 === 0 ? size * 1.65 : size * 0.68;
+            const angle = point * Math.PI / 5 - Math.PI / 2;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            if (point === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+          }
+          ctx.closePath(); ctx.fill();
+        } else {
+          ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+        }
       }
       ctx.restore();
     }
@@ -747,6 +781,18 @@
       state.mediaDestination = state.audioContext.createMediaStreamDestination();
       state.frequencyData = new Uint8Array(state.analyser.frequencyBinCount);
       state.timeData = new Uint8Array(state.analyser.fftSize);
+      state.frequencyBands = [];
+      const nyquist = state.audioContext.sampleRate / 2;
+      const minHz = 28;
+      const maxHz = Math.min(18000, nyquist * 0.94);
+      const logSpan = Math.log(maxHz / minHz);
+      for (let i = 0; i < state.smoothedBands.length; i++) {
+        const f0 = minHz * Math.exp((i / state.smoothedBands.length) * logSpan);
+        const f1 = minHz * Math.exp(((i + 1) / state.smoothedBands.length) * logSpan);
+        const start = Math.max(0, Math.min(state.frequencyData.length - 1, Math.floor(f0 / nyquist * state.frequencyData.length)));
+        const end = Math.max(start, Math.min(state.frequencyData.length - 1, Math.ceil(f1 / nyquist * state.frequencyData.length)));
+        state.frequencyBands.push({ start: start, end: end });
+      }
       state.source.connect(state.analyser);
       state.analyser.connect(state.audioContext.destination);
       state.analyser.connect(state.mediaDestination);
