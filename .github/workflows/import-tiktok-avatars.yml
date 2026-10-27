@@ -19,21 +19,24 @@ jobs:
 
       - name: Extract and install avatar files
         run: |
+          set -eu
           test -f tiktok_followers_local_avatars_bundle.zip
           mkdir -p /tmp/tiktok-avatar-import
           unzip -o tiktok_followers_local_avatars_bundle.zip -d /tmp/tiktok-avatar-import
           test -f /tmp/tiktok-avatar-import/public/followers.json
           test -d /tmp/tiktok-avatar-import/public/avatars/tiktok
+          test "$(find /tmp/tiktok-avatar-import/public/avatars/tiktok -maxdepth 1 -type f -name '*.jpeg' | wc -l)" -gt 0
           cp /tmp/tiktok-avatar-import/public/followers.json public/followers.json
           mkdir -p public/avatars/tiktok
-          cp -f /tmp/tiktok-avatar-import/public/avatars/tiktok/* public/avatars/tiktok/
-          rm tiktok_followers_local_avatars_bundle.zip
+          cp -f /tmp/tiktok-avatar-import/public/avatars/tiktok/*.jpeg public/avatars/tiktok/
 
       - name: Commit imported avatars
         run: |
+          set -eu
+          rm tiktok_followers_local_avatars_bundle.zip
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/followers.json public/avatars/tiktok tiktok_followers_local_avatars_bundle.zip
+          git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
