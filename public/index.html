@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090b12">
-  <meta name="description" content="WAVEFRAME — бесплатный онлайн-конструктор аудиовизуализаторов. Создавай неоновые визуалы и экспортируй видео прямо в браузере.">
-  <title>WAVEFRAME — Visual Lab</title>
+  <meta name="description" content="НсП Visual Lab — бесплатный конструктор музыкальных визуализаторов с собственным логотипом и фоном.">
+  <title>НсП Visual Lab — визуализатор музыки</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,11 +16,11 @@
 <body>
   <div class="site-noise" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="WAVEFRAME — начало">
-      <span class="brand-mark"><i></i><i></i><i></i><i></i></span>
-      <span class="brand-text"><b>WAVEFRAME</b><small>VISUAL LAB <em>01</em></small></span>
+    <a class="brand" href="./" aria-label="НсП Visual Lab — главная">
+      <span class="brand-nsp">НсП</span>
+      <span class="brand-text"><b>НсП VISUAL LAB</b><small>АУДИО · ВИЗУАЛ · АВТОРСКАЯ СЦЕНА</small></span>
     </a>
-    <div class="topbar-center"><span class="live-dot"></span> STUDIO RUNS IN YOUR BROWSER</div>
+    <div class="topbar-center"><span class="live-dot"></span> ВСЁ РАБОТАЕТ В БРАУЗЕРЕ</div>
     <div class="topbar-actions">
       <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить стиль</button>
       <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
@@ -30,11 +30,11 @@
   <main class="app-main">
     <section class="intro">
       <div>
-        <div class="eyebrow"><span>ИНСТРУМЕНТ ДЛЯ ЗВУКА</span><i></i><span>NO CLOUD RENDER</span></div>
-        <h1>СДЕЛАЙ ЗВУК<br><span>ВИДИМЫМ.</span></h1>
-        <p class="intro-copy">Собери собственный аудиовизуализатор: от чистой волны до неонового космоса. Настраивай сцену, слушай и экспортируй видео — прямо здесь.</p>
+        <div class="eyebrow"><span>АВТОРСКАЯ МУЗЫКАЛЬНАЯ ГРАФИКА</span><i></i><span>ПОД КОНТРОЛЕМ НсП</span></div>
+        <h1>ЗВУК, КОТОРЫЙ<br><span>ВИДНО.</span></h1>
+        <p class="intro-copy">Настраивай визуализатор до мелочей: форму, движение, фон, логотип, свет и типографику. Твоя сцена — твои правила.</p>
       </div>
-      <div class="intro-stamp"><span class="stamp-orbit"></span><b>WF / 001</b><small>CREATE<br>YOUR FREQUENCY</small></div>
+      <div class="intro-stamp"><span class="stamp-orbit"></span><b>НсП / LAB</b><small>СВОЙ ЗВУК<br>СВОЙ ВИЗУАЛ</small></div>
     </section>
 
     <section class="workspace" id="workspace">
@@ -65,20 +65,17 @@
         </div>
         <div class="panel-divider"></div>
         <div class="local-card"><span class="local-icon">⌁</span><div><b>ЛОКАЛЬНАЯ СТУДИЯ</b><p>Музыка не отправляется на сервер. Файл остаётся на твоём устройстве.</p></div></div>
-        <div class="side-foot"><span>WAVEFRAME STUDIO</span><span>BUILD 1.0</span></div>
+        <div class="side-foot"><span>НсП STUDIO</span><span>BUILD 1.2</span></div>
       </aside>
 
       <section class="preview-column">
         <div class="preview-header">
-          <div><div class="panel-kicker"><span>02</span> КОМПОЗИЦИЯ</div><h2>Live preview<span class="accent-dot">.</span></h2></div>
+          <div><div class="panel-kicker"><span>02</span> КОМПОЗИЦИЯ</div><h2>Предпросмотр<span class="accent-dot">.</span></h2></div>
           <div class="preview-status"><span class="live-dot"></span><span id="previewStatus">DEMO MODE</span></div>
         </div>
         <div class="canvas-shell" id="canvasShell">
           <canvas id="visualizer" width="1280" height="720" aria-label="Предпросмотр аудиовизуализатора"></canvas>
-          <div class="canvas-corner canvas-corner-tl">WF<span> / LIVE SIGNAL</span></div>
           <div class="canvas-corner canvas-corner-tr" id="canvasAspectBadge">16:9 · 1280 × 720</div>
-          <div class="canvas-corner canvas-corner-bl">AUDIO REACTIVE <i></i></div>
-          <div class="canvas-corner canvas-corner-br">30 FPS TARGET</div>
         </div>
         <div class="track-transport">
           <div class="transport-file">
@@ -102,7 +99,7 @@
 
       <aside class="controls-panel panel">
         <div class="panel-kicker"><span>03</span> НАСТРОЙКА СЦЕНЫ</div>
-        <div class="section-title-row"><h2>Твоя композиция</h2><span class="micro-label">EDITOR</span></div>
+        <div class="section-title-row"><h2>Твоя сцена</h2><span class="micro-label">EDITOR</span></div>
         <div class="control-section">
           <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
           <button class="dropzone" id="dropzone" type="button">
@@ -114,6 +111,34 @@
           <div class="control-heading"><label for="trackTitle">Название</label><span class="micro-label">TEXT</span></div>
           <input class="text-field" id="trackTitle" type="text" maxlength="80" placeholder="Название трека">
           <input class="text-field secondary-field" id="trackArtist" type="text" maxlength="60" placeholder="Исполнитель / подпись">
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section media-section">
+          <div class="control-heading"><span>Логотип в центре</span><span class="micro-label">НсП</span></div>
+          <div class="media-picker-row">
+            <div class="logo-preview" id="logoPreview"><span>НсП</span></div>
+            <div class="media-picker-copy"><b id="logoFileName">Логотип НсП</b><small>Круглая маска · PNG / JPG / WEBP</small><button class="mini-action" id="logoPickButton" type="button">Выбрать логотип</button></div>
+          </div>
+          <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+          <button class="plain-action" id="removeLogoButton" type="button">Сбросить на монограмму НсП</button>
+          <div class="two-range-grid">
+            <label><span>Размер <output id="logoSizeOutput">18%</output></span><input id="logoSizeRange" class="range-input" type="range" min="6" max="34" step="1" value="18"></label>
+            <label><span>Непрозрачность <output id="logoOpacityOutput">100%</output></span><input id="logoOpacityRange" class="range-input" type="range" min="20" max="100" step="1" value="100"></label>
+          </div>
+          <div class="two-range-grid">
+            <label><span>Центр X <output id="logoXOutput">50%</output></span><input id="logoXRange" class="range-input" type="range" min="10" max="90" step="1" value="50"></label>
+            <label><span>Центр Y <output id="logoYOutput">45%</output></span><input id="logoYRange" class="range-input" type="range" min="10" max="90" step="1" value="45"></label>
+          </div>
+        </div>
+        <div class="panel-divider"></div>
+        <div class="control-section media-section">
+          <div class="control-heading"><span>Собственный фон</span><span class="micro-label">IMAGE</span></div>
+          <div class="background-picker-row"><button class="background-pick-button" id="backgroundPickButton" type="button"><span>＋</span> Загрузить изображение</button><button class="icon-action" id="removeBackgroundButton" type="button" title="Убрать изображение">×</button></div>
+          <input id="backgroundFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+          <div class="control-heading compact-heading"><label for="backgroundOpacityRange">Видимость фона</label><output id="backgroundOpacityOutput">100%</output></div>
+          <input id="backgroundOpacityRange" class="range-input" type="range" min="0" max="100" step="1" value="100">
+          <div class="control-heading compact-heading"><label for="vignetteRange">Виньетка</label><output id="vignetteOutput">65%</output></div>
+          <input id="vignetteRange" class="range-input" type="range" min="0" max="100" step="1" value="65">
         </div>
         <div class="panel-divider"></div>
         <div class="control-section">
@@ -143,9 +168,43 @@
           <div class="control-heading"><label for="aspectSelect">Формат кадра</label><span class="micro-label">RATIO</span></div>
           <select id="aspectSelect" class="select-field"><option value="landscape">16:9 · YouTube</option><option value="square">1:1 · пост</option><option value="portrait">9:16 · Shorts / Reels</option></select>
         </div>
+        <div class="panel-divider"></div>
+        <div class="control-section">
+          <div class="control-heading"><span>Положение визуализатора</span><span class="micro-label">MOVE</span></div>
+          <div class="two-range-grid">
+            <label><span>По X <output id="visualXOutput">0%</output></span><input id="visualXRange" class="range-input" type="range" min="-30" max="30" step="1" value="0"></label>
+            <label><span>По Y <output id="visualYOutput">0%</output></span><input id="visualYRange" class="range-input" type="range" min="-30" max="30" step="1" value="0"></label>
+          </div>
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><span>Положение текста</span><span class="micro-label">TYPE</span></div>
+          <div class="two-range-grid">
+            <label><span>По X <output id="textXOutput">6%</output></span><input id="textXRange" class="range-input" type="range" min="3" max="90" step="1" value="6"></label>
+            <label><span>По Y <output id="textYOutput">81%</output></span><input id="textYRange" class="range-input" type="range" min="5" max="94" step="1" value="81"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="textSizeRange">Размер текста</label><output id="textSizeOutput">100%</output></div>
+          <input id="textSizeRange" class="range-input" type="range" min="55" max="180" step="5" value="100">
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><span>Частицы</span><span class="micro-label">FX</span></div>
+          <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b><small>Движение на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+          <div class="two-range-grid">
+            <label><span>Количество <output id="particleCountOutput">84</output></span><input id="particleCountRange" class="range-input" type="range" min="0" max="250" step="5" value="85"></label>
+            <label><span>Размер <output id="particleSizeOutput">1.0×</output></span><input id="particleSizeRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1"></label>
+          </div>
+          <div class="control-heading compact-heading"><label for="particleSpeedRange">Скорость частиц</label><output id="particleSpeedOutput">1.0×</output></div>
+          <input id="particleSpeedRange" class="range-input" type="range" min="0" max="3" step="0.1" value="1">
+        </div>
+        <div class="control-section">
+          <div class="control-heading"><span>Динамика</span><span class="micro-label">AUDIO</span></div>
+          <div class="control-heading compact-heading"><label for="beatResponseRange">Реакция на удар</label><output id="beatResponseOutput">1.4×</output></div>
+          <input id="beatResponseRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1.4">
+          <div class="control-heading compact-heading"><label for="smoothingRange">Плавность</label><output id="smoothingOutput">45%</output></div>
+          <input id="smoothingRange" class="range-input" type="range" min="0" max="90" step="5" value="45">
+        </div>
         <div class="toggle-list">
           <label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label>
-          <label class="toggle-row"><span><b>Звёздная пыль</b><small>Частицы на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+          <label class="toggle-row"><span><b>Виньетка</b><small>Затемнение по краям</small></span><input id="showVignette" type="checkbox" checked><i></i></label>
         </div>
         <div class="panel-divider"></div>
         <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div>
@@ -157,7 +216,7 @@
       <div class="bottom-feature"><span>02</span><div><b>ЗВУК ОСТАЁТСЯ ТВОИМ</b><small>Аудио обрабатывается локально, без загрузки на сервер.</small></div></div>
       <div class="bottom-feature"><span>03</span><div><b>СРАЗУ В ВИДЕО</b><small>Экспорт WebM в браузере и PNG-кадр обложки.</small></div></div>
     </section>
-    <footer class="footer"><span><b>WAVEFRAME</b> <i>•</i> VISUAL LAB</span><span>BUILT FOR THE FREQUENCY <b>↗</b></span></footer>
+    <footer class="footer"><span><b>НсП</b> <i>•</i> VISUAL LAB</span><span>BUILT FOR THE FREQUENCY <b>↗</b></span></footer>
   </main>
 
   <audio id="audio" preload="metadata"></audio>
