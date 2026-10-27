@@ -42,6 +42,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   const geometries = {};
   const materials = {};
   const textures = {};
+  const physicsMaterials = {};
 
   function status(text) { if (engineStatus) engineStatus.textContent = text; }
 
@@ -128,6 +129,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     },256);
   }
 
+  function tntLabelTexture() {
+    const c=document.createElement('canvas');
+    c.width=256;c.height=128;
+    const g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    g.fillStyle='rgba(38,3,10,.82)';g.fillRect(7,23,242,82);
+    g.strokeStyle='rgba(255,236,213,.8)';g.lineWidth=4;g.strokeRect(10,26,236,76);
+    g.fillStyle='#fff1df';g.font='900 55px Manrope,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('TNT',128,65);
+    const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;return texture;
+  }
+
   function shadowTexture() {
     return makeCanvasTexture((g,s) => {
       const grad=g.createRadialGradient(s/2,s/2,1,s/2,s/2,s*.48);
@@ -141,11 +153,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     textures.ball = ballTexture();
     textures.plastic = plasticTexture();
     textures.red = redTexture();
+    textures.tntLabel = tntLabelTexture();
     textures.shadow = shadowTexture();
 
     materials.ice = new THREE.MeshPhysicalMaterial({
       color: 0xb7edff, map: textures.ice, roughness: .17, metalness: 0,
       clearcoat: .95, clearcoatRoughness: .12, transparent: true, opacity: .9,
+      bumpMap: textures.ice, bumpScale: .025,
       side: THREE.DoubleSide, envMapIntensity: 1.6, depthWrite: false
     });
     materials.ball = new THREE.MeshPhysicalMaterial({
@@ -154,13 +168,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     });
     materials.cube = new THREE.MeshPhysicalMaterial({
       color: 0xffffff, map: textures.plastic, roughness: .26, metalness: .08,
-      clearcoat: .85, clearcoatRoughness: .18, envMapIntensity: 1.5
+      clearcoat: .85, clearcoatRoughness: .18, bumpMap: textures.plastic, bumpScale: .012, envMapIntensity: 1.5
     });
     materials.tnt = new THREE.MeshPhysicalMaterial({
       color: 0xffffff, map: textures.red, roughness: .32, metalness: .01,
       clearcoat: .5, clearcoatRoughness: .25, envMapIntensity: 1.1
     });
-    materials.tntLabel = new THREE.MeshBasicMaterial({ color: 0xfff2db, transparent: true, opacity: .96, side: THREE.DoubleSide });
+    materials.tntLabel = new THREE.MeshBasicMaterial({ map: textures.tntLabel, transparent: true, opacity: .98, side: THREE.DoubleSide, depthWrite: false });
     materials.shadow = new THREE.MeshBasicMaterial({
       map: textures.shadow, transparent: true, opacity: .7, depthWrite: false, color: 0x8d93b8
     });
@@ -216,6 +230,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.cube = new RoundedBoxGeometry(.45,.45,.45,3,.055);
     geometries.ice = new RoundedBoxGeometry(.48,.48,.48,3,.045);
     geometries.tnt = new RoundedBoxGeometry(.49,.49,.49,3,.035);
+    geometries.tntLabel = new THREE.PlaneGeometry(.4,.2);
     geometries.shadow = new THREE.PlaneGeometry(1,1);
     geometries.floor = new THREE.BoxGeometry(1,.12,1.2);
     geometries.ring = new THREE.TorusGeometry(.12,.018,5,42);
@@ -242,7 +257,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function makeWall(position, halfExtents) {
-    const body = new CANNON.Body({ mass: 0, shape: new CANNON.Box(new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z)) });
+    const body = new CANNON.Body({ mass: 0, material: physicsMaterials.wall, shape: new CANNON.Box(new CANNON.Vec3(halfExtents.x, halfExtents.y, halfExtents.z)) });
     body.position.set(position.x,position.y,position.z);
     body.collisionFilterGroup = 1;
     body.collisionFilterMask = 1;
@@ -281,6 +296,28 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     world.defaultContactMaterial.restitution = .18;
     world.defaultContactMaterial.contactEquationStiffness = 1e7;
     world.defaultContactMaterial.contactEquationRelaxation = 4;
+    physicsMaterials.wall = new CANNON.Material('wall');
+    physicsMaterials.rubber = new CANNON.Material('rubber');
+    physicsMaterials.ice = new CANNON.Material('ice');
+    physicsMaterials.cube = new CANNON.Material('cube');
+    physicsMaterials.tnt = new CANNON.Material('tnt');
+    const contact = (a,b,friction,restitution) => world.addContactMaterial(new CANNON.ContactMaterial(
+      physicsMaterials[a],physicsMaterials[b],{friction,restitution,contactEquationStiffness:1e7,contactEquationRelaxation:4}
+    ));
+    contact('rubber','rubber',.36,.87);
+    contact('rubber','ice',.34,.68);
+    contact('rubber','cube',.42,.72);
+    contact('rubber','tnt',.4,.66);
+    contact('ice','ice',.18,.51);
+    contact('ice','cube',.25,.43);
+    contact('ice','tnt',.24,.4);
+    contact('cube','cube',.44,.34);
+    contact('cube','tnt',.4,.3);
+    contact('tnt','tnt',.38,.28);
+    for(const kind of ['rubber','ice','cube','tnt']){
+      const settings=kind==='rubber'?{friction:.35,restitution:.82}:kind==='ice'?{friction:.2,restitution:.61}:kind==='cube'?{friction:.42,restitution:.35}:{friction:.4,restitution:.3};
+      world.addContactMaterial(new CANNON.ContactMaterial(physicsMaterials[kind],physicsMaterials.wall,{...settings,contactEquationStiffness:1e7,contactEquationRelaxation:4}));
+    }
     world.gravity.set(gravityX,gravityY,0);
     rebuildWalls();
   }
@@ -296,7 +333,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     g.fillStyle='#fff1df';g.font='900 55px Manrope,system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('TNT',128,65);
     const texture=new THREE.CanvasTexture(c);
     texture.colorSpace=THREE.SRGBColorSpace;
-    const sticker=new THREE.Mesh(new THREE.PlaneGeometry(.4,.2),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
+    const sticker=new THREE.Mesh(geometries.tntLabel,materials.tntLabel);
     sticker.position.set(0,0,.249);
     mesh.add(sticker);
     return sticker;
@@ -343,7 +380,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     scene.add(shadow);
 
     const body=new CANNON.Body({
-      mass, shape, position:new CANNON.Vec3(position.x,position.y,position.z),
+      mass, material:physicsMaterials[kind], shape, position:new CANNON.Vec3(position.x,position.y,position.z),
       linearDamping: kind==='rubber'?.045 : kind==='ice'?.018 : .035,
       angularDamping: kind==='rubber'?.075 : .055,
       allowSleep:true, sleepSpeedLimit:.12, sleepTimeLimit:.65
