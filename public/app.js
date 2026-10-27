@@ -20,6 +20,20 @@
     aspect: 'landscape',
     showTitle: true,
     showLogo: false,
+    logoShape: 'circle',
+    logoPulseEnabled: true,
+    logoPulseMode: 'both',
+    logoPulseAmount: 45,
+    logoHaloEnabled: true,
+    logoHaloCount: 3,
+    logoHaloWidth: 2,
+    logoHaloColor: '#d6b57c',
+    logoGlow: 14,
+    showVisualizer: true,
+    visualizerGradient: true,
+    visualizerShadow: 12,
+    visualizerFilter: 'none',
+    visualizerLayers: [],
     showParticles: true,
     showVignette: true,
     vignette: 65,
@@ -102,6 +116,7 @@
     toastTimer: null,
     lastFrameTime: 0,
     particles: [],
+    visualizerLayers: [],
     playing: false
   };
 
@@ -154,6 +169,20 @@
     $('#aspectSelect').value = state.aspect;
     $('#showTitle').checked = state.showTitle;
     $('#showLogo').checked = state.showLogo;
+    $('#logoShapeSelect').value = state.logoShape;
+    $('#logoPreview').dataset.shape = state.logoShape;
+    $('#logoPulseEnabled').checked = state.logoPulseEnabled;
+    $('#logoPulseModeSelect').value = state.logoPulseMode;
+    $('#logoPulseAmountRange').value = state.logoPulseAmount;
+    $('#logoHaloEnabled').checked = state.logoHaloEnabled;
+    $('#logoHaloCountRange').value = state.logoHaloCount;
+    $('#logoHaloWidthRange').value = state.logoHaloWidth;
+    $('#logoHaloColorInput').value = state.logoHaloColor;
+    $('#logoGlowRange').value = state.logoGlow;
+    $('#showVisualizer').checked = state.showVisualizer;
+    $('#visualizerGradientEnabled').checked = state.visualizerGradient;
+    $('#visualizerShadowRange').value = state.visualizerShadow;
+    $('#visualizerFilterSelect').value = state.visualizerFilter;
     $('#showParticles').checked = state.showParticles;
     $('#showVignette').checked = state.showVignette;
     $('#vignetteRange').value = state.vignette;
@@ -197,6 +226,11 @@
     $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
     $('#logoSizeOutput').textContent = state.logoSize + '%';
     $('#logoOpacityOutput').textContent = state.logoOpacity + '%';
+    $('#logoPulseAmountOutput').textContent = state.logoPulseAmount + '%';
+    $('#logoHaloCountOutput').textContent = String(state.logoHaloCount);
+    $('#logoHaloWidthOutput').textContent = String(state.logoHaloWidth);
+    $('#logoGlowOutput').textContent = String(state.logoGlow);
+    $('#visualizerShadowOutput').textContent = String(state.visualizerShadow);
     $('#logoXOutput').textContent = state.logoX + '%';
     $('#logoYOutput').textContent = state.logoY + '%';
     $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
@@ -225,6 +259,7 @@
     $('#vignettePulseOutput').textContent = state.vignettePulse + '%';
     $('#sensitivityOutput').textContent = Number(state.sensitivity).toFixed(1) + '×';
     $('#glowOutput').textContent = String(state.glow);
+    renderVisualizerLayerList();
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === state.style);
     });
@@ -513,56 +548,65 @@
     }
   }
 
-  function drawCenterLogo(w, h) {
-    const size = Math.max(22, Math.min(w, h) * state.logoSize / 100);
-    const cx = w * state.logoX / 100;
-    const cy = h * state.logoY / 100;
-    ctx.save();
-    ctx.globalAlpha = state.logoOpacity / 100;
+  function traceLogoShape(cx, cy, size, shape) {
+    const half = size / 2;
     ctx.beginPath();
-    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(8,11,18,0.82)';
-    ctx.shadowBlur = state.glow * 0.7;
-    ctx.shadowColor = state.colorOne;
-    ctx.fill();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2 - 1.5, 0, Math.PI * 2);
-    ctx.clip();
-    if (state.logoImage) {
-      drawCoverImageInCircle(state.logoImage, cx, cy, size);
-    } else {
-      ctx.shadowBlur = 0;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#f5f6f8';
-      ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif';
-      ctx.fillText('НсП', cx, cy);
-    }
-    ctx.restore();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = rgba(state.colorOne, 0.82);
-    ctx.lineWidth = Math.max(1.2, size * 0.012);
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2 - 1, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+    if (shape === 'square') ctx.rect(cx - half, cy - half, size, size);
+    else if (shape === 'diamond') { ctx.moveTo(cx, cy - half); ctx.lineTo(cx + half, cy); ctx.lineTo(cx, cy + half); ctx.lineTo(cx - half, cy); ctx.closePath(); }
+    else if (shape === 'hexagon') {
+      for (let i = 0; i < 6; i++) { const angle = i * Math.PI / 3 - Math.PI / 6, x = cx + Math.cos(angle) * half, y = cy + Math.sin(angle) * half; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.closePath();
+    } else ctx.arc(cx, cy, half, 0, Math.PI * 2);
   }
 
-  function drawCoverImageInCircle(image, cx, cy, size) {
+  function drawCenterLogo(w, h, now, values) {
+    const baseSize = Math.max(22, Math.min(w, h) * state.logoSize / 100);
+    const cx = w * state.logoX / 100, cy = h * state.logoY / 100;
+    const beat = clamp(values && values.beat || 0, 0, 1), bass = clamp((values && values.bass || 0) * 3.6, 0, 1);
+    const pulse = state.logoPulseMode === 'beat' ? beat : state.logoPulseMode === 'bass' ? bass : Math.max(beat, bass);
+    const pulseAmt = state.logoPulseEnabled ? pulse * state.logoPulseAmount / 100 : 0;
+    const size = baseSize * (1 + pulseAmt * 0.28);
+    ctx.save();
+    if (state.logoHaloEnabled && state.logoHaloCount > 0) {
+      for (let ring = state.logoHaloCount; ring >= 1; ring--) {
+        const radiusSize = size * (1.18 + ring * 0.19 + pulseAmt * 0.13), count = Math.max(48, 128 - ring * 10);
+        ctx.save(); ctx.globalAlpha = state.logoOpacity / 100 * (0.25 + (state.logoHaloCount - ring + 1) / state.logoHaloCount * 0.62);
+        ctx.lineWidth = Math.max(1, state.logoHaloWidth * (ring === 1 ? 1.35 : 0.8)); ctx.lineCap = 'round';
+        for (let i = 0; i < count; i++) {
+          const angle = i / count * Math.PI * 2, level = values && values.level ? values.level(i + ring * 11, count) : 0.1;
+          const inner = radiusSize * 0.47, outer = inner + size * (0.03 + level * 0.2 + pulseAmt * 0.08);
+          ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner); ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+          ctx.strokeStyle = i % 5 === 0 ? state.logoHaloColor : rgba(state.logoHaloColor, 0.78); ctx.shadowColor = state.logoHaloColor; ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      for (let ring = 1; ring <= state.logoHaloCount; ring++) {
+        traceLogoShape(cx, cy, size * (1.12 + ring * 0.16 + pulseAmt * 0.1), state.logoShape);
+        ctx.strokeStyle = rgba(state.logoHaloColor, 0.1 + pulseAmt * 0.17); ctx.lineWidth = Math.max(0.8, state.logoHaloWidth * 0.65); ctx.shadowBlur = Math.min(16, state.logoGlow * 0.55); ctx.shadowColor = state.logoHaloColor; ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = state.logoOpacity / 100;
+    traceLogoShape(cx, cy, size, state.logoShape); ctx.fillStyle = 'rgba(8,11,18,0.86)'; ctx.shadowBlur = state.logoGlow + pulseAmt * 15; ctx.shadowColor = state.logoHaloColor; ctx.fill();
+    ctx.save(); traceLogoShape(cx, cy, Math.max(1, size - 3), state.logoShape); ctx.clip();
+    if (state.logoImage) drawCoverImageInShape(state.logoImage, cx, cy, size);
+    else { ctx.shadowBlur = 0; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f5f6f8'; ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif'; ctx.fillText('НсП', cx, cy); }
+    ctx.restore(); ctx.shadowBlur = 0; traceLogoShape(cx, cy, size, state.logoShape); ctx.strokeStyle = rgba(state.logoHaloColor, 0.9); ctx.lineWidth = Math.max(1.2, size * 0.012); ctx.stroke(); ctx.restore();
+  }
+
+  function drawCoverImageInShape(image, cx, cy, size) {
     if (!image || !image.width || !image.height) return;
-    const scale = Math.max(size / image.width, size / image.height);
-    const iw = image.width * scale;
-    const ih = image.height * scale;
+    const scale = Math.max(size / image.width, size / image.height), iw = image.width * scale, ih = image.height * scale;
     ctx.drawImage(image, cx - iw / 2, cy - ih / 2, iw, ih);
   }
 
 
   function colorGradient(y1, y2) {
     const gradient = ctx.createLinearGradient(0, y1, 0, y2);
-    gradient.addColorStop(0, state.colorOne);
-    gradient.addColorStop(0.52, state.colorTwo);
-    gradient.addColorStop(1, rgba(state.colorTwo, 0.08));
+    if (!state.visualizerGradient) {
+      gradient.addColorStop(0, state.colorOne); gradient.addColorStop(0.52, state.colorOne); gradient.addColorStop(1, rgba(state.colorOne, 0.08));
+    } else {
+      gradient.addColorStop(0, state.colorOne); gradient.addColorStop(0.52, state.colorTwo); gradient.addColorStop(1, rgba(state.colorTwo, 0.08));
+    }
     return gradient;
   }
 
@@ -901,6 +945,40 @@
     ctx.restore();
   }
 
+
+  function visualizerFilterCss(filter) {
+    return ({none:'',punch:'contrast(1.22) saturate(1.18)',mono:'grayscale(1) contrast(1.08)',warm:'sepia(.25) saturate(1.25)',cold:'hue-rotate(16deg) saturate(1.22)',bloom:'brightness(1.18) saturate(1.45)'})[filter] || '';
+  }
+  function drawSelectedVisualizer(w,h,now,values) {
+    if (state.style === 'spectrum') drawSpectrum(w,h,now,values);
+    else if (state.style === 'orbit') drawOrbit(w,h,now,values);
+    else if (state.style === 'wave') drawWave(w,h,now,values);
+    else if (state.style === 'aurora') drawAurora(w,h,now,values);
+    else if (state.style === 'radial') drawRadial(w,h,now,values);
+    else if (state.style === 'impact') drawImpact(w,h,now,values);
+    else if (state.style === 'matrix') drawMatrix(w,h,now,values);
+    else if (state.style === 'scope') drawScope(w,h,now,values);
+    else if (state.style === 'tunnel') drawTunnel(w,h,now,values);
+    else if (state.style === 'shockwave') drawShockwave(w,h,now,values);
+    else if (state.style === 'bars3d') drawBars3d(w,h,now,values);
+  }
+  function drawVisualizerLayer(w,h,now,values,layer) {
+    const original={colorOne:state.colorOne,colorTwo:state.colorTwo,glow:state.glow,visualizerGradient:state.visualizerGradient};
+    const colorOne=layer?layer.colorOne:state.colorOne,colorTwo=layer?layer.colorTwo:state.colorTwo;
+    const glow=layer?layer.glow:state.glow,gradient=layer?layer.gradient:state.visualizerGradient;
+    const shadow=layer?layer.shadow:state.visualizerShadow;
+    state.colorOne=colorOne;state.colorTwo=gradient?colorTwo:colorOne;state.glow=glow;state.visualizerGradient=gradient;
+    const impact=state.cameraShakeMode==='beat'?values.beat:state.cameraShakeMode==='bass'?clamp(values.bass*3.6,0,1):Math.max(values.beat,clamp(values.bass*3.6,0,1));
+    const dx=w*state.visualX/100+(state.cameraShakeEnabled?state.cameraShake*impact*Math.sin(now*.117):0)+(layer?w*layer.x/100:0);
+    const dy=h*state.visualY/100+(state.cameraShakeEnabled?state.cameraShake*impact*.72*Math.cos(now*.151):0)+(layer?h*layer.y/100:0);
+    const scale=state.visualScale/100*(1+impact*state.visualizerPulse/100*.34)*(layer?layer.scale/100:1);
+    ctx.save();ctx.translate(w*.5+dx,h*.5+dy);ctx.scale(scale,scale);ctx.translate(-w*.5,-h*.5);
+    ctx.globalAlpha=state.visualOpacity/100*(layer?layer.opacity/100:1);
+    if('filter' in ctx){const pieces=[visualizerFilterCss(state.visualizerFilter)];if(shadow>0)pieces.push('drop-shadow(0px 0px '+Math.min(40,shadow)+'px '+colorOne+')');ctx.filter=pieces.filter(Boolean).join(' ')||'none';}
+    drawSelectedVisualizer(w,h,now,values);ctx.restore();
+    state.colorOne=original.colorOne;state.colorTwo=original.colorTwo;state.glow=original.glow;state.visualizerGradient=original.visualizerGradient;
+  }
+
   function drawFrame(now) {
     if (!ctx) return;
     const w = canvas.width;
@@ -915,30 +993,14 @@
     const effects = { pulse: impactPulse, shakeX: shakeX, shakeY: shakeY, shakeEnabled: state.cameraShakeEnabled };
     drawBackground(w, h, now, values, effects);
 
-    const dx = w * state.visualX / 100 + (state.cameraShakeEnabled ? shakeX : 0);
-    const dy = h * state.visualY / 100 + (state.cameraShakeEnabled ? shakeY : 0);
-    const scale = state.visualScale / 100 * (1 + impactPulse * state.visualizerPulse / 100 * 0.34);
-    ctx.save();
-    ctx.translate(w * 0.5 + dx, h * 0.5 + dy);
-    ctx.scale(scale, scale);
-    ctx.translate(-w * 0.5, -h * 0.5);
-    ctx.globalAlpha = state.visualOpacity / 100;
-    if (state.style === 'spectrum') drawSpectrum(w, h, now, values);
-    else if (state.style === 'orbit') drawOrbit(w, h, now, values);
-    else if (state.style === 'wave') drawWave(w, h, now, values);
-    else if (state.style === 'aurora') drawAurora(w, h, now, values);
-    else if (state.style === 'radial') drawRadial(w, h, now, values);
-    else if (state.style === 'impact') drawImpact(w, h, now, values);
-    else if (state.style === 'matrix') drawMatrix(w, h, now, values);
-    else if (state.style === 'scope') drawScope(w, h, now, values);
-    else if (state.style === 'tunnel') drawTunnel(w, h, now, values);
-    else if (state.style === 'shockwave') drawShockwave(w, h, now, values);
-    else if (state.style === 'bars3d') drawBars3d(w, h, now, values);
-    ctx.restore();
+    if (state.showVisualizer) {
+      drawVisualizerLayer(w,h,now,values,null);
+      state.visualizerLayers.forEach(function(layer){if(layer.enabled!==false)drawVisualizerLayer(w,h,now,values,layer);});
+    }
 
     ctx.save();
     if (state.cameraShakeEnabled) ctx.translate(shakeX * 0.32, shakeY * 0.32);
-    if (state.showLogo) drawCenterLogo(w, h);
+    if (state.showLogo) drawCenterLogo(w,h,now,values);
     drawTypography(w, h);
     ctx.restore();
     state.lastFrameTime = now;
@@ -1295,6 +1357,11 @@
   function updatePositionOutputs() {
     $('#logoSizeOutput').textContent = state.logoSize + '%';
     $('#logoOpacityOutput').textContent = state.logoOpacity + '%';
+    $('#logoPulseAmountOutput').textContent = state.logoPulseAmount + '%';
+    $('#logoHaloCountOutput').textContent = String(state.logoHaloCount);
+    $('#logoHaloWidthOutput').textContent = String(state.logoHaloWidth);
+    $('#logoGlowOutput').textContent = String(state.logoGlow);
+    $('#visualizerShadowOutput').textContent = String(state.visualizerShadow);
     $('#logoXOutput').textContent = state.logoX + '%';
     $('#logoYOutput').textContent = state.logoY + '%';
     $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
@@ -1460,6 +1527,9 @@
         aspect: state.aspect,
         showTitle: state.showTitle,
         showLogo: state.showLogo,
+        logoShape: state.logoShape, logoPulseEnabled: state.logoPulseEnabled, logoPulseMode: state.logoPulseMode, logoPulseAmount: state.logoPulseAmount,
+        logoHaloEnabled: state.logoHaloEnabled, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
+        showVisualizer: state.showVisualizer, visualizerGradient: state.visualizerGradient, visualizerShadow: state.visualizerShadow, visualizerFilter: state.visualizerFilter, visualizerLayers: state.visualizerLayers,
         showParticles: state.showParticles,
         showVignette: state.showVignette,
         vignette: state.vignette,
@@ -1539,6 +1609,14 @@
       if (['landscape', 'square', 'portrait'].includes(v.aspect)) state.aspect = v.aspect;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showLogo === 'boolean') state.showLogo = v.showLogo;
+      if (typeof v.showVisualizer === 'boolean') state.showVisualizer = v.showVisualizer;
+      if (typeof v.logoPulseEnabled === 'boolean') state.logoPulseEnabled = v.logoPulseEnabled;
+      if (typeof v.logoHaloEnabled === 'boolean') state.logoHaloEnabled = v.logoHaloEnabled;
+      if (['circle','square','diamond','hexagon'].includes(v.logoShape)) state.logoShape = v.logoShape;
+      if (['beat','bass','both'].includes(v.logoPulseMode)) state.logoPulseMode = v.logoPulseMode;
+      if (['none','punch','mono','warm','cold','bloom'].includes(v.visualizerFilter)) state.visualizerFilter = v.visualizerFilter;
+      if (typeof v.visualizerGradient === 'boolean') state.visualizerGradient = v.visualizerGradient;
+      if (Array.isArray(v.visualizerLayers)) state.visualizerLayers = v.visualizerLayers.slice(0,8).filter(function(layer){return layer&&typeof layer==='object';}).map(function(layer,index){return {id:index+1,colorOne:/^#[0-9a-f]{6}$/i.test(layer.colorOne||'')?layer.colorOne:'#8b97b0',colorTwo:/^#[0-9a-f]{6}$/i.test(layer.colorTwo||'')?layer.colorTwo:'#d6b57c',opacity:clamp(Number(layer.opacity)||70,0,100),glow:clamp(Number(layer.glow)||0,0,40),shadow:clamp(Number(layer.shadow)||0,0,40),scale:clamp(Number(layer.scale)||94,50,150),x:clamp(Number(layer.x)||0,-35,35),y:clamp(Number(layer.y)||0,-35,35),gradient:layer.gradient!==false,enabled:layer.enabled!==false};});
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
@@ -1557,7 +1635,7 @@
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
         particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3],
         particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90],
-        cameraShake: [0, 24], visualizerPulse: [0, 100], particlePulse: [0, 100], vignettePulse: [0, 100]
+        cameraShake: [0, 24], visualizerPulse: [0, 100], particlePulse: [0, 100], vignettePulse: [0, 100], logoPulseAmount:[0,100], logoHaloCount:[0,6], logoHaloWidth:[1,8], logoGlow:[0,30], visualizerShadow:[0,40]
       };
       Object.keys(numericSettings).forEach(function (key) {
         if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
@@ -1569,6 +1647,8 @@
 
   function resetSettings() {
     Object.assign(state, defaults);
+    state.visualizerLayers = [];
+    nextVisualizerLayerId = 1;
     removeLogo();
     removeBackground();
     initParticles();
@@ -1579,6 +1659,84 @@
     setStyle(state.style);
     toast('Настройки возвращены к исходным.');
   }
+
+  let nextVisualizerLayerId = 1;
+  function renderVisualizerLayerList() {
+    const host=$('#visualizerLayerList'); if(!host)return;host.innerHTML='';
+    if(!state.visualizerLayers.length){const empty=document.createElement('p');empty.className='empty-layer-note';empty.textContent='Пока только основной слой.';host.appendChild(empty);}
+    state.visualizerLayers.forEach(function(layer,index){
+      const card=document.createElement('section');card.className='visual-layer-card';
+      card.innerHTML=`
+        <div class="visual-layer-head"><b>Слой ${index+2}</b><button type="button" class="text-button layer-remove-button" data-remove-layer="${layer.id}">Удалить</button></div>
+        <div class="color-row layer-color-row">
+          <label class="color-control"><input type="color" data-layer-id="${layer.id}" data-layer-key="colorOne" value="${layer.colorOne}"><span><b>ЦВЕТ 1</b><small>Основной</small></span></label>
+          <label class="color-control"><input type="color" data-layer-id="${layer.id}" data-layer-key="colorTwo" value="${layer.colorTwo}"><span><b>ЦВЕТ 2</b><small>Градиент</small></span></label>
+        </div>
+        <div class="two-range-grid layer-range-grid">
+          <label><span>Прозрачность <output>${layer.opacity}%</output></span><input type="range" min="0" max="100" data-layer-id="${layer.id}" data-layer-key="opacity" value="${layer.opacity}"></label>
+          <label><span>Масштаб <output>${layer.scale}%</output></span><input type="range" min="50" max="150" data-layer-id="${layer.id}" data-layer-key="scale" value="${layer.scale}"></label>
+        </div>
+        <div class="two-range-grid layer-range-grid">
+          <label><span>Свечение <output>${layer.glow}</output></span><input type="range" min="0" max="40" data-layer-id="${layer.id}" data-layer-key="glow" value="${layer.glow}"></label>
+          <label><span>Тень <output>${layer.shadow}</output></span><input type="range" min="0" max="40" data-layer-id="${layer.id}" data-layer-key="shadow" value="${layer.shadow}"></label>
+        </div>
+        <div class="two-range-grid layer-range-grid">
+          <label><span>Сдвиг X <output>${layer.x}%</output></span><input type="range" min="-35" max="35" data-layer-id="${layer.id}" data-layer-key="x" value="${layer.x}"></label>
+          <label><span>Сдвиг Y <output>${layer.y}%</output></span><input type="range" min="-35" max="35" data-layer-id="${layer.id}" data-layer-key="y" value="${layer.y}"></label>
+        </div>
+        <label class="toggle-row layer-gradient-row"><span><b>Градиент слоя</b><small>Использовать оба цвета</small></span><input type="checkbox" data-layer-id="${layer.id}" data-layer-key="gradient" ${layer.gradient?'checked':''}><i></i></label>`;
+      host.appendChild(card);
+    });
+    $('#visualizerLayerCount').textContent=(state.visualizerLayers.length+1)+' слой'+(state.visualizerLayers.length===0?'а':state.visualizerLayers.length<4?'а':'ев');
+    $('#addVisualizerLayerButton').disabled=state.visualizerLayers.length>=8;
+    $('#addVisualizerLayerButton').textContent=state.visualizerLayers.length>=8?'Лимит: 9 слоёв':'＋ Добавить слой';
+  }
+  function addVisualizerLayer() {
+    if(state.visualizerLayers.length>=8){toast('Максимум 9 слоёв вместе с основным.');return;}
+    const prev=state.visualizerLayers.length?state.visualizerLayers[state.visualizerLayers.length-1]:{colorOne:state.colorOne,colorTwo:state.colorTwo,glow:state.glow,shadow:state.visualizerShadow,scale:100,x:0,y:0};
+    state.visualizerLayers.push({id:nextVisualizerLayerId++,colorOne:prev.colorTwo||state.colorTwo,colorTwo:prev.colorOne||state.colorOne,opacity:72,glow:Math.round((prev.glow||0)*.7),shadow:Math.round((prev.shadow||0)*.7),scale:Math.max(50,Math.min(150,(prev.scale||100)-6)),x:Number(prev.x||0),y:Number(prev.y||0),gradient:true,enabled:true});
+    renderVisualizerLayerList();drawFrame(performance.now());
+  }
+  $('#addVisualizerLayerButton').addEventListener('click',addVisualizerLayer);
+  $('#visualizerLayerList').addEventListener('input',function(event){
+    const input=event.target.closest('[data-layer-id][data-layer-key]');if(!input)return;
+    const layer=state.visualizerLayers.find(item=>String(item.id)===input.dataset.layerId);if(!layer)return;
+    const key=input.dataset.layerKey;layer[key]=input.type==='checkbox'?input.checked:input.type==='color'?input.value:Number(input.value);
+    const output=input.closest('label')&&input.closest('label').querySelector('output');if(output)output.textContent=input.value+(['opacity','scale','x','y'].includes(key)?'%':'');
+  });
+  $('#visualizerLayerList').addEventListener('click',function(event){
+    const button=event.target.closest('[data-remove-layer]');if(!button)return;
+    state.visualizerLayers=state.visualizerLayers.filter(layer=>String(layer.id)!==button.dataset.removeLayer);renderVisualizerLayerList();drawFrame(performance.now());
+  });
+
+  function setSettingsTab(name) {
+    $$('.settings-tab').forEach(function(button){const active=button.dataset.settingsTab===name;button.classList.toggle('active',active);button.setAttribute('aria-selected',active?'true':'false');button.tabIndex=active?0:-1;});
+    $$('[data-settings-panel]').forEach(function(panel){panel.hidden=panel.dataset.settingsPanel!==name;});
+  }
+  $$('.settings-tab').forEach(function(button){button.addEventListener('click',function(){setSettingsTab(button.dataset.settingsTab);});});
+  $$('.settings-tab').forEach(function(button,index,buttons){button.addEventListener('keydown',function(event){
+    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();
+    const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowRight'?1:buttons.length-1))%buttons.length;
+    buttons[next].focus();setSettingsTab(buttons[next].dataset.settingsTab);
+  });});
+
+  function setSiteWeather(mode,persist) {
+    if(!['off','snow','leaves'].includes(mode))mode='off';
+    const select=$('#siteParticlesMode'),layer=$('#siteWeatherLayer');select.value=mode;layer.innerHTML='';layer.dataset.mode=mode;
+    if(mode!=='off'){
+      const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches,total=reduced?8:22;
+      for(let i=0;i<total;i++){
+        const particle=document.createElement('span');particle.className='site-weather-particle';particle.textContent=mode==='snow'?'❄':'❧';
+        particle.style.left=(2+Math.random()*96).toFixed(1)+'%';particle.style.animationDuration=(3.8+Math.random()*7.5).toFixed(2)+'s';
+        particle.style.animationDelay=(-Math.random()*9).toFixed(2)+'s';particle.style.fontSize=(mode==='snow'?7+Math.random()*9:10+Math.random()*10)+'px';
+        particle.style.opacity=(.22+Math.random()*.48).toFixed(2);particle.style.setProperty('--drift',((Math.random()-.5)*38).toFixed(1)+'px');layer.appendChild(particle);
+      }
+    }
+    if(persist){try{localStorage.setItem('nsp-site-weather',mode);}catch{}}
+  }
+  $('#siteParticlesMode').addEventListener('change',function(event){setSiteWeather(event.target.value,true);});
+  let savedWeather='off';try{savedWeather=localStorage.getItem('nsp-site-weather')||'off';}catch{}
+  setSiteWeather(savedWeather,false);
 
   const logoFileInput = $('#logoFile');
   const backgroundFileInput = $('#backgroundFile');
@@ -1603,6 +1761,7 @@
     ['visualScaleRange', 'visualScale'], ['visualOpacityRange', 'visualOpacity'], ['visualLineWidthRange', 'visualLineWidth'],
     ['titleXRange', 'titleX'], ['titleYRange', 'titleY'], ['titleSizeRange', 'titleSize'], ['titleOpacityRange', 'titleOpacity'],
     ['artistXRange', 'artistX'], ['artistYRange', 'artistY'], ['artistSizeRange', 'artistSize'], ['artistOpacityRange', 'artistOpacity'],
+    ['logoPulseAmountRange','logoPulseAmount'], ['logoHaloCountRange','logoHaloCount'], ['logoHaloWidthRange','logoHaloWidth'], ['logoGlowRange','logoGlow'], ['visualizerShadowRange','visualizerShadow'],
     ['vignetteRange', 'vignette'], ['backgroundOpacityRange', 'backgroundOpacity'],
     ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'], ['particleSpeedRange', 'particleSpeed'],
     ['particleOpacityRange', 'particleOpacity'], ['particleGlowRange', 'particleGlow'],
@@ -1746,7 +1905,15 @@
   });
   $('#showTitle').addEventListener('change', function (event) { state.showTitle = event.target.checked; });
   $('#showLogo').addEventListener('change', function (event) { state.showLogo = event.target.checked; });
+  $('#logoShapeSelect').addEventListener('change', function(event){state.logoShape=event.target.value;$('#logoPreview').dataset.shape=state.logoShape;});
+  $('#logoPulseEnabled').addEventListener('change', function(event){state.logoPulseEnabled=event.target.checked;});
+  $('#logoPulseModeSelect').addEventListener('change', function(event){state.logoPulseMode=event.target.value;});
+  $('#logoHaloEnabled').addEventListener('change', function(event){state.logoHaloEnabled=event.target.checked;});
+  $('#logoHaloColorInput').addEventListener('input', function(event){state.logoHaloColor=event.target.value;});
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
+  $('#showVisualizer').addEventListener('change', function(event){state.showVisualizer=event.target.checked;});
+  $('#visualizerGradientEnabled').addEventListener('change', function(event){state.visualizerGradient=event.target.checked;});
+  $('#visualizerFilterSelect').addEventListener('change', function(event){state.visualizerFilter=event.target.value;});
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
   $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
   $('#cameraShakeModeSelect').addEventListener('change', function (event) { state.cameraShakeMode = event.target.value; });
@@ -1775,6 +1942,8 @@
   });
 
   loadPreset();
+  state.visualizerLayers = Array.isArray(state.visualizerLayers) ? state.visualizerLayers : [];
+  nextVisualizerLayerId = state.visualizerLayers.reduce(function(max,layer){return Math.max(max,Number(layer.id)||0);},0)+1;
   initParticles();
   updateSettingsUI();
   setStyle(state.style);
