@@ -363,7 +363,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       const settings=kind==='rubber'?{friction:.35,restitution:.82}:kind==='ice'?{friction:.2,restitution:.61}:kind==='cube'?{friction:.42,restitution:.35}:{friction:.4,restitution:.3};
       world.addContactMaterial(new CANNON.ContactMaterial(physicsMaterials[kind],physicsMaterials.wall,{...settings,contactEquationStiffness:1e7,contactEquationRelaxation:4}));
     }
-    world.gravity.set(gravityX,gravityY,0);
+    world.gravity.set(gravityX,gravityY,gravityZ);
     rebuildWalls();
   }
 
@@ -569,17 +569,32 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function onCollision(item,event){
     const other=bodies.get(event.body);
-    if(!other || other===item)return;
+    let impact=0;
+    try{impact=Math.abs(event.contact.getImpactVelocityAlongNormal());}catch(_){
+      const a=item.body.velocity;
+      const b=event.body?.velocity||{x:0,y:0,z:0};
+      impact=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+    }
+    if(!other){
+      if(impact>1.15){
+        playImpact(item.kind,impact,item.body.position.x);
+        const p=item.body.position;
+        const av=item.body.angularVelocity;
+        const nearX=Math.abs(p.x)>sideX-item.radius*1.5;
+        const nearY=p.y<floorY+item.radius*1.5||p.y>ceilY-item.radius*1.5;
+        const nearZ=Math.abs(p.z)>.52;
+        if(nearX){av.y*=.48;av.z*=.42;}
+        if(nearY){av.x*=.42;av.z*=.44;}
+        if(nearZ){av.x*=.62;av.y*=.62;}
+      }
+      return;
+    }
+    if(other===item)return;
     const minId=Math.min(item.id,other.id), maxId=Math.max(item.id,other.id);
     const key=minId+':'+maxId;
     const now=performance.now();
     const last=collisionTimes.get(key)||0;
     if(now-last<62)return;
-    let impact=0;
-    try{impact=Math.abs(event.contact.getImpactVelocityAlongNormal());}catch(_){
-      const a=item.body.velocity,b=other.body.velocity;
-      impact=Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
-    }
     if(impact<1.05)return;
     collisionTimes.set(key,now);
     if(collisionTimes.size>180){
@@ -807,13 +822,21 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function boundsFor(item){
     const pos=item.body.position;
     const radius=item.radius*.88;
-    if(pos.x<-sideX+radius){pos.x=-sideX+radius;if(item.body.velocity.x<0){addWallImpact(item.kind,Math.abs(item.body.velocity.x),pos.x);item.body.velocity.x=Math.abs(item.body.velocity.x)*.84;item.body.angularVelocity.z+=.25;}}
-    if(pos.x>sideX-radius){pos.x=sideX-radius;if(item.body.velocity.x>0){addWallImpact(item.kind,Math.abs(item.body.velocity.x),pos.x);item.body.velocity.x=-Math.abs(item.body.velocity.x)*.84;item.body.angularVelocity.z-=.25;}}
+    const av=item.body.angularVelocity;
+    if(pos.x<-sideX+radius){pos.x=-sideX+radius;if(item.body.velocity.x<0){addWallImpact(item.kind,Math.abs(item.body.velocity.x),pos.x);item.body.velocity.x=Math.abs(item.body.velocity.x)*.78;av.y*=.48;av.z*=.42;}}
+    if(pos.x>sideX-radius){pos.x=sideX-radius;if(item.body.velocity.x>0){addWallImpact(item.kind,Math.abs(item.body.velocity.x),pos.x);item.body.velocity.x=-Math.abs(item.body.velocity.x)*.78;av.y*=.48;av.z*=.42;}}
     const rY=item.kind==='rubber'?radius:radius*1.18;
-    if(pos.y<floorY+rY){pos.y=floorY+rY;if(item.body.velocity.y<-.25){addWallImpact(item.kind,Math.abs(item.body.velocity.y),pos.x);item.body.velocity.y=Math.abs(item.body.velocity.y)*(item.kind==='rubber'?.88:.7);item.body.angularVelocity.z+=item.body.velocity.x*.12;}else if(Math.abs(item.body.velocity.y)<.4)item.body.velocity.y=0;}
-    if(pos.y>ceilY-rY){pos.y=ceilY-rY;if(item.body.velocity.y>0){addWallImpact(item.kind,Math.abs(item.body.velocity.y),pos.x);item.body.velocity.y=-Math.abs(item.body.velocity.y)*.72;}}
-    if(pos.z<-.72){pos.z=-.72;if(item.body.velocity.z<0)item.body.velocity.z=Math.abs(item.body.velocity.z)*.72;}
-    if(pos.z>.72){pos.z=.72;if(item.body.velocity.z>0)item.body.velocity.z=-Math.abs(item.body.velocity.z)*.72;}
+    if(pos.y<floorY+rY){
+      pos.y=floorY+rY;
+      if(item.body.velocity.y<-.25){addWallImpact(item.kind,Math.abs(item.body.velocity.y),pos.x);item.body.velocity.y=Math.abs(item.body.velocity.y)*(item.kind==='rubber'?.86:.67);av.x*=.42;av.z*=.44;}
+      else if(Math.abs(item.body.velocity.y)<.4)item.body.velocity.y=0;
+      if(Math.abs(item.body.velocity.y)<.18&&Math.abs(av.x)+Math.abs(av.z)<.45){av.x*=.82;av.z*=.82;}
+    }
+    if(pos.y>ceilY-rY){pos.y=ceilY-rY;if(item.body.velocity.y>0){addWallImpact(item.kind,Math.abs(item.body.velocity.y),pos.x);item.body.velocity.y=-Math.abs(item.body.velocity.y)*.68;av.x*=.58;av.z*=.58;}}
+    if(pos.z<-.72){pos.z=-.72;if(item.body.velocity.z<0){item.body.velocity.z=Math.abs(item.body.velocity.z)*.68;av.x*=.62;av.y*=.62;}}
+    if(pos.z>.72){pos.z=.72;if(item.body.velocity.z>0){item.body.velocity.z=-Math.abs(item.body.velocity.z)*.68;av.x*=.62;av.y*=.62;}}
+    const maxSpin=11;
+    av.x=clamp(av.x,-maxSpin,maxSpin);av.y=clamp(av.y,-maxSpin,maxSpin);av.z=clamp(av.z,-maxSpin,maxSpin);
   }
 
   const raycaster=new THREE.Raycaster();
@@ -849,6 +872,12 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     while(mesh.parent && !items.some(i=>i.mesh===mesh))mesh=mesh.parent;
     const item=items.find(i=>i.mesh===mesh);
     if(!item)return;
+    if(paintMode){
+      if(item.material?.color)item.material.color.set(selectedPaintColor);
+      item.body.wakeUp();
+      status('Цвет предмета изменён');
+      return;
+    }
     item.body.wakeUp();
     const p=pointerWorld(event,item.body.position.z);
     dragging={
@@ -904,8 +933,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         clamp((b.x-a.x)/seconds*.11,-4.5,4.5)
       );
       const offset=d.offset;
-      const spin=clamp(((b.x-a.x)*offset.y-(b.y-a.y)*offset.x)*.7,-8,8);
-      item.body.angularVelocity.set(clamp(item.body.velocity.y*.2,-1.8,1.8),clamp(-item.body.velocity.x*.2,-1.8,1.8),spin);
+      const spin=clamp(((b.x-a.x)*offset.y-(b.y-a.y)*offset.x)*1.6,-8,8);
+      item.body.angularVelocity.set(clamp(item.body.velocity.z*1.1,-2.5,2.5),clamp(-item.body.velocity.z*.8,-2,2),spin);
       item.body.wakeUp();
       playImpact(item.kind,Math.hypot(item.body.velocity.x,item.body.velocity.y),item.body.position.x);
       if(item.kind==='tnt')item.fuseAt=performance.now()+1800;
@@ -950,18 +979,29 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function updateTilt(event){
     if(!tiltEnabled||event.beta==null||event.gamma==null)return;
     if(!tiltReference)tiltReference={beta:event.beta,gamma:event.gamma};
-    const beta=event.beta-tiltReference.beta;
-    const gamma=event.gamma-tiltReference.gamma;
-    gravityX=clamp(gamma*.18,-12,12);
-    gravityY=clamp(-12+beta*.12,-18,8);
-    world.gravity.set(gravityX,gravityY,0);
+    const beta=THREE.MathUtils.degToRad(event.beta-tiltReference.beta);
+    const gamma=THREE.MathUtils.degToRad(event.gamma-tiltReference.gamma);
+    const rawAngle=(screen.orientation&&Number.isFinite(screen.orientation.angle)?screen.orientation.angle:
+      (Number.isFinite(window.orientation)?window.orientation:0));
+    const screenAngle=THREE.MathUtils.degToRad(rawAngle);
+    const tiltX=gamma*Math.cos(screenAngle)-beta*Math.sin(screenAngle);
+    const tiltY=gamma*Math.sin(screenAngle)+beta*Math.cos(screenAngle);
+    const g=12;
+    gravityX=clamp(Math.sin(tiltX)*g,-g,g);
+    gravityY=clamp(-Math.cos(tiltX)*Math.cos(tiltY)*g,-g,g);
+    gravityZ=clamp(Math.sin(tiltY)*g,-g,g);
+    world.gravity.set(gravityX,gravityY,gravityZ);
+    if(Math.abs(gravityX)>.75||Math.abs(gravityZ)>.75){
+      for(const item of items)item.body.wakeUp();
+    }
   }
 
   async function toggleTilt(){
     if(tiltEnabled){
       tiltEnabled=false;tiltReference=null;
       window.removeEventListener('deviceorientation',updateTilt,true);
-      world.gravity.set(0,-12,0);
+      gravityX=0;gravityY=-12;gravityZ=0;
+      world.gravity.set(gravityX,gravityY,gravityZ);
       tiltButton.setAttribute('aria-pressed','false');tiltLabel.textContent='Наклон';
       status('Управление наклоном выключено');
       return;
@@ -973,6 +1013,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         if(result!=='granted'){status('Разреши доступ к датчику в браузере');return;}
       }
       tiltEnabled=true;tiltReference=null;
+      gravityX=0;gravityY=-12;gravityZ=0;
+      world.gravity.set(gravityX,gravityY,gravityZ);
       window.addEventListener('deviceorientation',updateTilt,true);
       tiltButton.setAttribute('aria-pressed','true');tiltLabel.textContent='Наклон включён';
       status('Наклоняй телефон — гравитация меняется');
@@ -986,7 +1028,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     canvas.addEventListener('pointercancel',pointerUp);
     canvas.addEventListener('lostpointercapture',()=>{if(dragging)pointerUp();});
     window.addEventListener('resize',resize,{passive:true});
-    window.addEventListener('orientationchange',()=>setTimeout(resize,120),{passive:true});
+    window.addEventListener('orientationchange',()=>{
+      if(tiltEnabled)tiltReference=null;
+      setTimeout(resize,120);
+    },{passive:true});
     document.addEventListener('visibilitychange',()=>{
       if(document.hidden){
         lastRender=0;
