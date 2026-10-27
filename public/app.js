@@ -25,6 +25,7 @@
     logoPulseMode: 'both',
     logoPulseAmount: 45,
     logoHaloEnabled: true,
+    logoHaloStyle: 'radial',
     logoHaloCount: 3,
     logoHaloWidth: 2,
     logoHaloColor: '#d6b57c',
@@ -175,6 +176,7 @@
     $('#logoPulseModeSelect').value = state.logoPulseMode;
     $('#logoPulseAmountRange').value = state.logoPulseAmount;
     $('#logoHaloEnabled').checked = state.logoHaloEnabled;
+    $('#logoHaloStyleSelect').value = state.logoHaloStyle;
     $('#logoHaloCountRange').value = state.logoHaloCount;
     $('#logoHaloWidthRange').value = state.logoHaloWidth;
     $('#logoHaloColorInput').value = state.logoHaloColor;
@@ -571,11 +573,31 @@
         const radiusSize = size * (1.18 + ring * 0.19 + pulseAmt * 0.13), count = Math.max(48, 128 - ring * 10);
         ctx.save(); ctx.globalAlpha = state.logoOpacity / 100 * (0.25 + (state.logoHaloCount - ring + 1) / state.logoHaloCount * 0.62);
         ctx.lineWidth = Math.max(1, state.logoHaloWidth * (ring === 1 ? 1.35 : 0.8)); ctx.lineCap = 'round';
-        for (let i = 0; i < count; i++) {
-          const angle = i / count * Math.PI * 2, level = values && values.level ? values.level(i + ring * 11, count) : 0.1;
-          const inner = radiusSize * 0.47, outer = inner + size * (0.03 + level * 0.2 + pulseAmt * 0.08);
-          ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner); ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
-          ctx.strokeStyle = i % 5 === 0 ? state.logoHaloColor : rgba(state.logoHaloColor, 0.78); ctx.shadowColor = state.logoHaloColor; ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.stroke();
+        if (state.logoHaloStyle === 'radial') {
+          for (let i = 0; i < count; i++) {
+            const angle = i / count * Math.PI * 2, level = values && values.level ? values.level(i + ring * 11, count) : 0.1;
+            const inner = radiusSize * 0.47, outer = inner + size * (0.03 + level * 0.2 + pulseAmt * 0.08);
+            ctx.beginPath(); ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner); ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+            ctx.strokeStyle = i % 5 === 0 ? state.logoHaloColor : rgba(state.logoHaloColor, 0.78); ctx.shadowColor = state.logoHaloColor; ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.stroke();
+          }
+        } else if (state.logoHaloStyle === 'rings') {
+          ctx.beginPath(); ctx.arc(cx, cy, radiusSize * 0.72, 0, Math.PI * 2);
+          ctx.strokeStyle = rgba(state.logoHaloColor, 0.8); ctx.shadowColor = state.logoHaloColor;
+          ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.lineWidth = Math.max(1, state.logoHaloWidth);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          const samples = 180;
+          for (let i = 0; i <= samples; i++) {
+            const angle = i / samples * Math.PI * 2;
+            const level = values && values.level ? values.level(i + ring * 17, samples) : 0.1;
+            const radius = radiusSize * 0.62 + size * (level * 0.13 + Math.sin(angle * 8 + now / 250) * 0.012);
+            const x = cx + Math.cos(angle) * radius, y = cy + Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.strokeStyle = rgba(state.logoHaloColor, 0.84); ctx.shadowColor = state.logoHaloColor;
+          ctx.shadowBlur = Math.min(24, state.logoGlow * 0.9); ctx.lineWidth = Math.max(1, state.logoHaloWidth);
+          ctx.stroke();
         }
         ctx.restore();
       }
@@ -1527,7 +1549,7 @@
         showTitle: state.showTitle,
         showLogo: state.showLogo,
         logoShape: state.logoShape, logoPulseEnabled: state.logoPulseEnabled, logoPulseMode: state.logoPulseMode, logoPulseAmount: state.logoPulseAmount,
-        logoHaloEnabled: state.logoHaloEnabled, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
+        logoHaloEnabled: state.logoHaloEnabled, logoHaloStyle: state.logoHaloStyle, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
         showVisualizer: state.showVisualizer, visualizerGradient: state.visualizerGradient, visualizerShadow: state.visualizerShadow, visualizerFilter: state.visualizerFilter, visualizerLayers: state.visualizerLayers,
         showParticles: state.showParticles,
         showVignette: state.showVignette,
@@ -1611,6 +1633,7 @@
       if (typeof v.showVisualizer === 'boolean') state.showVisualizer = v.showVisualizer;
       if (typeof v.logoPulseEnabled === 'boolean') state.logoPulseEnabled = v.logoPulseEnabled;
       if (typeof v.logoHaloEnabled === 'boolean') state.logoHaloEnabled = v.logoHaloEnabled;
+      if (['radial','rings','wave'].includes(v.logoHaloStyle)) state.logoHaloStyle = v.logoHaloStyle;
       if (['circle','square','diamond','hexagon'].includes(v.logoShape)) state.logoShape = v.logoShape;
       if (['beat','bass','both'].includes(v.logoPulseMode)) state.logoPulseMode = v.logoPulseMode;
       if (['none','punch','mono','warm','cold','bloom'].includes(v.visualizerFilter)) state.visualizerFilter = v.visualizerFilter;
