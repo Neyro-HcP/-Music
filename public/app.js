@@ -50,14 +50,8 @@
     particleColor: '#d6b57c',
     particleOpacity: 65,
     particleGlow: 0,
-    beatResponse: 1.8,
-    smoothing: 45,
-    cameraShakeEnabled: false,
-    cameraShakeMode: 'both',
-    cameraShake: 12,
-    visualizerPulse: 35,
-    particlePulse: 30,
-    vignettePulse: 28
+    beatResponse: 1.4,
+    smoothing: 45
   };
 
   const palettes = {
@@ -92,10 +86,6 @@
     recorder: null,
     recordingStream: null,
     chunks: [],
-    converting: false,
-    currentExportFormat: 'mp4',
-    currentRecorderMimeType: '',
-    ffmpegPromise: null,
     recordingStarted: 0,
     recordingTimer: null,
     toastTimer: null,
@@ -185,12 +175,6 @@
     $('#particleSpeedRange').value = state.particleSpeed;
     $('#beatResponseRange').value = state.beatResponse;
     $('#smoothingRange').value = state.smoothing;
-    $('#cameraShakeEnabled').checked = state.cameraShakeEnabled;
-    $('#cameraShakeModeSelect').value = state.cameraShakeMode;
-    $('#cameraShakeRange').value = state.cameraShake;
-    $('#visualizerPulseRange').value = state.visualizerPulse;
-    $('#particlePulseRange').value = state.particlePulse;
-    $('#vignettePulseRange').value = state.vignettePulse;
     $('#vignetteOutput').textContent = state.vignette + '%';
     $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
     $('#logoSizeOutput').textContent = state.logoSize + '%';
@@ -217,10 +201,6 @@
     $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
     $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
     $('#smoothingOutput').textContent = state.smoothing + '%';
-    $('#cameraShakeOutput').textContent = Number(state.cameraShake).toFixed(0) + ' px';
-    $('#visualizerPulseOutput').textContent = state.visualizerPulse + '%';
-    $('#particlePulseOutput').textContent = state.particlePulse + '%';
-    $('#vignettePulseOutput').textContent = state.vignettePulse + '%';
     $('#sensitivityOutput').textContent = Number(state.sensitivity).toFixed(1) + '×';
     $('#glowOutput').textContent = String(state.glow);
     $$('.preset-card').forEach(function (button) {
@@ -261,7 +241,7 @@
     $('#canvasAspectBadge').textContent = ratio.label;
   }
   function setStyle(style) {
-    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(style)) return;
+    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(style)) return;
     state.style = style;
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === style);
@@ -271,11 +251,7 @@
       orbit: 'ORBITAL FIELD',
       wave: 'PURE WAVEFORM',
       aurora: 'AURORA FLOW',
-      radial: 'SONIC CORE',
-      impact: 'BASS IMPACT',
-      matrix: 'POWER MATRIX',
-      scope: 'LIVE OSCILLOSCOPE',
-      tunnel: 'SONIC TUNNEL'
+      radial: 'SONIC CORE'
     };
     $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
     // The capped animation loop renders the new style on the next frame instead of blocking the click.
@@ -398,7 +374,7 @@
     ctx.drawImage(image, (w - iw) / 2, (h - ih) / 2, iw, ih);
   }
 
-  function drawBackground(w, h, now, audioValues, effects) {
+  function drawBackground(w, h, now, audioValues) {
     const bg = ctx.createLinearGradient(0, 0, w, h);
     bg.addColorStop(0, state.background);
     bg.addColorStop(0.55, shadeColor(state.background, 0.22));
@@ -439,7 +415,6 @@
 
     if (state.showParticles && state.particleCount > 0) {
       ctx.save();
-      if (effects && effects.shakeEnabled) ctx.translate(effects.shakeX * 0.58, effects.shakeY * 0.58);
       const travelScale = now * 0.000012 * state.particleSpeed;
       for (let i = 0; i < state.particles.length; i++) {
         const p = state.particles[i];
@@ -464,8 +439,7 @@
         }
         const x = nx * w;
         const y = ny * h;
-        const pulseSize = 1 + (effects ? effects.pulse : 0) * state.particlePulse / 100 * 0.8;
-        const size = Math.max(0.6, p.size * state.particleSize * Math.max(0.7, w / 1280) * pulseSize);
+        const size = Math.max(0.6, p.size * state.particleSize * Math.max(0.7, w / 1280));
         const shimmer = 0.72 + 0.28 * Math.sin(now / 700 * p.speed + p.phase);
         ctx.globalAlpha = state.particleOpacity / 100 * shimmer;
         ctx.fillStyle = state.particleColor;
@@ -498,8 +472,7 @@
     }
 
     if (state.showVignette && state.vignette > 0) {
-      const pulseVignette = effects ? effects.pulse * state.vignettePulse : 0;
-      const amount = clamp(state.vignette + pulseVignette, 0, 100) / 100;
+      const amount = state.vignette / 100;
       const vignette = ctx.createRadialGradient(w * 0.5, h * 0.48, Math.min(w, h) * 0.12, w * 0.5, h * 0.48, Math.max(w, h) * 0.74);
       vignette.addColorStop(0, 'rgba(0,0,0,0)');
       vignette.addColorStop(0.55, 'rgba(0,0,0,' + (amount * 0.15) + ')');
@@ -568,14 +541,14 @@
     const cell = (w - 100) / count;
     const barW = Math.max(1, (cell - gap) * (0.68 + state.visualLineWidth * 0.22));
     const baseline = h * 0.61;
-    const maxH = h * 0.34;
+    const maxH = h * 0.29;
     const gradient = colorGradient(baseline - maxH, baseline + 2);
     ctx.save();
     ctx.fillStyle = gradient;
     ctx.shadowBlur = 0;
     for (let i = 0; i < count; i++) {
       const level = values.level(i, count);
-      const barH = Math.max(2, Math.min(maxH, Math.pow(level, 0.82) * maxH * 1.12));
+      const barH = Math.max(2, Math.min(maxH, level * maxH));
       const x = 50 + i * cell + (cell - barW) * 0.5;
       ctx.globalAlpha = 0.92;
       if (ctx.roundRect) {
@@ -595,10 +568,10 @@
     ctx.shadowBlur = Math.min(18, state.glow * 0.65);
     ctx.beginPath(); ctx.moveTo(36, baseline + 1); ctx.lineTo(w - 36, baseline + 1); ctx.stroke();
     ctx.restore();
-
+    drawCoreRing(w * 0.5, h * 0.37, Math.min(w, h) * 0.07, now, values);
   }
 
-  function drawOrbit(w, h, now, values) {
+  function drawCoreRing(cx, cy, radius, now, values) {
     const beat = values && Number.isFinite(values.beat) ? values.beat : 0;
     const breathe = 1 + beat * 0.13;
     ctx.save();
@@ -635,7 +608,7 @@
     const baseWidth = Math.max(1, w / 900 * 2.0 * state.visualLineWidth);
     for (let i = 0; i < count; i++) {
       const angle = i / count * Math.PI * 2 + now / 24000;
-      const amp = Math.max(2, Math.pow(values.level(i, count), 0.82) * Math.min(w, h) * 0.17);
+      const amp = Math.max(2, values.level(i, count) * Math.min(w, h) * 0.12);
       const inner = radius + 7;
       const outer = inner + amp;
       ctx.beginPath();
@@ -646,13 +619,13 @@
       ctx.stroke();
     }
     ctx.restore();
-
+    drawCoreRing(cx, cy, radius * 0.57, now, values);
   }
 
   function drawWave(w, h, now, values) {
     const mid = h * 0.48;
     const count = 280;
-    const amplitude = h * 0.19;
+    const amplitude = h * 0.15;
     for (let layer = 2; layer >= 0; layer--) {
       ctx.save();
       ctx.beginPath();
@@ -725,7 +698,7 @@
       const angle = i / count * Math.PI * 2 - Math.PI / 2;
       const level = values.level(i, count);
       const inner = radius + Math.sin(now / 1100 + i * 0.17) * 2;
-      const outer = inner + 7 + Math.pow(level, 0.82) * Math.min(w, h) * 0.21;
+      const outer = inner + 7 + level * Math.min(w, h) * 0.15;
       ctx.beginPath();
       ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
       ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
@@ -734,7 +707,7 @@
       ctx.stroke();
     }
     ctx.restore();
-
+    drawCoreRing(cx, cy, radius * 0.75, now, values);
     ctx.save();
     ctx.strokeStyle = rgba(state.colorOne, 0.2);
     ctx.lineWidth = Math.max(1, state.visualLineWidth);
@@ -787,153 +760,16 @@
     ctx.restore();
   }
 
-  function drawFrame(now) {  function drawImpact(w, h, now, values) {
-    const cx = w * 0.5, cy = h * 0.49, size = Math.min(w, h);
-    const beat = values.beat || 0;
-    ctx.save();
-    ctx.lineCap = 'round';
-    for (let ring = 0; ring < 5; ring++) {
-      const base = size * (0.07 + ring * 0.061 + beat * 0.035);
-      ctx.beginPath();
-      for (let i = 0; i <= 220; i++) {
-        const a = i / 220 * Math.PI * 2;
-        const f = values.level(i + ring * 17, 220);
-        const r = base + f * size * (0.022 + ring * 0.002) + Math.sin(a * (7 + ring) + now / 180 + ring) * size * 0.006;
-        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = ring % 2 ? rgba(state.colorTwo, 0.5) : rgba(state.colorOne, 0.8);
-      ctx.lineWidth = Math.max(1, (3.2 - ring * 0.35) * state.visualLineWidth);
-      ctx.shadowColor = ring % 2 ? state.colorTwo : state.colorOne;
-      ctx.shadowBlur = Math.min(28, state.glow * 0.9);
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    const rays = Math.min(240, Math.max(120, Math.floor(w / 4)));
-    for (let i = 0; i < rays; i++) {
-      const a = i / rays * Math.PI * 2;
-      const f = Math.pow(values.level(i, rays), 0.8);
-      const inner = size * (0.15 + beat * 0.035);
-      const outer = inner + size * (0.045 + f * 0.18);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * inner, cy + Math.sin(a) * inner);
-      ctx.lineTo(cx + Math.cos(a) * outer, cy + Math.sin(a) * outer);
-      ctx.strokeStyle = i % 4 === 0 ? state.colorOne : rgba(state.colorTwo, 0.72);
-      ctx.lineWidth = Math.max(0.8, (i % 4 === 0 ? 2.2 : 1.15) * state.visualLineWidth);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawMatrix(w, h, now, values) {
-    const columns = Math.min(112, Math.max(64, Math.floor(w / 10)));
-    const gap = Math.max(2, w * 0.0025);
-    const columnWidth = (w - 80) / columns - gap;
-    const mid = h * 0.58;
-    const maxHeight = h * 0.37;
-    ctx.save();
-    ctx.shadowBlur = 0;
-    for (let i = 0; i < columns; i++) {
-      const level = Math.max(0.015, Math.pow(values.level(i, columns), 0.8));
-      const blocks = Math.max(1, Math.min(18, Math.ceil(level * 16)));
-      const x = 40 + i * (columnWidth + gap);
-      for (let block = 0; block < blocks; block++) {
-        const t = block / Math.max(1, blocks);
-        const bh = Math.max(2, h * 0.012);
-        const y = mid - (block + 1) * (maxHeight / 18);
-        ctx.globalAlpha = 0.35 + t * 0.65;
-        ctx.fillStyle = block > blocks - 3 ? state.colorOne : state.colorTwo;
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = block === blocks - 1 ? Math.min(20, state.glow) : 0;
-        ctx.fillRect(x, y, columnWidth, bh);
-        ctx.globalAlpha = 0.08 + t * 0.16;
-        ctx.fillRect(x, mid + (block * maxHeight / 18) + 5, columnWidth, bh * 0.8);
-      }
-    }
-    ctx.globalAlpha = 0.55;
-    ctx.shadowBlur = Math.min(18, state.glow * 0.7);
-    ctx.shadowColor = state.colorOne;
-    ctx.strokeStyle = rgba(state.colorOne, 0.5);
-    ctx.lineWidth = Math.max(1, state.visualLineWidth);
-    ctx.beginPath(); ctx.moveTo(34, mid); ctx.lineTo(w - 34, mid); ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawScope(w, h, now, values) {
-    const mid = h * 0.49;
-    const count = 680;
-    ctx.save();
-    for (let layer = 2; layer >= 0; layer--) {
-      ctx.beginPath();
-      const phase = now / 1000 * (layer === 0 ? 1 : 0.72) + layer * 0.45;
-      for (let i = 0; i <= count; i++) {
-        const x = i / count * w;
-        const wave = values.wave(i, count);
-        const low = values.level(Math.floor(i / count * 80), 80);
-        const y = mid + (wave * 0.82 + Math.sin(i / count * Math.PI * 24 + phase) * 0.09) * h * (0.22 + low * 0.1);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = layer === 0 ? state.colorOne : rgba(state.colorTwo, 0.18 + layer * 0.16);
-      ctx.lineWidth = (layer === 0 ? 3.8 : 6 - layer) * Math.max(0.7, w / 1280) * state.visualLineWidth;
-      ctx.shadowColor = layer === 0 ? state.colorOne : state.colorTwo;
-      ctx.shadowBlur = Math.min(26, state.glow * 0.85);
-      ctx.stroke();
-    }
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 0.24;
-    ctx.strokeStyle = state.colorTwo;
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 8; i++) {
-      ctx.beginPath(); ctx.moveTo(0, h * i / 8); ctx.lineTo(w, h * i / 8); ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawTunnel(w, h, now, values) {
-    const cx = w * 0.5, cy = h * 0.48, size = Math.min(w, h);
-    const sides = 10, layers = 13;
-    ctx.save();
-    ctx.lineJoin = 'round';
-    for (let layer = layers - 1; layer >= 0; layer--) {
-      const progress = layer / layers;
-      const motion = (now / 2800 + progress) % 1;
-      const radius = size * (0.035 + motion * 0.49);
-      ctx.beginPath();
-      for (let point = 0; point <= sides; point++) {
-        const angle = point / sides * Math.PI * 2 - Math.PI / 2 + now / 17000 * (layer % 2 ? 1 : -1);
-        const f = values.level(point * 5 + layer * 13, sides * 5);
-        const r = radius * (1 + f * 0.11);
-        const x = cx + Math.cos(angle) * r;
-        const y = cy + Math.sin(angle) * r * (h / w > 1.2 ? 1.18 : 0.82);
-        if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = layer % 3 === 0 ? rgba(state.colorOne, 0.82) : rgba(state.colorTwo, 0.36 + (1 - progress) * 0.3);
-      ctx.lineWidth = Math.max(0.8, (2.3 - progress) * state.visualLineWidth);
-      ctx.shadowColor = layer % 3 === 0 ? state.colorOne : state.colorTwo;
-      ctx.shadowBlur = Math.min(18, state.glow * 0.65);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-
+  function drawFrame(now) {
     if (!ctx) return;
     const w = canvas.width;
     const h = canvas.height;
     const values = getAudioValues(now);
-    const beatPulse = clamp(values.beat || 0, 0, 1);
-    const bassPulse = clamp((values.bass || 0) * 3.6, 0, 1);
-    const impactPulse = state.cameraShakeMode === 'beat' ? beatPulse
-      : state.cameraShakeMode === 'bass' ? bassPulse : Math.max(beatPulse, bassPulse);
-    const shake = state.cameraShakeEnabled ? state.cameraShake * impactPulse : 0;
-    const shakeX = Math.sin(now * 0.117) * shake;
-    const shakeY = Math.cos(now * 0.151) * shake * 0.72;
-    const effects = { pulse: impactPulse, shakeX: shakeX, shakeY: shakeY, shakeEnabled: state.cameraShakeEnabled };
-    drawBackground(w, h, now, values, effects);
+    drawBackground(w, h, now, values);
 
-    const dx = w * state.visualX / 100 + (state.cameraShakeEnabled ? shakeX : 0);
-    const dy = h * state.visualY / 100 + (state.cameraShakeEnabled ? shakeY : 0);
-    const scale = state.visualScale / 100 * (1 + impactPulse * state.visualizerPulse / 100 * 0.34);
+    const dx = w * state.visualX / 100;
+    const dy = h * state.visualY / 100;
+    const scale = state.visualScale / 100;
     ctx.save();
     ctx.translate(w * 0.5 + dx, h * 0.5 + dy);
     ctx.scale(scale, scale);
@@ -943,18 +779,11 @@
     else if (state.style === 'orbit') drawOrbit(w, h, now, values);
     else if (state.style === 'wave') drawWave(w, h, now, values);
     else if (state.style === 'aurora') drawAurora(w, h, now, values);
-    else if (state.style === 'radial') drawRadial(w, h, now, values);
-    else if (state.style === 'impact') drawImpact(w, h, now, values);
-    else if (state.style === 'matrix') drawMatrix(w, h, now, values);
-    else if (state.style === 'scope') drawScope(w, h, now, values);
-    else if (state.style === 'tunnel') drawTunnel(w, h, now, values);
+    else drawRadial(w, h, now, values);
     ctx.restore();
 
-    ctx.save();
-    if (state.cameraShakeEnabled) ctx.translate(shakeX * 0.32, shakeY * 0.32);
     drawCenterLogo(w, h);
     drawTypography(w, h);
-    ctx.restore();
     state.lastFrameTime = now;
   }
 
@@ -1084,20 +913,16 @@
     updateTransport();
   }
 
-  function supportedRecorderType(preferMp4) {
+  function supportedRecorderType() {
     if (!window.MediaRecorder) return '';
-    const mp4Types = ['video/mp4;codecs="avc1.42E01E,mp4a.40.2"', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4'];
-    const webmTypes = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-    const types = preferMp4 ? mp4Types : webmTypes;
+    const types = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
     return types.find(function (type) { return MediaRecorder.isTypeSupported(type); }) || '';
   }
 
   function setExportUI(active) {
-    const selectedFormat = $('#exportFormatSelect').value || 'mp4';
-    const actionText = selectedFormat.toUpperCase();
-    const activeText = state.converting ? '↻ Конвертация MP4…' : '■ Остановить запись';
-    $('#exportButton').textContent = active ? activeText : '● Экспорт ' + actionText;
-    $('#topExportButton').textContent = active ? activeText : '↗ Экспорт ' + actionText;
+    const buttonText = active ? '■ Остановить запись' : '● Экспорт WebM';
+    $('#exportButton').textContent = buttonText;
+    $('#topExportButton').textContent = active ? '■ Остановить запись' : '↗ Экспорт видео';
     $('#exportButton').classList.toggle('recording', active);
     $('#topExportButton').classList.toggle('recording', active);
     $('#exportProgressWrap').hidden = !active;
@@ -1112,77 +937,7 @@
     try { state.recorder.stop(); } catch (error) { toast('Не удалось завершить запись: ' + error.message, true); }
   }
 
-  function loadExternalScript(src) {
-    return new Promise(function (resolve, reject) {
-      const existing = Array.from(document.scripts).find(function (script) { return script.src === src; });
-      if (existing) {
-        if (window.FFmpeg && window.FFmpeg.createFFmpeg) { resolve(); return; }
-        existing.addEventListener('load', resolve, { once: true });
-        existing.addEventListener('error', reject, { once: true });
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.async = true;
-      script.onload = resolve;
-      script.onerror = function () { reject(new Error('Не удалось загрузить конвертер MP4. Проверь интернет и повтори экспорт.')); };
-      document.head.appendChild(script);
-    });
-  }
-
-  async function convertWebmToMp4(webmBlob) {
-    if (!state.ffmpegPromise) {
-      state.ffmpegPromise = (async function () {
-        if (!window.FFmpeg || !window.FFmpeg.createFFmpeg) {
-          await loadExternalScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js');
-        }
-        const api = window.FFmpeg;
-        if (!api || !api.createFFmpeg || !api.fetchFile) throw new Error('Конвертер MP4 не инициализировался.');
-        const ffmpeg = api.createFFmpeg({
-          log: false,
-          corePath: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
-          progress: function (progress) {
-            const ratio = progress && Number.isFinite(progress.ratio) ? progress.ratio : 0;
-            $('#exportProgress').style.width = Math.round(12 + Math.max(0, Math.min(1, ratio)) * 84) + '%';
-            $('#exportStatus').textContent = 'Конвертируем MP4…';
-          }
-        });
-        await ffmpeg.load();
-        return { ffmpeg: ffmpeg, fetchFile: api.fetchFile };
-      })();
-    }
-    const ready = await state.ffmpegPromise;
-    const ffmpeg = ready.ffmpeg;
-    const inputName = 'nsp-recording-input.webm';
-    const outputName = 'nsp-recording-output.mp4';
-    try {
-      ffmpeg.FS('writeFile', inputName, await ready.fetchFile(webmBlob));
-      await ffmpeg.run('-i', inputName, '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', outputName);
-      const data = ffmpeg.FS('readFile', outputName);
-      const exactBytes = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-      return new Blob([exactBytes], { type: 'video/mp4' });
-    } finally {
-      try { ffmpeg.FS('unlink', inputName); } catch {}
-      try { ffmpeg.FS('unlink', outputName); } catch {}
-    }
-  }
-
-  function downloadVideoBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-  }
-
   async function startExport() {
-    if (state.converting) {
-      toast('Дождись завершения конвертации MP4.', true);
-      return;
-    }
     if (state.recorder && state.recorder.state !== 'inactive') {
       stopExport(true);
       return;
@@ -1195,15 +950,11 @@
       toast('Экспорт видео недоступен в этом браузере. Попробуй Chrome или Edge.', true);
       return;
     }
-    const wantsMp4 = $('#exportFormatSelect').value === 'mp4';
-    const nativeMp4Type = wantsMp4 ? supportedRecorderType(true) : '';
-    const mimeType = nativeMp4Type || supportedRecorderType(false);
+    const mimeType = supportedRecorderType();
     if (!mimeType) {
-      toast('Браузер не поддерживает запись видео. Попробуй обновить Chrome.', true);
+      toast('Браузер не поддерживает запись WebM. Попробуй обновить Chrome.', true);
       return;
     }
-    state.currentExportFormat = wantsMp4 ? 'mp4' : 'webm';
-    state.currentRecorderMimeType = mimeType;
 
     try {
       ensureAudioGraph();
@@ -1223,7 +974,7 @@
         if (event.data && event.data.size > 0) state.chunks.push(event.data);
       };
       state.recorder.onerror = function () { toast('Ошибка записи видео. Попробуй записать ещё раз.', true); };
-      state.recorder.onstop = async function () {
+      state.recorder.onstop = function () {
         window.clearInterval(state.recordingTimer);
         state.recordingTimer = null;
         if (state.recordingStream) state.recordingStream.getTracks().forEach(function (track) { track.stop(); });
@@ -1231,42 +982,21 @@
         const blob = new Blob(state.chunks, { type: mimeType });
         state.chunks = [];
         state.recorder = null;
-        $('#exportProgress').style.width = '0%';
-        const wantsMp4Now = state.currentExportFormat === 'mp4';
-        const recordedMp4 = /video\/mp4/i.test(mimeType);
-        const filenameBase = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10);
-        if (blob.size <= 0) {
-          setExportUI(false);
-          toast('Запись пустая. Запусти трек и попробуй ещё раз.', true);
-        } else if (wantsMp4Now && !recordedMp4) {
-          state.converting = true;
-          setExportUI(true);
-          $('#exportStatus').textContent = 'Загрузка конвертера MP4…';
-          try {
-            const mp4Blob = await convertWebmToMp4(blob);
-            if (!mp4Blob || mp4Blob.size <= 0) throw new Error('Конвертер вернул пустой файл.');
-            downloadVideoBlob(mp4Blob, filenameBase + '.mp4');
-            toast('Готово: настоящий MP4 · ' + bytesLabel(mp4Blob.size) + '.');
-          } catch (error) {
-            downloadVideoBlob(blob, filenameBase + '.webm');
-            toast('Не удалось собрать MP4: ' + (error.message || 'ошибка конвертации') + '. Скачан исходный WebM, его формат не подменён.', true);
-          } finally {
-            state.converting = false;
-            state.currentExportFormat = 'mp4';
-            setExportUI(false);
-            $('#exportProgress').style.width = '0%';
-            $('#exportStatus').textContent = 'Экспорт завершён';
-            setPlayState();
-          }
-          return;
-        } else {
-          const extension = recordedMp4 ? 'mp4' : 'webm';
-          downloadVideoBlob(blob, filenameBase + '.' + extension);
-          setExportUI(false);
-          toast('Видео готово: ' + extension.toUpperCase() + ' · ' + bytesLabel(blob.size) + '.');
-        }
-        state.currentExportFormat = $('#exportFormatSelect').value || 'mp4';
         setExportUI(false);
+        $('#exportProgress').style.width = '0%';
+        if (blob.size > 0) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10) + '.webm';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+          toast('Видео готово: WEBM · ' + bytesLabel(blob.size) + '.');
+        } else {
+          toast('Запись пустая. Запусти трек и попробуй ещё раз.', true);
+        }
         $('#exportStatus').textContent = 'Экспорт завершён';
         setPlayState();
       };
@@ -1509,12 +1239,6 @@
         particleGlow: state.particleGlow,
         beatResponse: state.beatResponse,
         smoothing: state.smoothing,
-        cameraShakeEnabled: state.cameraShakeEnabled,
-        cameraShakeMode: state.cameraShakeMode,
-        cameraShake: state.cameraShake,
-        visualizerPulse: state.visualizerPulse,
-        particlePulse: state.particlePulse,
-        vignettePulse: state.vignettePulse,
         title: $('#trackTitle').value,
         artist: $('#trackArtist').value
       },
@@ -1546,7 +1270,7 @@
       const saved = JSON.parse(localStorage.getItem('nsp-visual-preset') || localStorage.getItem('waveframe-preset') || 'null');
       const v = saved && saved.visualizer;
       if (!v) return;
-      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(v.style)) state.style = v.style;
+      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial'].includes(v.style)) state.style = v.style;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = v.colorTwo;
       if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = v.background;
@@ -1557,8 +1281,6 @@
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
-      if (typeof v.cameraShakeEnabled === 'boolean') state.cameraShakeEnabled = v.cameraShakeEnabled;
-      if (['beat', 'bass', 'both'].includes(v.cameraShakeMode)) state.cameraShakeMode = v.cameraShakeMode;
       if (typeof v.titleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.titleColor)) state.titleColor = v.titleColor;
       if (typeof v.artistColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.artistColor)) state.artistColor = v.artistColor;
       if (typeof v.particleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.particleColor)) state.particleColor = v.particleColor;
@@ -1571,8 +1293,7 @@
         titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
         particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3],
-        particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90],
-        cameraShake: [0, 24], visualizerPulse: [0, 100], particlePulse: [0, 100], vignettePulse: [0, 100]
+        particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90]
       };
       Object.keys(numericSettings).forEach(function (key) {
         if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
@@ -1621,9 +1342,7 @@
     ['vignetteRange', 'vignette'], ['backgroundOpacityRange', 'backgroundOpacity'],
     ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'], ['particleSpeedRange', 'particleSpeed'],
     ['particleOpacityRange', 'particleOpacity'], ['particleGlowRange', 'particleGlow'],
-    ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing'],
-    ['cameraShakeRange', 'cameraShake'], ['visualizerPulseRange', 'visualizerPulse'],
-    ['particlePulseRange', 'particlePulse'], ['vignettePulseRange', 'vignettePulse']
+    ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing']
   ];
   rangeBindings.forEach(function (binding) {
     const input = $('#' + binding[0]);
@@ -1762,8 +1481,6 @@
   $('#showTitle').addEventListener('change', function (event) { state.showTitle = event.target.checked; });
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
-  $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
-  $('#cameraShakeModeSelect').addEventListener('change', function (event) { state.cameraShakeMode = event.target.value; });
   $('#trackTitle').addEventListener('input', function () { $('#trackTitle').dataset.autoTitle = 'false'; });
   $('#playButton').addEventListener('click', togglePlay);
   $('#stopButton').addEventListener('click', stopPlayback);
@@ -1771,7 +1488,6 @@
   $('#seekRange').addEventListener('input', function (event) { if (Number.isFinite(audio.duration)) audio.currentTime = Number(event.target.value) / 1000 * audio.duration; });
   $('#exportButton').addEventListener('click', startExport);
   $('#topExportButton').addEventListener('click', startExport);
-  $('#exportFormatSelect').addEventListener('change', function () { setExportUI(false); });
   $('#pngButton').addEventListener('click', exportPng);
   $('#projectButton').addEventListener('click', function () {
     downloadText('nsp-visual-project.json', JSON.stringify(currentProject(), null, 2), 'application/json');
