@@ -29,6 +29,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let viewHalfWidth = 1.9, viewHalfHeight = 3;
   let floorY = -2.65, ceilY = 2.65, sideX = 1.55;
   let soundEnabled = true, audioContext = null, masterGain = null, compressor = null;
+  let liquidSoundSource = null, liquidSoundFilter = null, liquidSoundGain = null;
   let tiltEnabled = false, tiltReference = null;
   let gravityX = 0, gravityY = -12, gravityZ = 0;
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
@@ -334,11 +335,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function createPhysics() {
     world = new CANNON.World({ gravity: new CANNON.Vec3(0,-12,0), allowSleep: true });
     world.broadphase = new CANNON.SAPBroadphase(world);
-    world.solver.iterations = coarsePointer ? 10 : 14;
+    world.solver.iterations = coarsePointer ? 12 : 16;
     world.solver.tolerance = .001;
     world.allowSleep = true;
-    world.defaultContactMaterial.friction = .42;
-    world.defaultContactMaterial.restitution = .18;
+    world.defaultContactMaterial.friction = .34;
+    world.defaultContactMaterial.restitution = .2;
     world.defaultContactMaterial.contactEquationStiffness = 1e7;
     world.defaultContactMaterial.contactEquationRelaxation = 4;
     physicsMaterials.wall = new CANNON.Material('wall');
@@ -419,11 +420,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
     const body=new CANNON.Body({
       mass, material:physicsMaterials[kind], shape, position:new CANNON.Vec3(position.x,position.y,position.z),
-      linearDamping: kind==='rubber'?.045 : kind==='ice'?.018 : .035,
-      angularDamping: kind==='rubber'?.075 : .055,
+      linearDamping: kind==='rubber'?.065 : kind==='ice'?.028 : .055,
+      angularDamping: kind==='rubber'?.12 : kind==='ice'?.095 : .11,
       allowSleep:true, sleepSpeedLimit:.12, sleepTimeLimit:.65
     });
-    body.material=new CANNON.Material(kind);
     body.userData={kind};
     body.angularVelocity.set(random(-.45,.45),random(-.45,.45),random(-.75,.75));
     body.velocity.set(velocity?.x ?? random(-1.2,1.2),velocity?.y ?? random(-.6,.5),velocity?.z ?? random(-.55,.55));
@@ -1098,7 +1098,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         resize();
       }
     }
-    world.gravity.set(gravityX,gravityY,0);
+    world.gravity.set(gravityX,gravityY,gravityZ);
     if(dragging){
       dragging.item.body.type=CANNON.Body.KINEMATIC;
       dragging.item.body.updateMassProperties();
