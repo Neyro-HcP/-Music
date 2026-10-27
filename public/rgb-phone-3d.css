@@ -1,3 +1,9 @@
+@property --phone-rgb-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 
 .phone-page { width:min(1450px,calc(100% - 48px)); margin:0 auto; padding:28px 0 56px; }
 .phone-page-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin:10px 0 24px; }
@@ -40,6 +46,7 @@
 .phone-engine-status { margin-top:auto; display:flex; align-items:flex-start; gap:8px; padding:10px; border:1px solid rgba(255,255,255,.06); border-radius:10px; color:#9ca5b8; font:10px/1.5 "DM Mono",monospace; }
 .phone-engine-status i { flex:0 0 6px;width:6px;height:6px;margin-top:4px;border-radius:50%;background:#8ce8b3;box-shadow:0 0 8px rgba(140,232,179,.45); }
 .phone-footer-note { margin:14px 0 0;color:#74798d;font-size:11px;line-height:1.65; }
+.phone-nav-link { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
 .site-empty-page { width:min(1120px,calc(100% - 48px)); margin:0 auto; padding:70px 0; min-height:65vh; }
 .site-empty-kicker { color:#a9a0db;font:500 10px/1.5 "DM Mono",monospace;letter-spacing:.16em;text-transform:uppercase; }
 .site-empty-page h1 { margin:10px 0 12px;color:#f7f5ff;font:800 clamp(36px,5vw,58px)/1 Manrope,system-ui,sans-serif;letter-spacing:-.06em; }
