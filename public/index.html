@@ -105,6 +105,10 @@
           </div>
           <div class="control-heading compact-heading"><label for="titleSizeRange">Размер заголовка</label><output id="titleSizeOutput">100%</output></div>
           <input id="titleSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="two-range-grid typography-controls">
+            <label><span>Шрифт заголовка</span><select id="titleFontSelect" class="select-field"><option value="manrope">Manrope</option><option value="system">System UI</option><option value="arial">Arial</option><option value="georgia">Georgia</option><option value="trebuchet">Trebuchet MS</option><option value="courier">Courier New</option><option value="impact">Impact</option><option value="times">Times New Roman</option></select></label>
+            <label><span>Регистр заголовка</span><select id="titleCaseSelect" class="select-field"><option value="normal">Как введено</option><option value="uppercase">ВСЕ ЗАГЛАВНЫЕ</option><option value="lowercase">все строчные</option><option value="titlecase">С Заглавных Букв</option></select></label>
+          </div>
           <div class="color-row">
             <label class="color-control"><input id="titleColorInput" type="color" value="#f5f6f8"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
             <label class="color-control"><input id="titleOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="titleOpacityOutput">100%</small></span></label>
@@ -118,6 +122,10 @@
           </div>
           <div class="control-heading compact-heading"><label for="artistSizeRange">Размер подписи</label><output id="artistSizeOutput">100%</output></div>
           <input id="artistSizeRange" class="range-input" type="range" min="40" max="200" step="5" value="100">
+          <div class="two-range-grid typography-controls">
+            <label><span>Шрифт подписи</span><select id="artistFontSelect" class="select-field"><option value="manrope">Manrope</option><option value="system">System UI</option><option value="arial">Arial</option><option value="georgia">Georgia</option><option value="trebuchet">Trebuchet MS</option><option value="courier">Courier New</option><option value="impact">Impact</option><option value="times">Times New Roman</option></select></label>
+            <label><span>Регистр подписи</span><select id="artistCaseSelect" class="select-field"><option value="normal">Как введено</option><option value="uppercase">ВСЕ ЗАГЛАВНЫЕ</option><option value="lowercase">все строчные</option><option value="titlecase">С Заглавных Букв</option></select></label>
+          </div>
           <div class="color-row">
             <label class="color-control"><input id="artistColorInput" type="color" value="#b8a5ff"><span><b>ЦВЕТ</b><small>Подпись</small></span></label>
             <label class="color-control"><input id="artistOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="artistOpacityOutput">100%</small></span></label>
@@ -172,6 +180,8 @@
             <label><span>Кольца <output id="logoHaloCountOutput">3</output></span><input id="logoHaloCountRange" class="range-input" type="range" min="0" max="6" step="1" value="3"></label>
             <label><span>Толщина <output id="logoHaloWidthOutput">2</output></span><input id="logoHaloWidthRange" class="range-input" type="range" min="1" max="8" step="1" value="2"></label>
           </div>
+          <div class="control-heading compact-heading"><label for="logoHaloRotationSpeedRange">Скорость вращения колец</label><output id="logoHaloRotationSpeedOutput">0.22×</output></div>
+          <input id="logoHaloRotationSpeedRange" class="range-input" type="range" min="0" max="2" step="0.02" value="0.22">
           <div class="color-row particle-colors-row">
             <label class="color-control"><input id="logoHaloColorInput" type="color" value="#b8a5ff"><span><b>ЦВЕТ КОЛЕЦ</b><small>Контур</small></span></label>
             <label class="color-control"><input id="logoGlowRange" type="range" min="0" max="30" step="1" value="14"><span><b>СВЕЧЕНИЕ</b><small id="logoGlowOutput">14</small></span></label>
@@ -244,6 +254,18 @@
           <div class="control-heading"><span>Цветовая палитра</span><span class="micro-label">COLOR</span></div>
           <div class="color-row"><label class="color-control"><input id="colorOne" type="color" value="#b8a5ff"><span><b>NEON</b><small>Основной</small></span></label><label class="color-control"><input id="colorTwo" type="color" value="#f5f3ff"><span><b>GLOW</b><small>Вторичный</small></span></label></div>
           
+          <div class="control-section gradient-editor">
+            <div class="control-heading"><span>Редактор градиента</span><span class="micro-label">ЦВЕТ / УГОЛ / ПЕРЕХОД</span></div>
+            <div id="gradientPreview" class="gradient-preview" aria-label="Предпросмотр градиента"></div>
+            <label class="toggle-row standalone-toggle"><span><b>Градиентный переход</b><small>Включает переход между основными цветами</small></span><input id="gradientMidEnabled" type="checkbox" checked><i></i></label>
+            <div class="color-row gradient-mid-row">
+              <label class="color-control"><input id="gradientMidColorInput" type="color" value="#8c79df"><span><b>СРЕДНИЙ ЦВЕТ</b><small>Промежуточная точка</small></span></label>
+            </div>
+            <div class="control-heading compact-heading"><label for="gradientAngleRange">Угол градиента</label><output id="gradientAngleOutput">90°</output></div>
+            <input id="gradientAngleRange" class="range-input" type="range" min="0" max="345" step="15" value="90">
+            <div class="control-heading compact-heading"><label for="gradientMidPositionRange">Положение среднего цвета</label><output id="gradientMidPositionOutput">38%</output></div>
+            <input id="gradientMidPositionRange" class="range-input" type="range" min="10" max="60" step="1" value="38">
+          </div>
           <div class="swatches" aria-label="Быстрые цветовые темы">
             <button type="button" class="swatch active" data-palette="acid" title="Фиолетовый и белый" aria-label="Фиолетовый и белый"></button>
             <button type="button" class="swatch" data-palette="ocean" title="Deep ocean" aria-label="Голубой и бирюзовый"></button>
