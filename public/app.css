@@ -1011,8 +1011,98 @@ body {
 }
 
 
-/* Mafin618 footer feature — restrained RGB edge and ambient particles. */
-.nsp-friend-card {
+
+
+/* NSP people section — clean black footer, RGB is reserved for nicknames only. */
+.nsp-crew {
+  position:relative;
+  isolation:isolate;
+  margin:36px 0 8px;
+  padding:30px clamp(16px,3vw,38px) 26px;
+  overflow:hidden;
+  background:linear-gradient(145deg,#070708 0%,#0b0b0d 48%,#070708 100%);
+  border-top:1px solid rgba(255,255,255,.075);
+  border-bottom:1px solid rgba(255,255,255,.055);
+  color:#f4f2f8;
+}
+.nsp-crew-inner {
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:1250px;
+  margin:0 auto;
+}
+.nsp-crew-header { margin-bottom:18px; }
+.nsp-crew-kicker {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#777680;
+  font:500 9px/1.4 var(--mono);
+  letter-spacing:.19em;
+}
+.nsp-crew-kicker-mark {
+  width:5px;
+  height:5px;
+  flex:0 0 5px;
+  border-radius:50%;
+  background:#d9d6e0;
+  box-shadow:0 0 9px rgba(255,255,255,.2);
+}
+.nsp-crew-kicker-line {
+  display:block;
+  width:clamp(28px,7vw,86px);
+  height:1px;
+  margin-left:3px;
+  background:linear-gradient(90deg,rgba(255,255,255,.2),transparent);
+}
+.nsp-crew-heading {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:20px;
+  margin-top:12px;
+}
+.nsp-crew-heading h2 {
+  margin:0;
+  color:#f7f5fb;
+  font-size:clamp(24px,3vw,35px);
+  line-height:1.08;
+  font-weight:800;
+  letter-spacing:-.055em;
+}
+.nsp-crew-heading h2 span {
+  color:#b9b0d1;
+}
+.nsp-crew-heading p {
+  margin:8px 0 0;
+  color:#777581;
+  font-size:12px;
+  line-height:1.6;
+}
+.nsp-crew-count {
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  flex:0 0 auto;
+  padding-bottom:2px;
+  color:#777680;
+  font:500 9px/1 var(--mono);
+  letter-spacing:.12em;
+}
+.nsp-crew-count b {
+  color:#e5e2eb;
+  font-size:17px;
+  font-weight:500;
+  letter-spacing:-.04em;
+}
+.nsp-crew-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,260px));
+  justify-content:start;
+  gap:12px;
+}
+.nsp-crew-card {
   position:relative;
   isolation:isolate;
   display:flex;
@@ -1020,119 +1110,117 @@ body {
   align-items:center;
   justify-content:center;
   gap:12px;
-  width:min(100%,520px);
-  min-height:132px;
-  margin:10px auto 24px;
-  padding:24px 22px 28px;
+  min-width:0;
+  min-height:156px;
+  padding:18px 16px 20px;
   overflow:visible;
   border:0;
+  outline:0;
   border-radius:0;
   background:transparent;
   box-shadow:none;
   text-align:center;
 }
-.friend-rgb-frame {
+.nsp-crew-card-index {
+  position:absolute;
+  top:8px;
+  left:10px;
+  color:#5f5e66;
+  font:500 8px/1.4 var(--mono);
+  letter-spacing:.12em;
+}
+.nsp-crew-card-index b {
+  color:#92909b;
+  font-weight:500;
+}
+.nsp-rgb-frame {
   position:relative;
+  z-index:1;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   max-width:100%;
   padding:2px;
-  border-radius:13px;
-  background:linear-gradient(110deg,#ff5277 0%,#ffc65c 19%,#65ffb0 38%,#53cfff 58%,#a77aff 78%,#ff5277 100%);
+  border:0;
+  border-radius:10px;
+  background:linear-gradient(110deg,#ff5688 0%,#ffc65c 19%,#65ffb0 38%,#53d3ff 58%,#a77aff 78%,#ff5688 100%);
   background-size:320% 320%;
-  animation:friendRgbFlow 4.5s linear infinite;
-  box-shadow:0 0 18px rgba(136,103,255,.18),0 0 36px rgba(84,199,255,.08);
+  animation:nspCrewRgbFlow 4.5s linear infinite;
+  box-shadow:none;
 }
-.friend-rgb-frame::after {
+.nsp-rgb-frame::after {
   content:"";
   position:absolute;
   z-index:-1;
-  inset:-5px;
-  border-radius:17px;
+  inset:-4px;
+  border-radius:13px;
   background:inherit;
   background-size:inherit;
-  filter:blur(9px);
-  opacity:.42;
+  filter:blur(10px);
+  opacity:.28;
   pointer-events:none;
 }
-.friend-nickname {
+.nsp-rgb-name {
   display:block;
-  min-width:130px;
+  min-width:132px;
   max-width:100%;
-  padding:10px 29px;
-  border:1px solid rgba(255,255,255,.04);
-  border-radius:11px;
-  background:#0d0a1a;
+  padding:10px 28px;
+  border:0;
+  border-radius:8px;
+  background:linear-gradient(180deg,#09090b 0%,#050506 100%);
   color:#fbfaff;
-  font:800 clamp(22px,4vw,30px)/1.2 var(--font);
-  letter-spacing:-.035em;
-  text-shadow:0 0 19px rgba(210,196,255,.28);
+  font:800 clamp(22px,3vw,28px)/1.15 var(--font);
+  letter-spacing:-.04em;
+  text-shadow:0 0 18px rgba(255,255,255,.12);
+  white-space:nowrap;
 }
-.friend-caption {
+.nsp-crew-caption {
   margin:0;
-  color:#c7baff;
-  font:500 13px/1.5 var(--font);
+  color:#aaa6b4;
+  font:500 12px/1.5 var(--font);
   letter-spacing:.015em;
 }
-.friend-particle {
+.nsp-crew-particle {
   position:absolute;
   z-index:0;
   display:block;
-  width:4px;
-  height:4px;
+  width:3px;
+  height:3px;
   border-radius:50%;
-  background:#b8a5ff;
-  box-shadow:0 0 8px 2px rgba(184,165,255,.48);
   opacity:0;
   pointer-events:none;
-  animation:friendParticleFloat 5s ease-in-out infinite;
+  animation:nspCrewParticleFloat 4.8s ease-in-out infinite;
   will-change:transform,opacity;
 }
-.friend-particle-a { top:24%;left:16%;background:#ff78b7;box-shadow:0 0 9px 2px rgba(255,120,183,.44);animation-delay:-1.1s; }
-.friend-particle-b { top:32%;right:14%;width:3px;height:3px;background:#61d9ff;box-shadow:0 0 9px 2px rgba(97,217,255,.46);animation-delay:-3.3s; }
-.friend-particle-c { bottom:21%;left:25%;width:3px;height:3px;background:#a3ffcf;box-shadow:0 0 9px 2px rgba(163,255,207,.42);animation-delay:-2s; }
-.friend-particle-d { bottom:25%;right:23%;background:#d6a3ff;animation-delay:-.6s; }
-.friend-particle-e { top:16%;right:31%;width:2px;height:2px;background:#fff;box-shadow:0 0 7px 2px rgba(255,255,255,.35);animation-delay:-4.1s; }
-.friend-particle-f { bottom:17%;left:42%;width:2px;height:2px;background:#67baff;box-shadow:0 0 8px 2px rgba(103,186,255,.36);animation-delay:-2.7s; }
-@keyframes friendRgbFlow {
+.nsp-crew-particle-a { top:35%;left:12%;background:#ff78b7;box-shadow:0 0 8px 2px rgba(255,120,183,.5);animation-delay:-1s; }
+.nsp-crew-particle-b { top:39%;right:12%;width:4px;height:4px;background:#64d9ff;box-shadow:0 0 8px 2px rgba(100,217,255,.42);animation-delay:-2.4s; }
+.nsp-crew-particle-c { bottom:26%;left:24%;background:#a3ffcf;box-shadow:0 0 8px 2px rgba(163,255,207,.38);animation-delay:-3.1s; }
+.nsp-crew-particle-d { bottom:25%;right:22%;width:2px;height:2px;background:#d6a3ff;box-shadow:0 0 8px 2px rgba(214,163,255,.45);animation-delay:-.5s; }
+.nsp-crew-particle-e { top:27%;right:32%;width:2px;height:2px;background:#fff;box-shadow:0 0 7px 2px rgba(255,255,255,.35);animation-delay:-4s; }
+.nsp-crew-particle-f { bottom:34%;left:38%;width:2px;height:2px;background:#ffc65c;box-shadow:0 0 8px 2px rgba(255,198,92,.38);animation-delay:-1.8s; }
+@keyframes nspCrewRgbFlow {
   0% { background-position:0% 50%; }
   50% { background-position:100% 50%; }
   100% { background-position:0% 50%; }
 }
-@keyframes friendParticleFloat {
-  0%,100% { transform:translate3d(0,8px,0) scale(.7);opacity:0; }
-  25% { opacity:.75; }
-  50% { transform:translate3d(9px,-9px,0) scale(1.15);opacity:.95; }
-  75% { opacity:.6; }
+@keyframes nspCrewParticleFloat {
+  0%,100% { transform:translate3d(0,7px,0) scale(.65);opacity:0; }
+  23% { opacity:.72; }
+  50% { transform:translate3d(8px,-9px,0) scale(1.12);opacity:.95; }
+  77% { opacity:.55; }
 }
 @media (max-width:720px) {
-  .nsp-friend-card { min-height:132px;margin:4px auto 18px;padding:24px 14px;border:0;border-radius:0;background:transparent;box-shadow:none; }
-  .friend-nickname { min-width:118px;padding:9px 23px; }
-  .friend-caption { font-size:12px; }
+  .nsp-crew { margin-top:26px;padding:25px 13px 18px; }
+  .nsp-crew-heading { align-items:flex-end;gap:10px; }
+  .nsp-crew-heading p { max-width:230px;font-size:11px; }
+  .nsp-crew-count { gap:5px;font-size:8px; }
+  .nsp-crew-count b { font-size:15px; }
+  .nsp-crew-grid { grid-template-columns:minmax(0,1fr);justify-content:stretch; }
+  .nsp-crew-card { min-height:150px;padding:23px 12px 18px; }
+  .nsp-rgb-name { min-width:120px;padding:9px 23px;font-size:24px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .friend-rgb-frame,.friend-particle { animation:none !important; }
-  .friend-rgb-frame { background-position:50% 50%; }
-  .friend-particle { opacity:.55; }
-}
-
-
-/* Final presentation override: keep only the RGB nickname frame. */
-.nsp-friend-card {
-  min-height:0 !important;
-  margin:10px auto 24px !important;
-  padding:18px 14px 22px !important;
-  overflow:visible !important;
-  border:0 !important;
-  border-radius:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-}
-.nsp-friend-card::before,
-.nsp-friend-card::after,
-.friend-card-top,
-.friend-dot,
-.friend-card-orbit {
-  display:none !important;
+  .nsp-rgb-frame,.nsp-crew-particle { animation:none !important; }
+  .nsp-rgb-frame { background-position:50% 50%; }
+  .nsp-crew-particle { opacity:.48; }
 }
