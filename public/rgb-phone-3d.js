@@ -980,6 +980,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   const raycaster=new THREE.Raycaster();
   const ndc=new THREE.Vector2();
   const dragPlane=new THREE.Plane(new THREE.Vector3(0,0,1),0);
+  const liquidSurfacePlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
   const hitPoint=new THREE.Vector3();
   const worldPoint=new THREE.Vector3();
 
@@ -1005,7 +1006,19 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     screenCoordinates(event);
     raycaster.setFromCamera(ndc,camera);
     const hits=raycaster.intersectObjects(items.map(item=>item.mesh),false);
-    if(!hits.length)return;
+    if(!hits.length){
+      if(liquidMode&&liquidSurfaceMesh?.visible){
+        liquidSurfacePlane.constant=-liquidLevel;
+        if(raycaster.ray.intersectPlane(liquidSurfacePlane,hitPoint)){
+          const x=clamp(hitPoint.x,-sideX,sideX);
+          const z=clamp(hitPoint.z,-.62,.62);
+          addWaveImpulse(x,z,liquidMode==='water'?.16:.07);
+          if(liquidMode==='water')playImpact('water',2.2,x);
+          status(liquidMode==='water'?'Всплеск — волна расходится по воде':'Слизь колышется от прикосновения');
+        }
+      }
+      return;
+    }
     let mesh=hits[0].object;
     while(mesh.parent && !items.some(i=>i.mesh===mesh))mesh=mesh.parent;
     const item=items.find(i=>i.mesh===mesh);
