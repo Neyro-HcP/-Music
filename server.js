@@ -244,7 +244,7 @@ app.post('/api/tracks', requireAdmin, (req, res, next) => {
   if (cover && !identifyFile(cover.path, 'cover')) return reject(400, 'Не удалось распознать изображение обложки.');
 
   const title = String(req.body.title || '').trim().slice(0, 100);
-  const artist = String(req.body.artist || 'НсП').trim().slice(0, 80) || 'НсП';
+  const artist = String(req.body.artist || '').trim().slice(0, 80);
   const genre = String(req.body.genre || 'Другое').trim().slice(0, 40) || 'Другое';
   const description = String(req.body.description || '').trim().slice(0, 1000);
   if (!title) return reject(400, 'Укажи название трека.');
@@ -303,6 +303,6 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`НсП Music запущен: http://localhost:${PORT}`);
+  console.log(`Музыкальный сайт запущен: http://localhost:${PORT}`);
   if (!ADMIN_PASSWORD) console.warn('ADMIN_PASSWORD не задан: режим автора отключён до настройки .env.');
 });
