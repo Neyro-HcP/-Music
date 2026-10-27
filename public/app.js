@@ -1039,19 +1039,29 @@
     $('#logoYOutput').textContent = state.logoY + '%';
     $('#visualXOutput').textContent = (state.visualX > 0 ? '+' : '') + state.visualX + '%';
     $('#visualYOutput').textContent = (state.visualY > 0 ? '+' : '') + state.visualY + '%';
-    $('#textXOutput').textContent = state.textX + '%';
-    $('#textYOutput').textContent = state.textY + '%';
-    $('#textSizeOutput').textContent = state.textSize + '%';
+    $('#visualScaleOutput').textContent = state.visualScale + '%';
+    $('#visualOpacityOutput').textContent = state.visualOpacity + '%';
+    $('#visualLineWidthOutput').textContent = Number(state.visualLineWidth).toFixed(1) + '×';
+    $('#titleXOutput').textContent = state.titleX + '%';
+    $('#titleYOutput').textContent = state.titleY + '%';
+    $('#titleSizeOutput').textContent = state.titleSize + '%';
+    $('#titleOpacityOutput').textContent = state.titleOpacity + '%';
+    $('#artistXOutput').textContent = state.artistX + '%';
+    $('#artistYOutput').textContent = state.artistY + '%';
+    $('#artistSizeOutput').textContent = state.artistSize + '%';
+    $('#artistOpacityOutput').textContent = state.artistOpacity + '%';
     $('#vignetteOutput').textContent = state.vignette + '%';
     $('#backgroundOpacityOutput').textContent = state.backgroundOpacity + '%';
     $('#particleCountOutput').textContent = String(state.particleCount);
     $('#particleSizeOutput').textContent = Number(state.particleSize).toFixed(1) + '×';
     $('#particleSpeedOutput').textContent = Number(state.particleSpeed).toFixed(1) + '×';
+    $('#particleOpacityOutput').textContent = state.particleOpacity + '%';
+    $('#particleGlowOutput').textContent = String(state.particleGlow);
     $('#beatResponseOutput').textContent = Number(state.beatResponse).toFixed(1) + '×';
     $('#smoothingOutput').textContent = state.smoothing + '%';
   }
 
-  function openAssetDatabase() {
+    function openAssetDatabase() {
     return new Promise(function (resolve, reject) {
       if (!window.indexedDB) { reject(new Error('Хранилище изображений недоступно')); return; }
       const request = indexedDB.open('nsp-visual-assets', 1);
@@ -1195,12 +1205,27 @@
         logoY: state.logoY,
         visualX: state.visualX,
         visualY: state.visualY,
-        textX: state.textX,
-        textY: state.textY,
-        textSize: state.textSize,
+        visualScale: state.visualScale,
+        visualOpacity: state.visualOpacity,
+        visualLineWidth: state.visualLineWidth,
+        titleX: state.titleX,
+        titleY: state.titleY,
+        titleSize: state.titleSize,
+        titleColor: state.titleColor,
+        titleOpacity: state.titleOpacity,
+        artistX: state.artistX,
+        artistY: state.artistY,
+        artistSize: state.artistSize,
+        artistColor: state.artistColor,
+        artistOpacity: state.artistOpacity,
         particleCount: state.particleCount,
         particleSize: state.particleSize,
         particleSpeed: state.particleSpeed,
+        particleDirection: state.particleDirection,
+        particleShape: state.particleShape,
+        particleColor: state.particleColor,
+        particleOpacity: state.particleOpacity,
+        particleGlow: state.particleGlow,
         beatResponse: state.beatResponse,
         smoothing: state.smoothing,
         title: $('#trackTitle').value,
@@ -1243,12 +1268,21 @@
       if (['landscape', 'square', 'portrait'].includes(v.aspect)) state.aspect = v.aspect;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
+      if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
+      if (typeof v.titleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.titleColor)) state.titleColor = v.titleColor;
+      if (typeof v.artistColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.artistColor)) state.artistColor = v.artistColor;
+      if (typeof v.particleColor === 'string' && /^#[0-9a-f]{6}$/i.test(v.particleColor)) state.particleColor = v.particleColor;
+      if (['up','down','left','right','out','in','float'].includes(v.particleDirection)) state.particleDirection = v.particleDirection;
+      if (['circle','square','diamond','line','star'].includes(v.particleShape)) state.particleShape = v.particleShape;
       const numericSettings = {
         vignette: [0, 100], backgroundOpacity: [0, 100], logoSize: [6, 34], logoOpacity: [20, 100],
-        logoX: [10, 90], logoY: [10, 90], visualX: [-30, 30], visualY: [-30, 30],
-        textX: [3, 90], textY: [5, 94], textSize: [55, 180], particleCount: [0, 250],
-        particleSize: [0.4, 3], particleSpeed: [0, 3], beatResponse: [0.4, 3], smoothing: [0, 90]
+        logoX: [5, 95], logoY: [5, 95], visualX: [-35, 35], visualY: [-35, 35],
+        visualScale: [35, 175], visualOpacity: [10, 100], visualLineWidth: [0.5, 3],
+        titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
+        artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
+        particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3],
+        particleOpacity: [5, 100], particleGlow: [0, 24], beatResponse: [0.4, 3], smoothing: [0, 90]
       };
       Object.keys(numericSettings).forEach(function (key) {
         if (Number.isFinite(Number(v[key]))) state[key] = Math.max(numericSettings[key][0], Math.min(numericSettings[key][1], Number(v[key])));
@@ -1291,10 +1325,13 @@
   const rangeBindings = [
     ['logoSizeRange', 'logoSize'], ['logoOpacityRange', 'logoOpacity'], ['logoXRange', 'logoX'],
     ['logoYRange', 'logoY'], ['visualXRange', 'visualX'], ['visualYRange', 'visualY'],
-    ['textXRange', 'textX'], ['textYRange', 'textY'], ['textSizeRange', 'textSize'],
+    ['visualScaleRange', 'visualScale'], ['visualOpacityRange', 'visualOpacity'], ['visualLineWidthRange', 'visualLineWidth'],
+    ['titleXRange', 'titleX'], ['titleYRange', 'titleY'], ['titleSizeRange', 'titleSize'], ['titleOpacityRange', 'titleOpacity'],
+    ['artistXRange', 'artistX'], ['artistYRange', 'artistY'], ['artistSizeRange', 'artistSize'], ['artistOpacityRange', 'artistOpacity'],
     ['vignetteRange', 'vignette'], ['backgroundOpacityRange', 'backgroundOpacity'],
-    ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'],
-    ['particleSpeedRange', 'particleSpeed'], ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing']
+    ['particleCountRange', 'particleCount'], ['particleSizeRange', 'particleSize'], ['particleSpeedRange', 'particleSpeed'],
+    ['particleOpacityRange', 'particleOpacity'], ['particleGlowRange', 'particleGlow'],
+    ['beatResponseRange', 'beatResponse'], ['smoothingRange', 'smoothing']
   ];
   rangeBindings.forEach(function (binding) {
     const input = $('#' + binding[0]);
@@ -1307,7 +1344,7 @@
     });
   });
 
-  let canvasDrag = null;
+    let canvasDrag = null;
   canvas.style.touchAction = 'none';
   canvas.style.cursor = 'grab';
   function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
@@ -1318,27 +1355,34 @@
       y: (event.clientY - rect.top) / rect.height * canvas.height
     };
   }
-  function calculatedTextY(h) {
-    const scale = state.textSize / 100;
-    const titleSize = Math.max(14, Math.min(Math.round(canvas.width * 0.048), Math.round(h * 0.085))) * scale;
-    const artistSize = Math.max(10, Math.round(Math.min(canvas.width, h) * 0.022)) * scale;
-    const safeBlockHeight = titleSize * 2.55 + artistSize;
-    return Math.max(10, Math.min(h - safeBlockHeight - h * 0.025, h * state.textY / 100));
+  function titleTextY(h) {
+    const size = Math.max(16, Math.min(Math.round(canvas.width * 0.048), Math.round(h * 0.085))) * state.titleSize / 100;
+    return Math.max(10, Math.min(h - size - 12, h * state.titleY / 100));
+  }
+  function artistTextY(h) {
+    const size = Math.max(10, Math.round(Math.min(canvas.width, h) * 0.022)) * state.artistSize / 100;
+    return Math.max(10, Math.min(h - size - 12, h * state.artistY / 100));
+  }
+  function nearText(p, key, y, h) {
+    const xPercent = state[key + 'X'];
+    const anchor = titleAnchor(canvas.width, xPercent);
+    const left = anchor.align === 'right' ? anchor.x - canvas.width * 0.84 : anchor.x;
+    return p.x >= left - 12 && p.x <= left + canvas.width * 0.84 + 12
+      && p.y >= y - 10 && p.y <= y + h * (key === 'title' ? 0.105 : 0.055);
   }
   canvas.addEventListener('pointerdown', function (event) {
     const p = canvasPoint(event);
     const w = canvas.width, h = canvas.height;
-    const lx = w * (state.logoX + state.visualX) / 100;
-    const ly = h * (state.logoY + state.visualY) / 100;
+    const lx = w * state.logoX / 100;
+    const ly = h * state.logoY / 100;
     const logoRadius = Math.min(w, h) * state.logoSize / 200 * 1.25;
     let mode = 'visual';
     if (Math.hypot(p.x - lx, p.y - ly) <= logoRadius) {
       mode = 'logo';
-    } else if (state.showTitle) {
-      const ty = calculatedTextY(h);
-      const tx = w * state.textX / 100;
-      const left = state.textX > 72 ? tx - w * 0.84 : tx;
-      if (p.x >= left - 20 && p.x <= left + w * 0.84 && p.y >= ty - 14 && p.y <= ty + h * 0.17) mode = 'text';
+    } else if (state.showTitle && nearText(p, 'title', titleTextY(h), h)) {
+      mode = 'title';
+    } else if (state.showTitle && nearText(p, 'artist', artistTextY(h), h)) {
+      mode = 'artist';
     }
     canvasDrag = { mode: mode, lastX: p.x, lastY: p.y };
     canvas.setPointerCapture(event.pointerId);
@@ -1351,25 +1395,29 @@
     const dx = (p.x - canvasDrag.lastX) / canvas.width * 100;
     const dy = (p.y - canvasDrag.lastY) / canvas.height * 100;
     if (canvasDrag.mode === 'visual') {
-      state.visualX = Math.round(clamp(state.visualX + dx, -30, 30));
-      state.visualY = Math.round(clamp(state.visualY + dy, -30, 30));
+      state.visualX = Math.round(clamp(state.visualX + dx, -35, 35));
+      state.visualY = Math.round(clamp(state.visualY + dy, -35, 35));
       $('#visualXRange').value = state.visualX;
       $('#visualYRange').value = state.visualY;
     } else if (canvasDrag.mode === 'logo') {
-      state.logoX = Math.round(clamp(state.logoX + dx, 10, 90));
-      state.logoY = Math.round(clamp(state.logoY + dy, 10, 90));
+      state.logoX = Math.round(clamp(state.logoX + dx, 5, 95));
+      state.logoY = Math.round(clamp(state.logoY + dy, 5, 95));
       $('#logoXRange').value = state.logoX;
       $('#logoYRange').value = state.logoY;
+    } else if (canvasDrag.mode === 'title') {
+      state.titleX = Math.round(clamp(state.titleX + dx, 2, 90));
+      state.titleY = Math.round(clamp(state.titleY + dy, 5, 92));
+      $('#titleXRange').value = state.titleX;
+      $('#titleYRange').value = state.titleY;
     } else {
-      state.textX = Math.round(clamp(state.textX + dx, 3, 90));
-      state.textY = Math.round(clamp(state.textY + dy, 5, 94));
-      $('#textXRange').value = state.textX;
-      $('#textYRange').value = state.textY;
+      state.artistX = Math.round(clamp(state.artistX + dx, 2, 90));
+      state.artistY = Math.round(clamp(state.artistY + dy, 8, 96));
+      $('#artistXRange').value = state.artistX;
+      $('#artistYRange').value = state.artistY;
     }
     canvasDrag.lastX = p.x;
     canvasDrag.lastY = p.y;
     updatePositionOutputs();
-    drawFrame(performance.now());
     event.preventDefault();
   });
   function endCanvasDrag(event) {
@@ -1383,7 +1431,7 @@
   canvas.addEventListener('pointercancel', endCanvasDrag);
   canvas.addEventListener('lostpointercapture', function () { canvasDrag = null; canvas.style.cursor = 'grab'; });
 
-  fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) selectAudio(fileInput.files[0]); });
+    fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) selectAudio(fileInput.files[0]); });
   dropzone.addEventListener('click', function (event) { if (event.target !== fileInput) fileInput.click(); });
   ['dragenter', 'dragover'].forEach(function (name) {
     dropzone.addEventListener(name, function (event) {
