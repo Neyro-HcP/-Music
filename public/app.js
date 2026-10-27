@@ -860,5 +860,6 @@
   updateSettingsUI();
   setStyle(state.style);
   updateTransport();
+  window.addEventListener('resize', applyAspect);
   window.requestAnimationFrame(animate);
 })();
