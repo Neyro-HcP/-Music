@@ -1,8 +1,8 @@
 {
-  "name": "nsp-visual-lab",
+  "name": "music-visualizer",
   "version": "1.1.0",
   "private": true,
-  "description": "НсП Visual Lab — браузерный конструктор музыкальных визуализаторов",
+  "description": "Браузерный конструктор музыкальных визуализаторов",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
