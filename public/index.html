@@ -15,7 +15,8 @@
 </head>
 <body>
   <div class="site-noise" aria-hidden="true"></div>
-  <header class="topbar"><div class="site-weather-layer" id="siteWeatherLayer" aria-hidden="true"></div>
+  <div class="site-weather-layer" id="siteWeatherLayer" aria-hidden="true"></div>
+  <header class="topbar">
     <a class="brand" href="./" aria-label="НсП Visual Lab — главная">
       <span class="brand-nsp">НсП</span>
       <span class="brand-text"><b>НсП VISUAL LAB</b></span>
@@ -87,6 +88,7 @@
           <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-background" data-settings-tab="background">Фон</button>
           <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-logo" data-settings-tab="logo">Логотип</button>
           <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-music" data-settings-tab="music">Музыка</button>
+          <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-dynamics" data-settings-tab="dynamics">Динамика</button>
           <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-particles" data-settings-tab="particles">Частицы</button>
           <button class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-effects" data-settings-tab="effects">Спецэффекты</button>
         </div>
@@ -182,6 +184,34 @@
             <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
           </button>
         </div></div>
+        <div class="settings-tab-panel" id="settings-panel-dynamics" role="tabpanel" data-settings-panel="dynamics" hidden>
+          <div class="control-section">
+          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
+          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
+          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
+        </div>
+          <div class="control-section">
+          <div class="control-heading"><span>Динамика</span><span class="micro-label">AUDIO</span></div>
+          <div class="control-heading compact-heading"><label for="beatResponseRange">Реакция на удар</label><output id="beatResponseOutput">1.8×</output></div>
+          <input id="beatResponseRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1.8">
+          <div class="control-heading compact-heading"><label for="smoothingRange">Плавность</label><output id="smoothingOutput">45%</output></div>
+          <input id="smoothingRange" class="range-input" type="range" min="0" max="90" step="5" value="45">
+        </div>
+          <div class="control-section impact-settings">
+          <div class="control-heading"><span>Камера и ударные эффекты</span><span class="micro-label">IMPACT FX</span></div>
+          <label class="toggle-row standalone-toggle"><span><b>Дёргать камеру</b><small>Реакция на бас и ударные биты</small></span><input id="cameraShakeEnabled" type="checkbox"><i></i></label>
+          <div class="control-heading compact-heading"><label for="cameraShakeModeSelect">Источник тряски</label></div>
+          <select id="cameraShakeModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
+          <div class="control-heading compact-heading"><label for="cameraShakeRange">Сила тряски</label><output id="cameraShakeOutput">12 px</output></div>
+          <input id="cameraShakeRange" class="range-input" type="range" min="0" max="24" step="1" value="12">
+          <div class="control-heading compact-heading"><label for="visualizerPulseRange">Пульсация визуализатора</label><output id="visualizerPulseOutput">35%</output></div>
+          <input id="visualizerPulseRange" class="range-input" type="range" min="0" max="100" step="1" value="35">
+          <div class="control-heading compact-heading"><label for="particlePulseRange">Пульсация частиц</label><output id="particlePulseOutput">30%</output></div>
+          <input id="particlePulseRange" class="range-input" type="range" min="0" max="100" step="1" value="30">
+          <div class="control-heading compact-heading"><label for="vignettePulseRange">Пульсация виньетки</label><output id="vignettePulseOutput">28%</output></div>
+          <input id="vignettePulseRange" class="range-input" type="range" min="0" max="100" step="1" value="28">
+        </div>
+        </div>
         <div class="settings-tab-panel" id="settings-panel-particles" role="tabpanel" data-settings-panel="particles" hidden><div class="control-section">
           <div class="control-heading"><span>Частицы</span><span class="micro-label">СЛОЙ 04 · FX</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b><small>Движение на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
@@ -223,11 +253,7 @@
             <button type="button" class="swatch" data-palette="pink" title="Cyber pink" aria-label="Розовый и синий"></button>
           </div>
         </div>
-          <div class="control-section">
-          <div class="control-heading"><label for="sensitivityRange">Чувствительность</label><output id="sensitivityOutput">1.2×</output></div>
-          <input id="sensitivityRange" class="range-input" type="range" min="0.5" max="2.5" step="0.1" value="1.2">
-          <div class="range-labels"><span>Мягко</span><span>АГРЕССИВНО</span></div>
-        </div>
+          
           <div class="control-section">
           <div class="control-heading"><label for="glowRange">Свечение</label><output id="glowOutput">22</output></div>
           <input id="glowRange" class="range-input" type="range" min="0" max="40" step="1" value="22">
@@ -264,27 +290,8 @@
             <div id="visualizerLayerList"></div>
             <button class="primary-button layer-add-button" id="addVisualizerLayerButton" type="button">＋ Добавить слой</button>
           </div>
-          <div class="control-section">
-          <div class="control-heading"><span>Динамика</span><span class="micro-label">AUDIO</span></div>
-          <div class="control-heading compact-heading"><label for="beatResponseRange">Реакция на удар</label><output id="beatResponseOutput">1.8×</output></div>
-          <input id="beatResponseRange" class="range-input" type="range" min="0.4" max="3" step="0.1" value="1.8">
-          <div class="control-heading compact-heading"><label for="smoothingRange">Плавность</label><output id="smoothingOutput">45%</output></div>
-          <input id="smoothingRange" class="range-input" type="range" min="0" max="90" step="5" value="45">
-        </div>
-          <div class="control-section impact-settings">
-          <div class="control-heading"><span>Камера и ударные эффекты</span><span class="micro-label">IMPACT FX</span></div>
-          <label class="toggle-row standalone-toggle"><span><b>Дёргать камеру</b><small>Реакция на бас и ударные биты</small></span><input id="cameraShakeEnabled" type="checkbox"><i></i></label>
-          <div class="control-heading compact-heading"><label for="cameraShakeModeSelect">Источник тряски</label></div>
-          <select id="cameraShakeModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
-          <div class="control-heading compact-heading"><label for="cameraShakeRange">Сила тряски</label><output id="cameraShakeOutput">12 px</output></div>
-          <input id="cameraShakeRange" class="range-input" type="range" min="0" max="24" step="1" value="12">
-          <div class="control-heading compact-heading"><label for="visualizerPulseRange">Пульсация визуализатора</label><output id="visualizerPulseOutput">35%</output></div>
-          <input id="visualizerPulseRange" class="range-input" type="range" min="0" max="100" step="1" value="35">
-          <div class="control-heading compact-heading"><label for="particlePulseRange">Пульсация частиц</label><output id="particlePulseOutput">30%</output></div>
-          <input id="particlePulseRange" class="range-input" type="range" min="0" max="100" step="1" value="30">
-          <div class="control-heading compact-heading"><label for="vignettePulseRange">Пульсация виньетки</label><output id="vignettePulseOutput">28%</output></div>
-          <input id="vignettePulseRange" class="range-input" type="range" min="0" max="100" step="1" value="28">
-        </div>
+          
+          
         </div>
         <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div></aside>
     </section>
