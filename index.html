@@ -4,23 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090b12">
-  <meta name="description" content="НсП Visual Lab — бесплатный конструктор музыкальных визуализаторов с собственным логотипом и фоном.">
-  <title>НсП Visual Lab — визуализатор музыки</title>
+  <meta name="description" content="Музыкальный визуализатор с настройкой оформления и экспортом видео.">
+  <title>Визуализатор музыки</title>
   <link rel="icon" href="./public/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./public/app.css?v=nsp-luxe-20261027-1615">
+  <link rel="stylesheet" href="./public/app.css?v=clean-20261027">
   <script src="./public/app.js" defer></script>
 </head>
 <body>
   <div class="site-noise" aria-hidden="true"></div>
   <div class="site-weather-layer" id="siteWeatherLayer" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="НсП Visual Lab — главная">
-      <span class="brand-nsp">НсП</span>
-      <span class="brand-text"><b>НсП VISUAL LAB</b></span>
-    </a>
+    <a class="brand" href="./" aria-label="Главная"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span></a>
 <div class="topbar-actions"><div class="site-weather-control"><label for="siteParticlesMode">Эффект</label><select id="siteParticlesMode" aria-label="Эффект частиц сайта"><option value="off">Выкл.</option><option value="snow">Снег</option><option value="leaves">Листья</option></select></div>
       <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить</button>
       <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
@@ -150,11 +147,11 @@
           <div class="control-heading"><span>Логотип в центре</span></div>
           <label class="toggle-row standalone-toggle"><span><b>Показывать логотип на холсте</b><small>Выключен по умолчанию, чтобы не перекрывать визуализатор</small></span><input id="showLogo" type="checkbox"><i></i></label>
           <div class="media-picker-row">
-            <div class="logo-preview" id="logoPreview"><span>НсП</span></div>
-            <div class="media-picker-copy"><b id="logoFileName">Логотип НсП</b><small>Круглая маска · PNG / JPG / WEBP</small><button class="mini-action" id="logoPickButton" type="button">Выбрать логотип</button></div>
+            <div class="logo-preview" id="logoPreview"><span aria-hidden="true">♫</span></div>
+            <div class="media-picker-copy"><b id="logoFileName">Логотип</b><small>Круглая маска · PNG / JPG / WEBP</small><button class="mini-action" id="logoPickButton" type="button">Выбрать логотип</button></div>
           </div>
           <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-          <button class="plain-action" id="removeLogoButton" type="button">Сбросить на монограмму НсП</button>
+          <button class="plain-action" id="removeLogoButton" type="button">Сбросить логотип</button>
           <div class="two-range-grid">
             <label><span>Размер <output id="logoSizeOutput">18%</output></span><input id="logoSizeRange" class="range-input" type="range" min="6" max="34" step="1" value="18"></label>
             <label><span>Непрозрачность <output id="logoOpacityOutput">100%</output></span><input id="logoOpacityRange" class="range-input" type="range" min="20" max="100" step="1" value="100"></label>
@@ -319,23 +316,7 @@
         <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div></aside>
     </section>
 
-<section class="nsp-crew" id="nsp-crew" aria-label="Mafin618">
-  <div class="nsp-crew-inner">
-    <div class="nsp-crew-grid">
-      <article class="nsp-crew-card" aria-label="Mafin618 — Сладкий пупсик НсП">
-        <span class="nsp-crew-particle nsp-crew-particle-a" aria-hidden="true"></span>
-        <span class="nsp-crew-particle nsp-crew-particle-b" aria-hidden="true"></span>
-        <span class="nsp-crew-particle nsp-crew-particle-c" aria-hidden="true"></span>
-        <span class="nsp-crew-particle nsp-crew-particle-d" aria-hidden="true"></span>
-        <span class="nsp-crew-particle nsp-crew-particle-e" aria-hidden="true"></span>
-        <span class="nsp-crew-particle nsp-crew-particle-f" aria-hidden="true"></span>
-        <div class="nsp-rgb-frame"><span class="nsp-rgb-name">Mafin618</span></div>
-        <p class="nsp-crew-caption">Сладкий пупсик НсП</p>
-      </article>
-    </div>
-  </div>
-</section>
-<footer class="footer"><span><b>НсП</b> <i>•</i> VISUAL LAB</span></footer>
+
   </main>
 
   <audio id="audio" preload="metadata"></audio>
