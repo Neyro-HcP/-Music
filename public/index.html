@@ -110,7 +110,7 @@
             <label><span>Регистр заголовка</span><select id="titleCaseSelect" class="select-field"><option value="normal">Как введено</option><option value="uppercase">ВСЕ ЗАГЛАВНЫЕ</option><option value="lowercase">все строчные</option><option value="titlecase">С Заглавных Букв</option></select></label>
           </div>
           <div class="color-row">
-            <label class="color-control"><input id="titleColorInput" type="color" value="#f5f6f8"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
+            <label class="color-control"><input id="titleColorInput" type="color" value="#f5f3ff"><span><b>ЦВЕТ</b><small>Заголовок</small></span></label>
             <label class="color-control"><input id="titleOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="titleOpacityOutput">100%</small></span></label>
           </div>
         </div>
@@ -257,7 +257,7 @@
           <div class="control-section gradient-editor">
             <div class="control-heading"><span>Редактор градиента</span><span class="micro-label">ЦВЕТ / УГОЛ / ПЕРЕХОД</span></div>
             <div id="gradientPreview" class="gradient-preview" aria-label="Предпросмотр градиента"></div>
-            <label class="toggle-row standalone-toggle"><span><b>Градиентный переход</b><small>Включает переход между основными цветами</small></span><input id="gradientMidEnabled" type="checkbox" checked><i></i></label>
+            <label class="toggle-row standalone-toggle"><span><b>Средний цвет градиента</b><small>Третья точка между основными цветами</small></span><input id="gradientMidEnabled" type="checkbox" checked><i></i></label>
             <div class="color-row gradient-mid-row">
               <label class="color-control"><input id="gradientMidColorInput" type="color" value="#8c79df"><span><b>СРЕДНИЙ ЦВЕТ</b><small>Промежуточная точка</small></span></label>
             </div>
@@ -296,6 +296,8 @@
           </div>
           <div class="control-heading compact-heading"><label for="visualLineWidthRange">Толщина линий</label><output id="visualLineWidthOutput">1.0×</output></div>
           <input id="visualLineWidthRange" class="range-input" type="range" min="0.5" max="3" step="0.1" value="1">
+          <div class="control-heading compact-heading"><label for="visualizerRotationSpeedRange">Скорость вращения визуализатора</label><output id="visualizerRotationSpeedOutput">0.00×</output></div>
+          <input id="visualizerRotationSpeedRange" class="range-input" type="range" min="-1.5" max="1.5" step="0.05" value="0">
         </div>
           <div class="control-section">
             <div class="control-heading"><span>Рендер основного слоя</span><span class="micro-label">RENDER</span></div>
