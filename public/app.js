@@ -271,7 +271,7 @@
         const raw = count ? sum / count : 0;
         const normalized = Math.max(0, Math.min(1, (raw - 9) / 220));
         let target = Math.pow(normalized, 0.72) * state.sensitivity;
-        if (i < 15) {
+        if (i < 55) {
           bassEnergy += normalized;
           bassSamples++;
         }
@@ -487,20 +487,22 @@
   }
 
   function drawCoreRing(cx, cy, radius, now, values) {
+    const beat = values && Number.isFinite(values.beat) ? values.beat : 0;
+    const breathe = 1 + beat * 0.13;
     ctx.save();
     const rings = 3;
     for (let r = 0; r < rings; r++) {
       ctx.beginPath();
-      ctx.strokeStyle = r === 0 ? rgba(state.colorOne, 0.6) : rgba(state.colorTwo, 0.23);
+      ctx.strokeStyle = r === 0 ? rgba(state.colorOne, 0.62 + beat * 0.22) : rgba(state.colorTwo, 0.23 + beat * 0.12);
       ctx.lineWidth = r === 0 ? 2 : 1;
-      ctx.arc(cx, cy, radius * (1 + r * 0.24) + Math.sin(now / 900 + r) * 3, 0, Math.PI * 2);
+      ctx.arc(cx, cy, (radius * (1 + r * 0.24) + Math.sin(now / 900 + r) * 3) * breathe, 0, Math.PI * 2);
       ctx.stroke();
     }
-    const dotGradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 2, cx, cy, radius * 1.6);
-    dotGradient.addColorStop(0, rgba(state.colorOne, 0.5));
+    const dotGradient = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, 2, cx, cy, radius * (1.6 + beat * 0.25));
+    dotGradient.addColorStop(0, rgba(state.colorOne, 0.5 + beat * 0.2));
     dotGradient.addColorStop(1, rgba(state.colorTwo, 0));
     ctx.fillStyle = dotGradient;
-    ctx.beginPath(); ctx.arc(cx, cy, radius * 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, radius * (1.8 + beat * 0.25), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
 
