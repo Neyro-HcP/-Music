@@ -19,6 +19,7 @@
     glow: 22,
     aspect: 'landscape',
     showTitle: true,
+    showLogo: false,
     showParticles: true,
     showVignette: true,
     vignette: 65,
@@ -152,6 +153,7 @@
     $('#glowRange').value = state.glow;
     $('#aspectSelect').value = state.aspect;
     $('#showTitle').checked = state.showTitle;
+    $('#showLogo').checked = state.showLogo;
     $('#showParticles').checked = state.showParticles;
     $('#showVignette').checked = state.showVignette;
     $('#vignetteRange').value = state.vignette;
@@ -261,7 +263,7 @@
     $('#canvasAspectBadge').textContent = ratio.label;
   }
   function setStyle(style) {
-    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(style)) return;
+    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(style)) return;
     state.style = style;
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === style);
@@ -275,7 +277,9 @@
       impact: 'BASS IMPACT',
       matrix: 'POWER MATRIX',
       scope: 'LIVE OSCILLOSCOPE',
-      tunnel: 'SONIC TUNNEL'
+      tunnel: 'SONIC TUNNEL',
+      shockwave: 'BASS SHOCKWAVE',
+      bars3d: 'FREQUENCY WALL'
     };
     $('#previewStatus').textContent = state.file ? 'AUDIO REACTIVE' : 'DEMO · ' + statusNames[style];
     // The capped animation loop renders the new style on the next frame instead of blocking the click.
@@ -715,13 +719,6 @@
     }
     ctx.restore();
 
-    ctx.save();
-    ctx.strokeStyle = rgba(state.colorOne, 0.2);
-    ctx.lineWidth = Math.max(1, state.visualLineWidth);
-    ctx.shadowColor = state.colorOne;
-    ctx.shadowBlur = Math.min(18, state.glow * 0.6);
-    ctx.beginPath(); ctx.arc(cx, cy, radius * 1.9, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
   }
 
   function titleAnchor(w, xPercent) {
@@ -767,17 +764,45 @@
     ctx.restore();
   }
 
-  function drawImpact(w,h,now,values){
-    const cx=w*.5,cy=h*.49,size=Math.min(w,h),beat=values.beat||0;ctx.save();ctx.lineCap='round';
-    for(let ring=0;ring<5;ring++){const base=size*(.07+ring*.061+beat*.035);ctx.beginPath();
-      for(let i=0;i<=180;i++){const a=i/180*Math.PI*2,f=values.level(i+ring*17,180),r=base+f*size*(.022+ring*.002)+Math.sin(a*(7+ring)+now/180+ring)*size*.006;
-        const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
-      ctx.strokeStyle=ring%2?rgba(state.colorTwo,.5):rgba(state.colorOne,.8);ctx.lineWidth=Math.max(1,(3.2-ring*.35)*state.visualLineWidth);
-      ctx.shadowColor=ring%2?state.colorTwo:state.colorOne;ctx.shadowBlur=Math.min(28,state.glow*.9);ctx.stroke();}
-    ctx.shadowBlur=0;const rays=Math.min(200,Math.max(100,Math.floor(w/5)));
-    for(let i=0;i<rays;i++){const a=i/rays*Math.PI*2,f=Math.pow(values.level(i,rays),.8),inner=size*(.15+beat*.035),outer=inner+size*(.045+f*.18);
-      ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*inner,cy+Math.sin(a)*inner);ctx.lineTo(cx+Math.cos(a)*outer,cy+Math.sin(a)*outer);
-      ctx.strokeStyle=i%4===0?state.colorOne:rgba(state.colorTwo,.72);ctx.lineWidth=Math.max(.8,(i%4===0?2.2:1.15)*state.visualLineWidth);ctx.stroke();}ctx.restore();
+  function drawImpact(w, h, now, values) {
+    const cx = w * 0.5, cy = h * 0.49, size = Math.min(w, h);
+    const beat = values.beat || 0;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let layer = 0; layer < 3; layer++) {
+      const points = 240;
+      const base = size * (0.075 + layer * 0.038 + beat * 0.035);
+      ctx.beginPath();
+      for (let i = 0; i <= points; i++) {
+        const angle = i / points * Math.PI * 2;
+        const level = values.level(i + layer * 19, points);
+        const radius = base + Math.pow(level, 0.76) * size * (0.065 + layer * 0.012)
+          + Math.sin(angle * (11 + layer * 4) + now / (125 + layer * 28)) * size * 0.003;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = layer === 0 ? rgba(state.colorOne, 0.95) : rgba(state.colorTwo, 0.46 - layer * 0.08);
+      ctx.lineWidth = Math.max(1, (2.8 - layer * 0.55) * state.visualLineWidth);
+      ctx.shadowColor = layer === 0 ? state.colorOne : state.colorTwo;
+      ctx.shadowBlur = Math.min(24, state.glow * 0.82);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    const rays = Math.min(220, Math.max(110, Math.floor(size * 0.28)));
+    for (let i = 0; i < rays; i++) {
+      const angle = i / rays * Math.PI * 2;
+      const level = Math.pow(values.level(i, rays), 0.78);
+      const inner = size * (0.14 + beat * 0.045);
+      const outer = inner + size * (0.025 + level * 0.19);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
+      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
+      ctx.strokeStyle = i % 5 === 0 ? state.colorOne : rgba(state.colorTwo, 0.68);
+      ctx.lineWidth = Math.max(0.8, (i % 5 === 0 ? 2.1 : 1.05) * state.visualLineWidth);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawMatrix(w,h,now,values){
@@ -805,6 +830,75 @@
       for(let p=0;p<=sides;p++){const angle=p/sides*Math.PI*2-Math.PI/2+now/17000*(layer%2?1:-1),f=values.level(p*5+layer*13,sides*5),r=radius*(1+f*.11),x=cx+Math.cos(angle)*r,y=cy+Math.sin(angle)*r*(h/w>1.2?1.18:.82);if(p===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
       ctx.strokeStyle=layer%3===0?rgba(state.colorOne,.82):rgba(state.colorTwo,.36+(1-progress)*.3);ctx.lineWidth=Math.max(.8,(2.3-progress)*state.visualLineWidth);
       ctx.shadowColor=layer%3===0?state.colorOne:state.colorTwo;ctx.shadowBlur=Math.min(18,state.glow*.65);ctx.stroke();}ctx.restore();
+  }
+
+  // Broad bass waves with no central sphere.
+  function drawShockwave(w, h, now, values) {
+    const mid = h * 0.5, layers = 5, samples = 260;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let layer = 0; layer < layers; layer++) {
+      const centerY = mid + (layer - (layers - 1) / 2) * h * 0.075;
+      const direction = layer % 2 ? -1 : 1;
+      ctx.beginPath();
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples;
+        const level = values.level(i + layer * 23, samples);
+        const wave = values.wave(i, samples);
+        const envelope = Math.pow(Math.max(0, Math.sin(t * Math.PI)), 0.72);
+        const impactValue = (wave * 0.22 + Math.sin(t * Math.PI * (5 + layer) + now / 210 * direction) * 0.075
+          + (level - 0.16) * 0.36) * h * envelope;
+        const x = t * w, y = centerY + impactValue;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = layer % 2 ? rgba(state.colorTwo, 0.5) : rgba(state.colorOne, 0.88);
+      ctx.lineWidth = Math.max(1, (layer === 2 ? 3.6 : 1.6) * state.visualLineWidth);
+      ctx.shadowColor = layer % 2 ? state.colorTwo : state.colorOne;
+      ctx.shadowBlur = Math.min(22, state.glow * (layer === 2 ? 0.85 : 0.45));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Mirrored frequency wall for hard, bass-led visuals.
+  function drawBars3d(w, h, now, values) {
+    const count = Math.max(56, Math.min(112, Math.floor(w / 11)));
+    const gap = Math.max(2, w * 0.0026);
+    const cell = (w - 72) / count;
+    const barW = Math.max(1.2, cell - gap);
+    const mid = h * 0.53, maxH = h * 0.34;
+    const gradient = ctx.createLinearGradient(0, mid - maxH, 0, mid + maxH);
+    gradient.addColorStop(0, state.colorTwo);
+    gradient.addColorStop(0.48, state.colorOne);
+    gradient.addColorStop(1, rgba(state.colorTwo, 0.22));
+    ctx.save();
+    ctx.fillStyle = gradient;
+    for (let i = 0; i < count; i++) {
+      const level = Math.max(0.025, Math.pow(values.level(i, count), 0.78));
+      const kick = (values.beat || 0) * 0.16 * (1 - i / count);
+      const barH = Math.min(maxH, maxH * (level * 0.92 + kick));
+      const x = 36 + i * cell + (cell - barW) * 0.5;
+      ctx.globalAlpha = 0.94;
+      if (ctx.roundRect) {
+        ctx.beginPath(); ctx.roundRect(x, mid - barH, barW, barH, Math.min(4, barW * 0.35)); ctx.fill();
+        ctx.beginPath(); ctx.roundRect(x, mid + 6, barW, barH * 0.7, Math.min(4, barW * 0.35)); ctx.fill();
+      } else {
+        ctx.fillRect(x, mid - barH, barW, barH);
+        ctx.fillRect(x, mid + 6, barW, barH * 0.7);
+      }
+      if (i % 6 === 0) {
+        ctx.globalAlpha = 0.4;
+        ctx.shadowColor = state.colorOne;
+        ctx.shadowBlur = Math.min(14, state.glow * 0.55);
+        ctx.fillRect(x, mid - barH, barW, Math.max(2, state.visualLineWidth * 2));
+        ctx.shadowBlur = 0;
+      }
+    }
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = rgba(state.colorOne, 0.6);
+    ctx.lineWidth = Math.max(1, state.visualLineWidth);
+    ctx.beginPath(); ctx.moveTo(30, mid + 2); ctx.lineTo(w - 30, mid + 2); ctx.stroke();
+    ctx.restore();
   }
 
   function drawFrame(now) {
@@ -838,11 +932,13 @@
     else if (state.style === 'matrix') drawMatrix(w, h, now, values);
     else if (state.style === 'scope') drawScope(w, h, now, values);
     else if (state.style === 'tunnel') drawTunnel(w, h, now, values);
+    else if (state.style === 'shockwave') drawShockwave(w, h, now, values);
+    else if (state.style === 'bars3d') drawBars3d(w, h, now, values);
     ctx.restore();
 
     ctx.save();
     if (state.cameraShakeEnabled) ctx.translate(shakeX * 0.32, shakeY * 0.32);
-    drawCenterLogo(w, h);
+    if (state.showLogo) drawCenterLogo(w, h);
     drawTypography(w, h);
     ctx.restore();
     state.lastFrameTime = now;
@@ -1058,7 +1154,7 @@
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
   }
 
-  function stopExport(manual) {  function stopExport(manual) {
+  function stopExport(manual) {
     if (!state.recorder || state.recorder.state === 'inactive') return;
     if (manual) {
       audio.pause();
@@ -1153,7 +1249,7 @@
         $('#exportStatus').textContent = 'Экспорт завершён';
         setPlayState();
       };
-      state.recorder.start(1000);      state.recorder.start(1000);
+      state.recorder.start(1000);
       setExportUI(true);
       $('#exportStatus').textContent = 'Записываем визуализатор…';
       state.recordingTimer = window.setInterval(function () {
@@ -1363,6 +1459,7 @@
         glow: Number(state.glow),
         aspect: state.aspect,
         showTitle: state.showTitle,
+        showLogo: state.showLogo,
         showParticles: state.showParticles,
         showVignette: state.showVignette,
         vignette: state.vignette,
@@ -1433,7 +1530,7 @@
       const saved = JSON.parse(localStorage.getItem('nsp-visual-preset') || localStorage.getItem('waveframe-preset') || 'null');
       const v = saved && saved.visualizer;
       if (!v) return;
-      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel'].includes(v.style)) state.style = v.style;
+      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(v.style)) state.style = v.style;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = v.colorTwo;
       if (/^#[0-9a-f]{6}$/i.test(v.background || '')) state.background = v.background;
@@ -1441,6 +1538,7 @@
       if (Number.isFinite(Number(v.glow))) state.glow = Math.max(0, Math.min(40, Number(v.glow)));
       if (['landscape', 'square', 'portrait'].includes(v.aspect)) state.aspect = v.aspect;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
+      if (typeof v.showLogo === 'boolean') state.showLogo = v.showLogo;
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
       if (typeof v.showVignette === 'boolean') state.showVignette = v.showVignette;
@@ -1556,7 +1654,7 @@
     const ly = h * state.logoY / 100;
     const logoRadius = Math.min(w, h) * state.logoSize / 200 * 1.25;
     let mode = 'visual';
-    if (Math.hypot(p.x - lx, p.y - ly) <= logoRadius) {
+    if (state.showLogo && Math.hypot(p.x - lx, p.y - ly) <= logoRadius) {
       mode = 'logo';
     } else if (state.showTitle && nearText(p, 'title', titleTextY(h), h)) {
       mode = 'title';
@@ -1647,6 +1745,7 @@
     state.aspect = event.target.value; applyAspect(); drawFrame(performance.now());
   });
   $('#showTitle').addEventListener('change', function (event) { state.showTitle = event.target.checked; });
+  $('#showLogo').addEventListener('change', function (event) { state.showLogo = event.target.checked; });
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
   $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
