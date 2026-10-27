@@ -11,7 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./public/app.css?v=followers-grid-20261027">
+  <link rel="stylesheet" href="./public/rgb-phone.css?v=rgb-phone-20261027">
   <script src="./public/app.js?v=followers-grid-20261027" defer></script>
+  <script src="./public/rgb-phone.js?v=rgb-phone-20261027" defer></script>
 </head>
 <body>
   <div class="site-noise" aria-hidden="true"></div>
@@ -315,6 +317,41 @@
         </div>
         <div class="settings-actions"><button class="text-button" id="resetButton" type="button">↺ Сбросить</button><button class="text-button" id="projectButton" type="button">↓ Сохранить проект JSON</button></div></aside>
     </section>
+
+
+<section class="rgb-phone-section" id="rgbPhoneSection" aria-label="RGB Phone">
+  <div class="rgb-phone-heading">
+    <div>
+      <h2>RGB PHONE</h2>
+      <p>ФИЗИКА · ЗВУК · НАКЛОН</p>
+    </div>
+    <div class="rgb-phone-status" id="rgbPhoneStatus" role="status" aria-live="polite">Тяни предмет и отпускай</div>
+  </div>
+  <div class="rgb-phone-stage">
+    <div class="rgb-phone-device" aria-label="Интерактивный телефон RGB">
+      <div class="rgb-phone-bezel">
+        <div class="rgb-phone-top" aria-hidden="true"><span class="rgb-phone-speaker"></span><span class="rgb-phone-camera"></span></div>
+        <div class="rgb-phone-screen">
+          <canvas id="rgbPhoneCanvas" aria-label="Физическая песочница. Перетаскивай предметы и бросай их"></canvas>
+        </div>
+        <div class="rgb-phone-home" aria-hidden="true"></div>
+      </div>
+    </div>
+    <div class="rgb-phone-controls" aria-label="Добавить предметы">
+      <button class="rgb-phone-control" type="button" data-rgb-add="rubber"><span class="rgb-phone-icon">●</span> Шарики</button>
+      <button class="rgb-phone-control" type="button" data-rgb-add="ice"><span class="rgb-phone-icon">◇</span> Лёд</button>
+      <button class="rgb-phone-control" type="button" data-rgb-add="cube"><span class="rgb-phone-icon">◈</span> Кубики</button>
+      <button class="rgb-phone-control" type="button" data-rgb-add="tnt"><span class="rgb-phone-icon">▦</span> TNT</button>
+    </div>
+    <div class="rgb-phone-tool-row" aria-label="Управление физикой">
+      <button class="rgb-phone-control" id="rgbPhoneSound" type="button" aria-pressed="true"><span class="rgb-phone-icon">♫</span><span class="rgb-phone-tool-label">Звук включён</span></button>
+      <button class="rgb-phone-control" id="rgbPhoneTilt" type="button" aria-pressed="false"><span class="rgb-phone-icon">↻</span><span class="rgb-phone-tool-label">Наклон</span></button>
+      <button class="rgb-phone-control rgb-phone-clear" type="button" data-rgb-action="clear">Очистить</button>
+      <button class="rgb-phone-control" type="button" data-rgb-action="reset">Сбросить</button>
+    </div>
+    <p class="rgb-phone-gesture-note">Проведи по предмету, потяни и отпусти. Коснись TNT, чтобы взорвать.</p>
+  </div>
+</section>
 
 <section class="nsp-crew" id="nsp-crew" aria-label="Подписчики TikTok">
   <div class="nsp-crew-inner">
