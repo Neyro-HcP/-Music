@@ -69,7 +69,7 @@ button:disabled { cursor: not-allowed !important; opacity: .4; }
   gap: 13px;
   color: inherit;
   text-decoration: none;
-  min-width: 220px;
+  min-width: 37px;
 }
 .brand-mark {
   height: 37px;
