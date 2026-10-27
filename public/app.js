@@ -695,7 +695,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#f7f5ff';
       ctx.font = '800 ' + Math.max(12, size * 0.31) + 'px Manrope, sans-serif';
-      ctx.fillText('НсП', cx, cy);
+      ctx.fillText('♫', cx, cy);
     }
     ctx.restore();
     ctx.shadowBlur = 0;
@@ -927,7 +927,7 @@
   function drawTypography(w, h) {
     if (!state.showTitle) return;
     const rawTitle = ($('#trackTitle').value || 'Без названия').trim();
-    const rawArtist = ($('#trackArtist').value || 'НсП').trim();
+    const rawArtist = ($('#trackArtist').value || '').trim();
     const title = transformDisplayText(rawTitle, state.titleCase);
     const artist = transformDisplayText(rawArtist, state.artistCase);
     const base = Math.min(w, h);
@@ -1637,7 +1637,7 @@
         state.logoObjectUrl = url;
         state.logoImage = img;
         $('#logoPreview').innerHTML = '<img src="' + url + '" alt="">';
-        $('#logoFileName').textContent = file.name || 'Логотип НсП';
+        $('#logoFileName').textContent = file.name || 'Логотип';
         if (!fromStorage) void storeImageAsset('logo', file);
       } else {
         if (state.backgroundObjectUrl) URL.revokeObjectURL(state.backgroundObjectUrl);
@@ -1660,8 +1660,8 @@
     state.logoImage = null;
     if (state.logoObjectUrl) URL.revokeObjectURL(state.logoObjectUrl);
     state.logoObjectUrl = null;
-    $('#logoPreview').innerHTML = '<span>НсП</span>';
-    $('#logoFileName').textContent = 'Логотип НсП';
+    $('#logoPreview').innerHTML = '<span aria-hidden="true">♫</span>';
+    $('#logoFileName').textContent = 'Логотип';
     $('#logoFile').value = '';
     void deleteImageAsset('logo');
     drawFrame(performance.now());
@@ -1690,7 +1690,7 @@
 
   function currentProject() {
     return {
-      app: 'НсП Visual Lab',
+      app: 'Визуализатор музыки',
       version: 1,
       savedAt: new Date().toISOString(),
       visualizer: {
@@ -1969,7 +1969,7 @@
   const backgroundFileInput = $('#backgroundFile');
   $('#logoPickButton').addEventListener('click', function () { logoFileInput.click(); });
   $('#backgroundPickButton').addEventListener('click', function () { backgroundFileInput.click(); });
-  $('#removeLogoButton').addEventListener('click', function () { removeLogo(); toast('Используется монограмма НсП.'); });
+  $('#removeLogoButton').addEventListener('click', function () { removeLogo(); toast('Логотип сброшен.'); });
   $('#removeBackgroundButton').addEventListener('click', function () { removeBackground(); toast('Изображение фона убрано.'); });
   logoFileInput.addEventListener('change', function () {
     const file = logoFileInput.files && logoFileInput.files[0];
