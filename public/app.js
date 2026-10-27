@@ -35,6 +35,7 @@
     logoGlow: 8,
     showVisualizer: true,
     visualizerGradient: true,
+    visualizerRotationSpeed: 0,
     gradientMidEnabled: true,
     gradientMidColor: '#8c79df',
     gradientMidPosition: 38,
@@ -184,8 +185,8 @@
     $('#gradientMidColorInput').disabled = !state.gradientMidEnabled;
     $('#gradientMidPositionRange').disabled = !state.gradientMidEnabled;
     $('#gradientPreview').style.background = state.visualizerGradient
-      ? 'linear-gradient(' + state.gradientAngle + 'deg, ' + state.colorOne + ' 0%, ' + (state.gradientMidEnabled ? state.gradientMidColor + ' ' + state.gradientMidPosition + '%, ' : '') + state.colorTwo + ' 100%)'
-      : state.colorOne;
+      ? 'linear-gradient(' + ((Number(state.gradientAngle) + 90) % 360) + 'deg, ' + state.colorOne + ' 0%, ' + (state.gradientMidEnabled ? state.gradientMidColor + ' ' + state.gradientMidPosition + '%, ' : '') + state.colorTwo + ' 72%, ' + rgba(state.colorTwo, 0.08) + ' 100%)'
+      : 'linear-gradient(' + ((Number(state.gradientAngle) + 90) % 360) + 'deg, ' + state.colorOne + ' 0%, ' + state.colorOne + ' 72%, ' + rgba(state.colorOne, 0.08) + ' 100%)';
     $('#backgroundColor').value = state.background;
     $('#sensitivityRange').value = state.sensitivity;
     $('#glowRange').value = state.glow;
@@ -207,6 +208,8 @@
     $('#logoGlowRange').value = state.logoGlow;
     $('#showVisualizer').checked = state.showVisualizer;
     $('#visualizerGradientEnabled').checked = state.visualizerGradient;
+    $('#visualizerRotationSpeedRange').value = state.visualizerRotationSpeed;
+    $('#visualizerRotationSpeedOutput').textContent = Number(state.visualizerRotationSpeed).toFixed(2) + '×';
     $('#visualizerShadowRange').value = state.visualizerShadow;
     $('#visualizerFilterSelect').value = state.visualizerFilter;
     $('#showParticles').checked = state.showParticles;
@@ -901,7 +904,7 @@
     const value = String(text == null ? '' : text);
     if (mode === 'uppercase') return value.toLocaleUpperCase();
     if (mode === 'lowercase') return value.toLocaleLowerCase();
-    if (mode === 'titlecase') return value.toLocaleLowerCase().replace(/(^|\\s|[-–—])([A-Za-zА-Яа-яЁё0-9])/g, function (_, prefix, letter) {
+    if (mode === 'titlecase') return value.toLocaleLowerCase().replace(/(^|\s|[-–—])([A-Za-zА-Яа-яЁё0-9])/g, function (_, prefix, letter) {
       return prefix + letter.toLocaleUpperCase();
     });
     return value;
@@ -1126,7 +1129,7 @@
     const dx=w*state.visualX/100+(state.cameraShakeEnabled?state.cameraShake*impact*Math.sin(now*.117):0)+(layer?w*layer.x/100:0);
     const dy=h*state.visualY/100+(state.cameraShakeEnabled?state.cameraShake*impact*.72*Math.cos(now*.151):0)+(layer?h*layer.y/100:0);
     const scale=state.visualScale/100*(1+impact*state.visualizerPulse/100*.34)*(layer?layer.scale/100:1);
-    ctx.save();ctx.translate(w*.5+dx,h*.5+dy);ctx.scale(scale,scale);ctx.translate(-w*.5,-h*.5);
+    ctx.save();ctx.translate(w*.5+dx,h*.5+dy);if(state.visualizerRotationSpeed)ctx.rotate(now/1000*state.visualizerRotationSpeed);ctx.scale(scale,scale);ctx.translate(-w*.5,-h*.5);
     ctx.globalAlpha=state.visualOpacity/100*(layer?layer.opacity/100:1);
     if ('filter' in ctx) {
       const pieces = [];
@@ -1706,7 +1709,7 @@
         showLogo: state.showLogo,
         logoShape: state.logoShape, logoPulseEnabled: state.logoPulseEnabled, logoPulseMode: state.logoPulseMode, logoPulseAmount: state.logoPulseAmount,
         logoHaloEnabled: state.logoHaloEnabled, logoHaloStyle: state.logoHaloStyle, logoHaloRotationSpeed: state.logoHaloRotationSpeed, logoHaloCount: state.logoHaloCount, logoHaloWidth: state.logoHaloWidth, logoHaloColor: state.logoHaloColor, logoGlow: state.logoGlow,
-        showVisualizer: state.showVisualizer, visualizerGradient: state.visualizerGradient, visualizerShadow: state.visualizerShadow, visualizerFilter: state.visualizerFilter, visualizerLayers: state.visualizerLayers,
+        showVisualizer: state.showVisualizer, visualizerGradient: state.visualizerGradient, visualizerRotationSpeed: state.visualizerRotationSpeed, visualizerShadow: state.visualizerShadow, visualizerFilter: state.visualizerFilter, visualizerLayers: state.visualizerLayers,
         showParticles: state.showParticles,
         showVignette: state.showVignette,
         vignette: state.vignette,
@@ -1808,6 +1811,7 @@
       if (['beat','bass','both'].includes(v.logoPulseMode)) state.logoPulseMode = v.logoPulseMode;
       if (['none','punch','mono','warm','cold','bloom'].includes(v.visualizerFilter)) state.visualizerFilter = v.visualizerFilter;
       if (typeof v.visualizerGradient === 'boolean') state.visualizerGradient = v.visualizerGradient;
+      if (Number.isFinite(Number(v.visualizerRotationSpeed))) state.visualizerRotationSpeed = clamp(Number(v.visualizerRotationSpeed), -1.5, 1.5);
       if (Array.isArray(v.visualizerLayers)) state.visualizerLayers = v.visualizerLayers.slice(0,8).filter(function(layer){return layer&&typeof layer==='object';}).map(function(layer,index){return {id:index+1,colorOne:/^#[0-9a-f]{6}$/i.test(layer.colorOne||'')?layer.colorOne:'#b8a5ff',colorTwo:/^#[0-9a-f]{6}$/i.test(layer.colorTwo||'')?layer.colorTwo:'#f5f3ff',opacity:clamp(Number(layer.opacity)||70,0,100),glow:clamp(Number(layer.glow)||0,0,40),shadow:clamp(Number(layer.shadow)||0,0,40),scale:clamp(Number(layer.scale)||94,50,150),x:clamp(Number(layer.x)||0,-35,35),y:clamp(Number(layer.y)||0,-35,35),gradient:layer.gradient!==false,enabled:layer.enabled!==false};});
       if (typeof v.showParticles === 'boolean') state.showParticles = v.showParticles;
       if (typeof v.showTitle === 'boolean') state.showTitle = v.showTitle;
@@ -1820,6 +1824,7 @@
       if (['up','down','left','right','out','in','float'].includes(v.particleDirection)) state.particleDirection = v.particleDirection;
       if (['circle','square','diamond','line','star'].includes(v.particleShape)) state.particleShape = v.particleShape;
       const numericSettings = {
+        visualizerRotationSpeed: [-1.5, 1.5],
         vignette: [0, 100], backgroundOpacity: [0, 100], logoSize: [6, 34], logoOpacity: [20, 100],
         logoX: [5, 95], logoY: [5, 95], visualX: [-35, 35], visualY: [-35, 35],
         visualScale: [35, 175], visualOpacity: [10, 100], visualLineWidth: [0.5, 3],
@@ -2146,6 +2151,7 @@
   $('#showParticles').addEventListener('change', function (event) { state.showParticles = event.target.checked; });
   $('#showVisualizer').addEventListener('change', function(event){state.showVisualizer=event.target.checked;});
   $('#visualizerGradientEnabled').addEventListener('change', function(event){state.visualizerGradient=event.target.checked;updateSettingsUI();drawFrame(performance.now());});
+  $('#visualizerRotationSpeedRange').addEventListener('input', function(event){state.visualizerRotationSpeed=Number(event.target.value);$('#visualizerRotationSpeedOutput').textContent=state.visualizerRotationSpeed.toFixed(2)+'×';drawFrame(performance.now());});
   $('#visualizerFilterSelect').addEventListener('change', function(event){state.visualizerFilter=event.target.value;});
   $('#showVignette').addEventListener('change', function (event) { state.showVignette = event.target.checked; });
   $('#cameraShakeEnabled').addEventListener('change', function (event) { state.cameraShakeEnabled = event.target.checked; });
