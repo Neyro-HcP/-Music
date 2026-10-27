@@ -234,6 +234,28 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     renderer.info.autoReset = true;
   }
 
+  function createOpenLiquidVolumeGeometry(){
+    const faces=[
+      [[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]],
+      [[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5]],
+      [[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5]],
+      [[.5,-.5,.5],[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5]],
+      [[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5]]
+    ];
+    const positions=[];
+    const indices=[];
+    for(const face of faces){
+      const base=positions.length/3;
+      for(const vertex of face)positions.push(vertex[0],vertex[1],vertex[2]);
+      indices.push(base,base+1,base+2,base,base+2,base+3);
+    }
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
   function createScene() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x080a13);
@@ -269,7 +291,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.ice = new RoundedBoxGeometry(.48,.48,.48,3,.045);
     geometries.tnt = new RoundedBoxGeometry(.49,.49,.49,3,.035);
     geometries.tntLabel = new THREE.PlaneGeometry(.4,.2);
-    geometries.liquidVolume = new THREE.BoxGeometry(1,1,1);
+    geometries.liquidVolume = createOpenLiquidVolumeGeometry();
     geometries.liquidSurface = new THREE.PlaneGeometry(1,1,coarsePointer?24:38,coarsePointer?8:12);
     geometries.liquidSurface.rotateX(-Math.PI/2);
     geometries.liquidPour = new THREE.CylinderGeometry(.035,.075,1,coarsePointer?7:10,1,true);
@@ -445,7 +467,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     bodies.set(body,item);
     body.addEventListener('collide', event=>onCollision(item,event));
     items.push(item);
-    if(liquidMode)attachLiquidToItem(item,liquidMode);
+    item.liquidSubmerged=0;
     return item;
   }
 
@@ -457,8 +479,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     scene.remove(item.mesh);
     scene.remove(item.shadow);
     item.material?.dispose();
-    for(let i=surfaceStreams.length-1;i>=0;i--)if(surfaceStreams[i].item===item)surfaceStreams.splice(i,1);
-    for(let i=liquidDrops.length-1;i>=0;i--)if(liquidDrops[i].item===item)liquidDrops.splice(i,1);
     item.body.removeAllEventListeners?.();
     if(dragging?.item===item)dragging=null;
   }
@@ -617,6 +637,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     }else if(kind==='tnt'){
       voice(115,.22,'sine',.12*power,'down',x);
       noiseBurst(.04,.04*power,'crack',1800,x);
+    }else if(kind==='water'){
+      noiseBurst(.055,.018*power,'soft',1450,x);
+      voice(random(520,880),.095,'sine',.022*power,'down',x);
+      voice(random(1050,1500),.045,'triangle',.009*power,'down',x);
     }else{
       voice(random(260,390),.075,'triangle',.08*power,'down',x);
       voice(random(480,720),.035,'sine',.025*power,'down',x);
