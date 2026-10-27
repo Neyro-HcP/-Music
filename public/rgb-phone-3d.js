@@ -34,16 +34,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let gravityX = 0, gravityY = -12, gravityZ = 0;
   let lastWakeGravity = {x:0,y:-12,z:0}, lastWakeAt = 0, lastCollisionSweep = 0;
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
+  let liquidLevel = -2, liquidTargetLevel = -1, liquidPouring = false;
+  let liquidEnergy = 0, liquidSurfaceAccumulator = 0, nextPourWaveAt = 0;
+  let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null;
+  const liquidWaveImpulses = [];
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
   const items = [];
   const bodies = new WeakMap();
   const walls = [];
   const activeEffects = [];
   const collisionTimes = new Map();
-  const liquidDrops = [];
-  const wallStreams = [];
-  const surfaceStreams = [];
-  const MAX_LIQUID_PARTICLES = coarsePointer ? 28 : 46;
+  const MAX_LIQUID_WAVES = coarsePointer ? 5 : 8;
   let maxDpr = coarsePointer ? 1.25 : 1.5;
   let animationHandle = 0;
   let fpsSamples = 0, fpsElapsed = 0, fpsScale = 1;
@@ -189,43 +190,34 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     materials.floor = new THREE.MeshStandardMaterial({ color: 0x15192b, roughness: .5, metalness: .14 });
     materials.back = new THREE.MeshBasicMaterial({ color: 0x090d19 });
     materials.ring = new THREE.MeshBasicMaterial({ color: 0xffbc71, transparent: true, opacity: .9, depthWrite: false, side: THREE.DoubleSide });
-    textures.waterFlow = makeCanvasTexture((g,s) => {
-      g.clearRect(0,0,s,s);
-      const gradient=g.createLinearGradient(0,0,s,0);
-      gradient.addColorStop(0,'rgba(255,255,255,0)');
-      gradient.addColorStop(.24,'rgba(255,255,255,.12)');
-      gradient.addColorStop(.42,'rgba(255,255,255,.68)');
-      gradient.addColorStop(.56,'rgba(255,255,255,.92)');
-      gradient.addColorStop(.72,'rgba(255,255,255,.3)');
-      gradient.addColorStop(1,'rgba(255,255,255,0)');
-      g.fillStyle=gradient;g.fillRect(0,0,s,s);
-      g.fillStyle='rgba(255,255,255,.25)';g.fillRect(s*.43,0,s*.1,s);
-    },64);
-    textures.slimeFlow = makeCanvasTexture((g,s) => {
-      g.clearRect(0,0,s,s);
-      const gradient=g.createLinearGradient(0,0,s,0);
-      gradient.addColorStop(0,'rgba(255,255,255,0)');
-      gradient.addColorStop(.18,'rgba(255,255,255,.24)');
-      gradient.addColorStop(.4,'rgba(255,255,255,.88)');
-      gradient.addColorStop(.58,'rgba(255,255,255,.95)');
-      gradient.addColorStop(.8,'rgba(255,255,255,.36)');
-      gradient.addColorStop(1,'rgba(255,255,255,0)');
-      g.fillStyle=gradient;g.fillRect(0,0,s,s);
-      for(let i=0;i<9;i++){
-        g.beginPath();g.ellipse(random(s*.2,s*.8),random(0,s),random(1,4),random(5,22),0,0,Math.PI*2);
-        g.fillStyle='rgba(255,255,255,'+random(.12,.4)+')';g.fill();
-      }
-    },64);
-    materials.water = new THREE.MeshPhysicalMaterial({
-      color:0x64dfff,roughness:.045,metalness:.02,transparent:true,opacity:.76,
-      clearcoat:1,clearcoatRoughness:.025,envMapIntensity:1.6,depthWrite:false
+    materials.waterVolume = new THREE.MeshPhysicalMaterial({
+      color:0x159bd7,roughness:.12,metalness:.02,transparent:true,opacity:.29,
+      clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.4,depthWrite:false,
+      side:THREE.DoubleSide
     });
-    materials.slime = new THREE.MeshPhysicalMaterial({
-      color:0x75ee43,roughness:.12,metalness:.01,transparent:true,opacity:.88,
-      clearcoat:1,clearcoatRoughness:.06,envMapIntensity:1.35,depthWrite:false
+    materials.waterSurface = new THREE.MeshPhysicalMaterial({
+      color:0x48caff,roughness:.065,metalness:.06,transparent:true,opacity:.88,
+      clearcoat:1,clearcoatRoughness:.025,envMapIntensity:1.8,depthWrite:false,
+      side:THREE.DoubleSide
     });
-    materials.waterFlow = new THREE.MeshBasicMaterial({map:textures.waterFlow,color:0x70dfff,transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide});
-    materials.slimeFlow = new THREE.MeshBasicMaterial({map:textures.slimeFlow,color:0x87ec4f,transparent:true,opacity:.88,depthWrite:false,side:THREE.DoubleSide});
+    materials.waterStream = new THREE.MeshPhysicalMaterial({
+      color:0x67dcff,roughness:.07,metalness:.01,transparent:true,opacity:.79,
+      clearcoat:1,clearcoatRoughness:.035,depthWrite:false,side:THREE.DoubleSide
+    });
+    materials.slimeVolume = new THREE.MeshPhysicalMaterial({
+      color:0x4bbd28,roughness:.18,metalness:.01,transparent:true,opacity:.48,
+      clearcoat:1,clearcoatRoughness:.055,envMapIntensity:1.25,depthWrite:false,
+      side:THREE.DoubleSide
+    });
+    materials.slimeSurface = new THREE.MeshPhysicalMaterial({
+      color:0x84ef45,roughness:.11,metalness:.01,transparent:true,opacity:.94,
+      clearcoat:1,clearcoatRoughness:.04,envMapIntensity:1.35,depthWrite:false,
+      side:THREE.DoubleSide
+    });
+    materials.slimeStream = new THREE.MeshPhysicalMaterial({
+      color:0x8df34e,roughness:.13,metalness:0,transparent:true,opacity:.9,
+      clearcoat:1,clearcoatRoughness:.06,depthWrite:false,side:THREE.DoubleSide
+    });
   }
 
   function createRenderer() {
@@ -276,8 +268,10 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.ice = new RoundedBoxGeometry(.48,.48,.48,3,.045);
     geometries.tnt = new RoundedBoxGeometry(.49,.49,.49,3,.035);
     geometries.tntLabel = new THREE.PlaneGeometry(.4,.2);
-    geometries.drop = new THREE.SphereGeometry(.055,8,6);
-    geometries.flowRibbon = new THREE.PlaneGeometry(1,1);
+    geometries.liquidVolume = new THREE.BoxGeometry(1,1,1);
+    geometries.liquidSurface = new THREE.PlaneGeometry(1,1,coarsePointer?24:38,coarsePointer?8:12);
+    geometries.liquidSurface.rotateX(-Math.PI/2);
+    geometries.liquidPour = new THREE.CylinderGeometry(.035,.075,1,coarsePointer?7:10,1,true);
     geometries.shadow = new THREE.PlaneGeometry(1,1);
     geometries.floor = new THREE.BoxGeometry(1,.12,1.2);
     geometries.ring = new THREE.TorusGeometry(.12,.018,5,42);
@@ -289,6 +283,19 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     floorMesh = new THREE.Mesh(geometries.floor, materials.floor);
     floorMesh.position.z = -.3;
     scene.add(floorMesh);
+
+    liquidVolumeMesh = new THREE.Mesh(geometries.liquidVolume, materials.waterVolume);
+    liquidVolumeMesh.visible = false;
+    liquidVolumeMesh.renderOrder = 2;
+    scene.add(liquidVolumeMesh);
+    liquidSurfaceMesh = new THREE.Mesh(geometries.liquidSurface, materials.waterSurface);
+    liquidSurfaceMesh.visible = false;
+    liquidSurfaceMesh.renderOrder = 3;
+    scene.add(liquidSurfaceMesh);
+    liquidPourMesh = new THREE.Mesh(geometries.liquidPour, materials.waterStream);
+    liquidPourMesh.visible = false;
+    liquidPourMesh.renderOrder = 4;
+    scene.add(liquidPourMesh);
 
     const stars = new THREE.BufferGeometry();
     const starCount = coarsePointer ? 65 : 100;
@@ -331,6 +338,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     floorMesh.position.y=floorY-.08;
     floorMesh.position.z=-.26;
     backMesh.scale.set(x*.24,y*.18,1);
+    updateLiquidLayout();
   }
 
   function createPhysics() {
