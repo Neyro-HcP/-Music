@@ -341,7 +341,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     world.defaultContactMaterial.friction = .34;
     world.defaultContactMaterial.restitution = .2;
     world.defaultContactMaterial.contactEquationStiffness = 1e7;
-    world.defaultContactMaterial.contactEquationRelaxation = 4;
+    world.defaultContactMaterial.contactEquationRelaxation = 3;
+    world.defaultContactMaterial.contactEquationRegularizationTime = 3;
     physicsMaterials.wall = new CANNON.Material('wall');
     physicsMaterials.rubber = new CANNON.Material('rubber');
     physicsMaterials.ice = new CANNON.Material('ice');
@@ -351,15 +352,15 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       physicsMaterials[a],physicsMaterials[b],{friction,restitution,contactEquationStiffness:1e7,contactEquationRelaxation:4}
     ));
     contact('rubber','rubber',.36,.87);
-    contact('rubber','ice',.34,.68);
-    contact('rubber','cube',.42,.72);
-    contact('rubber','tnt',.4,.66);
-    contact('ice','ice',.18,.51);
-    contact('ice','cube',.25,.43);
-    contact('ice','tnt',.24,.4);
-    contact('cube','cube',.44,.34);
-    contact('cube','tnt',.4,.3);
-    contact('tnt','tnt',.38,.28);
+    contact('rubber','ice',.24,.72);
+    contact('rubber','cube',.32,.74);
+    contact('rubber','tnt',.34,.68);
+    contact('ice','ice',.12,.57);
+    contact('ice','cube',.2,.49);
+    contact('ice','tnt',.2,.46);
+    contact('cube','cube',.34,.42);
+    contact('cube','tnt',.32,.38);
+    contact('tnt','tnt',.3,.34);
     for(const kind of ['rubber','ice','cube','tnt']){
       const settings=kind==='rubber'?{friction:.35,restitution:.82}:kind==='ice'?{friction:.2,restitution:.61}:kind==='cube'?{friction:.42,restitution:.35}:{friction:.4,restitution:.3};
       world.addContactMaterial(new CANNON.ContactMaterial(physicsMaterials[kind],physicsMaterials.wall,{...settings,contactEquationStiffness:1e7,contactEquationRelaxation:4}));
@@ -888,7 +889,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const speed=Math.hypot(item.body.velocity.x,item.body.velocity.y,item.body.velocity.z);
     const spin=Math.hypot(av.x,av.y,av.z);
     if(touchingY&&speed<.22&&spin<2.5){av.x*=.68;av.y*=.82;av.z*=.68;}
-    if(speed<.12&&spin<.16)item.body.sleep();
+    if((touchingX||touchingY||touchingZ)&&speed<.12&&spin<.16)item.body.sleep();
     const maxSpin=9;
     av.x=clamp(av.x,-maxSpin,maxSpin);av.y=clamp(av.y,-maxSpin,maxSpin);av.z=clamp(av.z,-maxSpin,maxSpin);
   }
@@ -1091,11 +1092,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       if(document.hidden){
         lastRender=0;
         clock.stop();
+        stopLiquidSound();
         if(animationHandle)cancelAnimationFrame(animationHandle);
         animationHandle=0;
       }else{
         clock.start();
         lastRender=0;
+        if(liquidMode&&soundEnabled)startLiquidSound(liquidMode);
         if(!animationHandle)animationHandle=requestAnimationFrame(animate);
       }
     });
