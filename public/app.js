@@ -2180,6 +2180,86 @@
     if (state.recorder && state.recorder.state !== 'inactive') stopExport(false);
   });
 
+  async function initTikTokFollowers() {
+    const grid = $('#tiktokFollowersGrid');
+    if (!grid) return;
+
+    try {
+      const response = await fetch('./public/followers.json', { cache: 'no-cache' });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const followers = Array.isArray(payload) ? payload : (Array.isArray(payload.followers) ? payload.followers : []);
+      const seen = new Set();
+
+      followers.slice(0, 80).forEach(function (person) {
+        if (!person || typeof person !== 'object') return;
+        const username = String(person.username || person.handle || '').trim().replace(/^@+/, '');
+        if (!/^[a-zA-Z0-9._]{1,24}$/.test(username)) return;
+        const key = username.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+
+        const card = document.createElement('a');
+        card.className = 'tiktok-follower-card';
+        card.href = 'https://www.tiktok.com/@' + encodeURIComponent(username);
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+        card.setAttribute('aria-label', 'Открыть TikTok @' + username);
+
+        const avatar = document.createElement('span');
+        avatar.className = 'tiktok-follower-avatar';
+        const fallback = document.createElement('span');
+        fallback.className = 'tiktok-follower-initial';
+        fallback.textContent = username.charAt(0).toUpperCase();
+        avatar.appendChild(fallback);
+
+        const avatarSource = typeof person.avatar === 'string' ? person.avatar.trim() : '';
+        if (avatarSource) {
+          try {
+            const parsedAvatar = new URL(avatarSource, window.location.href);
+            const isLocal = parsedAvatar.origin === window.location.origin;
+            if (parsedAvatar.protocol === 'https:' || isLocal) {
+              const image = document.createElement('img');
+              image.src = parsedAvatar.href;
+              image.alt = 'Аватар TikTok @' + username;
+              image.loading = 'lazy';
+              image.decoding = 'async';
+              image.addEventListener('load', function () { fallback.hidden = true; });
+              image.addEventListener('error', function () { image.remove(); });
+              avatar.appendChild(image);
+            }
+          } catch (_error) {
+            // Keep the initials fallback when an avatar URL is invalid.
+          }
+        }
+
+        const details = document.createElement('span');
+        details.className = 'tiktok-follower-details';
+        const handle = document.createElement('span');
+        handle.className = 'tiktok-follower-handle';
+        handle.textContent = '@' + username;
+        const platform = document.createElement('span');
+        platform.className = 'tiktok-follower-platform';
+        platform.textContent = 'TikTok';
+        details.appendChild(handle);
+        details.appendChild(platform);
+
+        const arrow = document.createElement('span');
+        arrow.className = 'tiktok-follower-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '↗';
+
+        card.appendChild(avatar);
+        card.appendChild(details);
+        card.appendChild(arrow);
+        grid.appendChild(card);
+      });
+    } catch (_error) {
+      // The visualizer stays usable if the followers list cannot be loaded.
+    }
+  }
+
+  void initTikTokFollowers();
   loadPreset();
   state.visualizerLayers = Array.isArray(state.visualizerLayers) ? state.visualizerLayers : [];
   nextVisualizerLayerId = state.visualizerLayers.reduce(function(max,layer){return Math.max(max,Number(layer.id)||0);},0)+1;
