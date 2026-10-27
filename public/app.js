@@ -598,7 +598,8 @@
       } else if (haloMode === 'rings') {
         // Every ring responds to a different part of the spectrum.
         for (let ring = haloCount; ring >= 1; ring--) {
-          const level = values && values.level ? values.level((ring * 13 + 5) % 32, 32) : 0.08;
+          const ringBand = Math.round((ring - 1) / Math.max(1, haloCount - 1) * 47);
+          const level = values && values.level ? values.level(ringBand, 48) : 0.08;
           const radius = size * (0.62 + ring * 0.15 + level * 0.11 + pulseAmt * 0.035);
           ctx.beginPath();
           ctx.arc(cx, cy, radius, 0, Math.PI * 2);
