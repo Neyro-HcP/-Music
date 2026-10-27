@@ -707,124 +707,164 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   }
 
   function clearLiquidVisuals(){
-    for(const flow of wallStreams){scene.remove(flow.mesh);scene.remove(flow.drop);}
-    wallStreams.length=0;
-    for(const stream of surfaceStreams)stream.item.mesh.remove(stream.mesh,stream.drop);
-    surfaceStreams.length=0;
-    for(const drop of liquidDrops)drop.item.mesh.remove(drop.mesh);
-    liquidDrops.length=0;
+    liquidWaveImpulses.length=0;
+    liquidEnergy=0;
+    liquidPouring=false;
+    if(liquidVolumeMesh)liquidVolumeMesh.visible=false;
+    if(liquidSurfaceMesh)liquidSurfaceMesh.visible=false;
+    if(liquidPourMesh)liquidPourMesh.visible=false;
   }
 
-  function makeDropMesh(mode){
-    const mesh=new THREE.Mesh(geometries.drop,mode==='water'?materials.water:materials.slime);
-    mesh.castShadow=false;
-    mesh.receiveShadow=false;
-    return mesh;
+  function updateLiquidLayout(){
+    if(!liquidVolumeMesh||!liquidSurfaceMesh||!liquidPourMesh)return;
+    const width=Math.max(.2,sideX*2-.16);
+    const depth=1.34;
+    const height=Math.max(.035,liquidLevel-floorY);
+    liquidVolumeMesh.scale.set(width,height,depth);
+    liquidVolumeMesh.position.set(0,floorY+height*.5,0);
+    liquidSurfaceMesh.scale.set(width,1,depth);
+    liquidSurfaceMesh.position.set(0,liquidLevel,0);
+    const streamHeight=Math.max(.03,ceilY-liquidLevel);
+    liquidPourMesh.scale.set(1,streamHeight,1);
+    liquidPourMesh.position.set(0,liquidLevel+streamHeight*.5,.12);
+    const shown=Boolean(liquidMode);
+    liquidVolumeMesh.visible=shown;
+    liquidSurfaceMesh.visible=shown;
+    liquidPourMesh.visible=shown&&liquidPouring;
   }
 
-  function attachLiquidToItem(item,mode){
-    if(!item || !items.includes(item))return;
-    const cap=coarsePointer?1:2;
-    for(let n=0;n<cap && liquidDrops.length<MAX_LIQUID_PARTICLES;n++){
-      const x=item.kind==='rubber'?random(-.12,.12):random(-.16,.16);
-      const y=item.kind==='rubber'?random(-.08,.12):random(-.14,.16);
-      const mesh=makeDropMesh(mode);
-      mesh.scale.set(mode==='slime'?1.14:.78,mode==='slime'?1.5:.92,mode==='slime'?1.1:.75);
-      item.mesh.add(mesh);
-      const record={item,mesh,mode,x,y,speed:mode==='slime'?random(.055,.13):random(.14,.32),phase:random(0,1)};
-      liquidDrops.push(record);
-      placeSurfaceDrop(record);
-    }
-    if(item.kind!=='rubber' && surfaceStreams.length<MAX_LIQUID_PARTICLES){
-      const mesh=new THREE.Mesh(geometries.flowRibbon,mode==='water'?materials.waterFlow:materials.slimeFlow);
-      mesh.scale.set(mode==='slime'?random(.11,.17):random(.075,.12),mode==='slime'?random(.26,.4):random(.3,.48),1);
-      item.mesh.add(mesh);
-      const drop=makeDropMesh(mode);
-      drop.scale.setScalar(mode==='slime'?.73:.48);
-      item.mesh.add(drop);
-      const record={item,mesh,drop,mode,x:random(-.13,.13),y:random(-.04,.19),width:mesh.scale.x,height:mesh.scale.y,speed:mode==='slime'?random(.06,.13):random(.16,.32)};
-      surfaceStreams.push(record);
-      placeSurfaceStream(record);
-    }
-  }
-
-  function placeSurfaceDrop(record){
-    const {item,mesh}=record;
-    let z=item.kind==='ice'?.247:item.kind==='tnt'?.25:.232;
-    if(item.kind==='rubber'){
-      const r=.22;
-      const y=clamp(record.y,-r*.88,r*.88);
-      const x=clamp(record.x,-r*.72,r*.72);
-      z=Math.sqrt(Math.max(.002,r*r-x*x-y*y))+.008;
-    }
-    mesh.position.set(record.x,record.y,z);
-  }
-
-  function placeSurfaceStream(record){
-    const z=record.item.kind==='ice'?.247:record.item.kind==='tnt'?.25:.232;
-    record.mesh.position.set(record.x,record.y,z);
-    record.drop.position.set(record.x,record.y-record.height*.47,z+.012);
-  }
-
-  function createWallStreams(mode){
-    const count=coarsePointer?4:6;
-    const maxWidth=Math.max(.28,sideX*1.75);
-    for(let i=0;i<count;i++){
-      const height=random(.45,1.2);
-      const mesh=new THREE.Mesh(geometries.flowRibbon,mode==='water'?materials.waterFlow:materials.slimeFlow);
-      mesh.scale.set(mode==='slime'?random(.045,.085):random(.025,.055),height,1);
-      mesh.position.set(random(-maxWidth*.47,maxWidth*.47),random(floorY,ceilY),.83);
-      scene.add(mesh);
-      const drop=makeDropMesh(mode);
-      drop.scale.setScalar(mode==='slime'?.68:.43);
-      scene.add(drop);
-      wallStreams.push({mesh,drop,mode,height,speed:mode==='slime'?random(.3,.65):random(.8,1.5),x:mesh.position.x});
-    }
+  function addWaveImpulse(x,z,amplitude){
+    if(!liquidMode)return;
+    if(liquidWaveImpulses.length>=MAX_LIQUID_WAVES)liquidWaveImpulses.shift();
+    liquidWaveImpulses.push({
+      x,z,amplitude:clamp(amplitude,.018,.22),
+      born:performance.now()/1000,
+      speed:liquidMode==='water'?2.25:1.05,
+      decay:liquidMode==='water'?1.85:1.1
+    });
+    liquidEnergy=Math.min(1.6,liquidEnergy+amplitude*2.8);
   }
 
   function setLiquidMode(mode){
-    liquidMode=liquidMode===mode?null:mode;
-    clearLiquidVisuals();
-    for(const button of document.querySelectorAll('[data-liquid]')){
-      button.setAttribute('aria-pressed',String(button.dataset.liquid===liquidMode));
-    }
-    if(liquidMode){
-      createWallStreams(liquidMode);
-      for(const item of items)attachLiquidToItem(item,liquidMode);
-      startLiquidSound(liquidMode);
-      status(liquidMode==='water'?'Вода стекает тонкими струйками и каплями':'Слизь тянется густыми дорожками по предметам');
-    }else{
+    if(liquidMode===mode){
+      liquidMode=null;
+      clearLiquidVisuals();
       stopLiquidSound();
-      status('Жидкость остановлена');
+      for(const button of document.querySelectorAll('[data-liquid]')){
+        button.setAttribute('aria-pressed','false');
+      }
+      status('Жидкость убрана');
+      return;
+    }
+    clearLiquidVisuals();
+    liquidMode=mode;
+    liquidLevel=floorY+.045;
+    liquidTargetLevel=floorY+(ceilY-floorY)*(mode==='water'?.76:.62);
+    liquidPouring=true;
+    nextPourWaveAt=performance.now()+180;
+    liquidVolumeMesh.material=mode==='water'?materials.waterVolume:materials.slimeVolume;
+    liquidSurfaceMesh.material=mode==='water'?materials.waterSurface:materials.slimeSurface;
+    liquidPourMesh.material=mode==='water'?materials.waterStream:materials.slimeStream;
+    liquidVolumeMesh.visible=true;
+    liquidSurfaceMesh.visible=true;
+    liquidPourMesh.visible=true;
+    for(const button of document.querySelectorAll('[data-liquid]')){
+      button.setAttribute('aria-pressed',String(button.dataset.liquid===mode));
+    }
+    addWaveImpulse(0,.12,mode==='water'?.18:.11);
+    startLiquidSound(mode);
+    updateLiquidLayout();
+    status(mode==='water'?'Вода льётся — поверхность колышется и поднимается':'Слизь медленно наполняет телефон густой волной');
+  }
+
+  function applyLiquidForces(dt){
+    if(!liquidMode)return;
+    const water=liquidMode==='water';
+    for(const item of items){
+      const pos=item.body.position;
+      const r=item.radius;
+      const submerged=clamp((liquidLevel-(pos.y-r))/(2*r),0,1);
+      const previous=item.liquidSubmerged||0;
+      item.liquidSubmerged=submerged;
+      if(submerged>.05){
+        const factor=water?1.08:1.17;
+        item.body.force.x+=-gravityX*item.mass*submerged*factor;
+        item.body.force.y+=-gravityY*item.mass*submerged*factor;
+        item.body.force.z+=-gravityZ*item.mass*submerged*factor;
+        const drag=(water?1.1:3.4)*submerged*dt;
+        const damp=clamp(1-drag,.65,1);
+        item.body.velocity.x*=damp;
+        item.body.velocity.y*=damp;
+        item.body.velocity.z*=damp;
+        item.body.angularVelocity.x*=clamp(1-(water?1.1:3)*submerged*dt,.68,1);
+        item.body.angularVelocity.y*=clamp(1-(water?1.1:3)*submerged*dt,.68,1);
+        item.body.angularVelocity.z*=clamp(1-(water?1.2:3.2)*submerged*dt,.66,1);
+      }
+      if(submerged>.12&&previous<=.12&&pos.y+r>liquidLevel-.12){
+        addWaveImpulse(pos.x,pos.z,clamp(Math.hypot(item.body.velocity.x,item.body.velocity.y)*.025,.035,.16));
+        playImpact('water',Math.hypot(item.body.velocity.x,item.body.velocity.y),pos.x);
+      }
     }
   }
 
   function updateLiquids(dt){
-    for(const stream of wallStreams){
-      stream.mesh.position.y-=stream.speed*dt;
-      if(stream.mesh.position.y-stream.height*.5<floorY){
-        stream.mesh.position.y=ceilY+stream.height*.5+random(.05,.8);
-        stream.x=random(-Math.max(.28,sideX*1.75)*.47,Math.max(.28,sideX*1.75)*.47);
-        stream.mesh.position.x=stream.x;
+    if(!liquidMode)return;
+    const step=Math.min(dt,.035);
+    const nowSeconds=performance.now()/1000;
+    if(liquidPouring){
+      const fillSpeed=liquidMode==='water'?.72:.34;
+      liquidLevel=Math.min(liquidTargetLevel,liquidLevel+fillSpeed*step);
+      if(performance.now()>=nextPourWaveAt){
+        addWaveImpulse(random(-sideX*.32,sideX*.32),random(-.38,.38),liquidMode==='water'?.12:.055);
+        nextPourWaveAt=performance.now()+(liquidMode==='water'?560:1050);
+        if(soundEnabled&&liquidMode==='water'){
+          noiseBurst(.045,.007,'soft',1550,0);
+          voice(random(780,1150),.065,'sine',.009,'down',0);
+        }
       }
-      stream.drop.position.set(stream.mesh.position.x,stream.mesh.position.y-stream.height*.47,.845);
-      const pulse=1+Math.sin(performance.now()*.003+stream.x*4)*.08;
-      stream.drop.scale.y=(stream.mode==='slime'?.68:.43)*pulse;
+      if(liquidLevel>=liquidTargetLevel-.005){
+        liquidPouring=false;
+        if(liquidPourMesh)liquidPourMesh.visible=false;
+        status(liquidMode==='water'?'Аквариум наполнен — волны продолжают двигаться':'Слизь собралась в бассейн и медленно колышется');
+      }
     }
-    for(const stream of surfaceStreams){
-      stream.y-=stream.speed*dt;
-      if(stream.y-stream.height*.5<-.23)stream.y=.19+random(0,.08);
-      placeSurfaceStream(stream);
-      const pulse=1+Math.sin(performance.now()*.004+stream.x*7)*.12;
-      stream.drop.scale.setScalar((stream.mode==='slime'?.73:.48)*pulse);
+    liquidEnergy*=Math.exp(-step*(liquidMode==='water'?1.5:.9));
+    updateLiquidLayout();
+
+    liquidSurfaceAccumulator+=step;
+    if(liquidSurfaceAccumulator<1/30)return;
+    const surfaceDt=liquidSurfaceAccumulator;
+    liquidSurfaceAccumulator=0;
+    const geometry=geometries.liquidSurface;
+    const position=geometry.attributes.position;
+    const width=Math.max(.2,sideX*2-.16);
+    const depth=1.34;
+    const speed=liquidMode==='water'?1.0:.42;
+    const baseAmp=liquidMode==='water'?.027:.012;
+    const energyAmp=Math.min(liquidEnergy,1.5)*(liquidMode==='water'?.035:.019);
+    for(let i=0;i<position.count;i++){
+      const localX=position.getX(i);
+      const localZ=position.getZ(i);
+      const x=localX*width;
+      const z=localZ*depth;
+      let wave=Math.sin(x*4.1+nowSeconds*2.35)*baseAmp;
+      wave+=Math.sin(z*7.4-nowSeconds*1.65)*baseAmp*.48;
+      wave+=Math.sin((x*.8+z)*5.2+nowSeconds*1.15)*baseAmp*.27;
+      wave+=Math.sin((x-z*.45)*9.8-nowSeconds*2.1)*energyAmp*.28;
+      for(const impulse of liquidWaveImpulses){
+        const age=nowSeconds-impulse.born;
+        if(age<0||age>2.8)continue;
+        const distance=Math.hypot(x-impulse.x,z-impulse.z);
+        const front=distance-age*impulse.speed;
+        const envelope=Math.exp(-Math.abs(front)*2.6)*Math.exp(-age*impulse.decay);
+        wave+=Math.sin(front*13)*impulse.amplitude*envelope;
+      }
+      position.setY(i,wave);
     }
-    for(const drop of liquidDrops){
-      drop.y-=drop.speed*dt;
-      const low=drop.item.kind==='rubber'?-.18:-.21;
-      if(drop.y<low)drop.y=drop.item.kind==='rubber'?.16:.2+random(0,.04);
-      placeSurfaceDrop(drop);
-      const pulse=1+Math.sin(performance.now()*.005+drop.phase*6)*.08;
-      drop.mesh.scale.y=(drop.mode==='slime'?1.5:.92)*pulse;
+    position.needsUpdate=true;
+    geometry.computeVertexNormals();
+    for(let i=liquidWaveImpulses.length-1;i>=0;i--){
+      if(nowSeconds-liquidWaveImpulses[i].born>2.8)liquidWaveImpulses.splice(i,1);
     }
   }
 
