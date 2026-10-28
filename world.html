@@ -263,7 +263,7 @@ function buildHouse(x,z){
   const win=new THREE.Mesh(new THREE.BoxGeometry(.07,1,1.1),glass);
   win.position.set(x+side*(w/2+.01),1.8,z+wz);scene.add(win);
  }
- solidBlock(scene,x,.18,front+.65,2,.36,1,'cobblestone');
+ decoBlock(scene,x,.18,front+.65,2,.36,1,'cobblestone');
 }
 function addFence(x,z,w,d){
  for(let sx=-w/2;sx<=w/2;sx+=1.5){solidBlock(scene,x+sx,.55,z-d/2,.18,1.1,.18,'oak_log');solidBlock(scene,x+sx,.55,z+d/2,.18,1.1,.18,'oak_log');}
@@ -371,7 +371,7 @@ function isBlocked(x,z,feetY=p.y){
 
 function updateProgress(){$('progressLabel').textContent=villagers.length+' жителей';$('progressBar').style.width='100%';}
 function setCheckpoint(){}
-function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;p.jumpHeld=false;p.jumpBuffer=0;p.coyote=.12;if(localAvatar)localAvatar.group.position.set(p.x,p.y,p.z);if(show)toast('Возврат к контрольной точке');}
+function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;p.jumpHeld=false;p.jumpBuffer=0;p.coyote=.1;p.sneak=false;if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;}if(show)toast('Возврат в деревню');}
 function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(keys.has('KeyW')||keys.has('ArrowUp'))z++;if(keys.has('KeyS')||keys.has('ArrowDown'))z--;x+=joy.x;z+=joy.y;const l=Math.hypot(x,z);if(l>1){x/=l;z/=l;}return{x,z,len:Math.min(1,l)};}
 function animateLimbs(a,t,s){const v=Math.sin(t*10.5)*Math.min(1,s)*.53;a.la.rotation.x=v;a.ra.rotation.x=-v;a.ll.rotation.x=-v;a.rl.rotation.x=v;}
 function updatePlayer(dt){
