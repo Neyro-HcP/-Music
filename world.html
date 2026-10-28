@@ -114,6 +114,11 @@ function pixelBlockTexture(kind){
  else{for(let i=0;i<70;i++){x.fillStyle=pal[1+Math.floor(rand()*3)];x.fillRect(Math.floor(rand()*16),Math.floor(rand()*16),1+Math.floor(rand()*2),1);}}
  return c;
 }
+function pixelGrassSideOverlay(){
+ const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');
+ for(let y=0;y<16;y++)for(let px=0;px<16;px++){const edge=y<3||(y===3&&((px*7)%5!==0));if(edge){x.fillStyle=(px+y)%4===0?'#f5fff0':'#ffffff';x.fillRect(px,y,1,1);}}
+ return c;
+}
 function pixelSteveSkin(){
  const c=document.createElement('canvas');c.width=64;c.height=64;const x=c.getContext('2d');
  const skin='#bd8564',hair='#4b3021',shirt='#00a4b8',shirtDark='#087a8e',pants='#263f9b',shoe='#555b62',eye='#5141a0';
@@ -130,6 +135,7 @@ function makeVanillaTexture(path,fallback,repeat=true){
 const mcTextures={
  grassTop:makeVanillaTexture('block/grass_block_top',pixelBlockTexture('grassTop')),
  grassSide:makeVanillaTexture('block/grass_block_side',pixelBlockTexture('grassSide')),
+ grassSideOverlay:makeVanillaTexture('block/grass_block_side_overlay',pixelGrassSideOverlay()),
  dirt:makeVanillaTexture('block/dirt',pixelBlockTexture('dirt')),
  stone:makeVanillaTexture('block/stone',pixelBlockTexture('stone')),
  cobblestone:makeVanillaTexture('block/cobblestone',pixelBlockTexture('cobblestone')),
@@ -140,7 +146,7 @@ const mcTextures={
  steve:makeVanillaTexture('entity/player/wide/steve',pixelSteveSkin(),false)
 };
 function texturedMaterial(texture,extra={}){return new THREE.MeshStandardMaterial({map:texture,color:0xffffff,roughness:1,metalness:0,...extra});}
-const mcMaterials={grassSide:texturedMaterial(mcTextures.grassSide),grassTop:texturedMaterial(mcTextures.grassTop),dirt:texturedMaterial(mcTextures.dirt),stone:texturedMaterial(mcTextures.stone),cobblestone:texturedMaterial(mcTextures.cobblestone),oakPlanks:texturedMaterial(mcTextures.oakPlanks),oakLog:texturedMaterial(mcTextures.oakLog),oakLogTop:texturedMaterial(mcTextures.oakLogTop),oakLeaves:texturedMaterial(mcTextures.oakLeaves,{transparent:true,alphaTest:.18,side:THREE.DoubleSide})};
+const mcMaterials={grassSide:texturedMaterial(mcTextures.grassSide),grassSideOverlay:texturedMaterial(mcTextures.grassSideOverlay,{color:0x79b84d,transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:false}),grassTop:texturedMaterial(mcTextures.grassTop),dirt:texturedMaterial(mcTextures.dirt),stone:texturedMaterial(mcTextures.stone),cobblestone:texturedMaterial(mcTextures.cobblestone),oakPlanks:texturedMaterial(mcTextures.oakPlanks),oakLog:texturedMaterial(mcTextures.oakLog),oakLogTop:texturedMaterial(mcTextures.oakLogTop),oakLeaves:texturedMaterial(mcTextures.oakLeaves,{transparent:true,alphaTest:.18,side:THREE.DoubleSide})};
 const blockMaterials={
  grass:[mcMaterials.grassSide,mcMaterials.grassSide,mcMaterials.grassTop,mcMaterials.dirt,mcMaterials.grassSide,mcMaterials.grassSide],
  dirt:[mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt],
@@ -156,7 +162,14 @@ function repeatedBoxGeometry(w,h,d){
  uv.needsUpdate=true;return geo;
 }
 function block(parent,x,y,z,w,h,d,type='stone'){
- const geo=repeatedBoxGeometry(w,h,d),mesh=new THREE.Mesh(geo,blockMaterials[type]||blockMaterials.stone);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+ const geo=repeatedBoxGeometry(w,h,d),mesh=new THREE.Mesh(geo,blockMaterials[type]||blockMaterials.stone);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);
+ if(type==='grass'){
+  const invisible=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  const overlayGeo=repeatedBoxGeometry(w+.004,h,d+.004);
+  const overlay=new THREE.Mesh(overlayGeo,[mcMaterials.grassSideOverlay,mcMaterials.grassSideOverlay,invisible,invisible,mcMaterials.grassSideOverlay,mcMaterials.grassSideOverlay]);
+  overlay.position.set(x,y,z);overlay.renderOrder=1;parent.add(overlay);
+ }
+ return mesh;
 }
 function addTree(x,z,height=4){
  block(scene,x,height/2,z,1,height,1,'oak_log');
