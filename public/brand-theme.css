@@ -48,7 +48,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 0 !important;
   border: 0;
   border-radius: 50% !important;
-  background: #050308 url("./nsp-logo.svg") center / cover no-repeat !important;
+  background: #050308 url("./nsp-logo.webp") center / cover no-repeat !important;
   box-shadow: 0 0 24px rgba(222, 0, 255, .19) !important;
   overflow: hidden;
 }
