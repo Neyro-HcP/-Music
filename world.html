@@ -100,6 +100,41 @@
  .hub-toast{bottom:112px}
  .look-hint{display:none}
 }
+
+.music-panel{position:absolute;z-index:18;top:104px;right:12px;width:min(320px,calc(100% - 24px));padding:8px;border:1px solid rgba(255,255,255,.24);border-radius:8px;background:rgba(29,38,29,.96);box-shadow:0 8px 28px rgba(0,0,0,.32)}
+.music-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:2px 4px 8px;color:#fff;font:600 11px Manrope,system-ui,sans-serif}
+.music-panel-head button{width:28px;height:26px;border:1px solid rgba(255,255,255,.25);border-radius:4px;background:#424e3b;color:#fff;font:20px/1 system-ui;cursor:pointer}
+.music-panel iframe{display:block;width:100%;height:180px;border:0;background:#111}
+#musicToggleButton{border-color:rgba(255,255,255,.38);background:rgba(36,54,31,.9);font-size:11px}
+#musicToggleButton[aria-expanded="true"]{background:#667c4d}
+@media(max-width:760px){
+ .hub-stage.playing .hub-bottom-left{display:none}
+ .joy-ring{width:148px!important;height:148px!important}
+ .joy-knob{width:62px!important;height:62px!important}
+ .joystick{left:12px!important;bottom:17px!important;gap:6px}
+ .joystick>span{font-size:9px}
+ .touch-actions{right:10px!important;bottom:20px!important;width:204px!important;height:142px!important;grid-template-columns:58px 58px 78px!important;grid-template-rows:58px 58px!important;gap:8px!important}
+ .touch-btn{width:58px!important;height:58px!important;font-size:9px!important;border-width:2px!important}
+ .jump-btn{width:82px!important;height:82px!important;font-size:10px!important}
+ .look-hint{bottom:178px!important;max-width:48%!important;font-size:9px!important}
+ .music-panel{top:104px;right:8px;width:min(300px,calc(100% - 16px))}
+ .music-panel iframe{height:169px}
+ #musicToggleButton{min-height:35px;padding:0 8px;font-size:10px}
+}
+@media(max-width:380px){
+ .joy-ring{width:132px!important;height:132px!important}
+ .joy-knob{width:56px!important;height:56px!important}
+ .touch-actions{width:184px!important;grid-template-columns:52px 52px 70px!important;grid-template-rows:52px 52px!important;gap:5px!important}
+ .touch-btn{width:52px!important;height:52px!important;font-size:8px!important}
+ .jump-btn{width:74px!important;height:74px!important}
+}
+@media(pointer:coarse) and (min-width:761px){
+ .joy-ring{width:148px!important;height:148px!important}
+ .joy-knob{width:62px!important;height:62px!important}
+ .touch-actions{right:22px!important;bottom:24px!important;width:204px!important;height:142px!important;grid-template-columns:58px 58px 78px!important;grid-template-rows:58px 58px!important;gap:8px!important}
+ .touch-btn{width:58px!important;height:58px!important;font-size:9px!important}
+ .jump-btn{width:82px!important;height:82px!important}
+}
 </style>
 </head>
 <body class="hub-body">
@@ -114,9 +149,13 @@
 <main class="hub-stage" id="hubStage">
 <canvas id="hubCanvas" aria-label="Трёхмерный мир НсП Hub"></canvas>
 <div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">МИР / ДЕРЕВНЯ</div></div>
-<div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
+<div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="musicToggleButton" type="button" aria-expanded="false">Музыка C418</button><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
 <div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ОБЫЧНЫЙ МИР</span><b id="progressLabel">ДЕРЕВНЯ</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — ходьба · SPACE — прыжок · SHIFT — бег · мышь — обзор · E — действие</p></div>
 <div class="crosshair" id="crosshair" aria-hidden="true"><i></i><b></b><i></i><b></b></div>
+<div class="music-panel" id="musicPanel" hidden>
+ <div class="music-panel-head"><span>C418 · Minecraft</span><button type="button" id="musicCloseButton" aria-label="Закрыть музыку">×</button></div>
+ <iframe id="musicFrame" title="Официальный музыкальный плеер C418" width="320" height="180" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
 <div class="touch-controls" id="touchControls">
  <div class="joystick" id="joystick"><div class="joy-ring" id="joyRing"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div>
  <div class="touch-actions">
@@ -155,7 +194,7 @@ function safeName(value){return String(value||'Игрок').replace(/[<>]/g,'').
 function colorFor(id){let h=0;for(const c of String(id||''))h=((h<<5)-h+c.charCodeAt(0))|0;return palette[Math.abs(h)%palette.length];}
 function mat(color,roughness=.58,metalness=.2){return new THREE.MeshStandardMaterial({color,roughness,metalness});}
 function box(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-const vanillaAssetBase='https://assets.mcasset.cloud/1.21.11/assets/minecraft/textures/';
+const vanillaAssetBase='https://mcasset.cloud/1.21.11/assets/minecraft/textures/';
 function pixelBlockTexture(kind){
  const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');
  const colors={grassTop:['#79b84d','#71ad45','#8ac65a','#659f3e'],grassSide:['#805533','#70472c','#93643b','#69442b'],dirt:['#805533','#70472c','#93643b','#69442b'],stone:['#777777','#686868','#878787','#5f5f5f'],cobblestone:['#777777','#696969','#898989','#585858'],oak_planks:['#b28a55','#9c7548','#c19a63','#87623c'],oak_log:['#81562e','#674322','#9a6d3a','#4e351e'],oak_log_top:['#976e40','#b58a56','#79542f','#d0a06a'],oak_leaves:['#4d8b35','#427a2c','#659b3d','#376d2a']};
@@ -235,6 +274,7 @@ function glassPane(x,y,z,w,h,d=.08){
  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:0x99d5ed,roughness:.25,transparent:true,opacity:.78}));m.position.set(x,y,z);scene.add(m);return m;
 }
 function addTree(x,z,height=4){
+ addGroundShadow(x,z,4.5,4.5,.72);
  solidBlock(scene,x,height/2,z,.9,height,.9,'oak_log');
  decoBlock(scene,x,height+.25,z,3.3,1.2,3.3,'leaves');
  decoBlock(scene,x,height+1.0,z,2.6,1.2,2.6,'leaves');
@@ -242,6 +282,7 @@ function addTree(x,z,height=4){
 }
 function addPath(x,z,w,d){decoBlock(scene,x,.035,z,w,.07,d,'dirt');}
 function buildHouse(x,z){
+ addGroundShadow(x,z,8.6,8.4,.72);
  const w=6,d=6,wallH=3,wallY=1.5,front=z+d/2,back=z-d/2;
  decoBlock(scene,x,.12,z,w+.4,.24,d+.4,'cobblestone');
  decoBlock(scene,x,.27,z,w,.08,d,'oak_planks');
@@ -271,6 +312,7 @@ function addFence(x,z,w,d){
  for(const y of [.38,.78]){decoBlock(scene,x,y,z-d/2,w,.12,.12,'oak_planks');decoBlock(scene,x,y,z+d/2,w,.12,.12,'oak_planks');decoBlock(scene,x-w/2,y,z,.12,.12,d,'oak_planks');decoBlock(scene,x+w/2,y,z,.12,.12,d,'oak_planks');}
 }
 function addFarm(){
+ addGroundShadow(17,-18,11.7,14,.72);
  decoBlock(scene,17,.045,-18,9,.09,12,'dirt');decoBlock(scene,17,.07,-18,1,.04,10,'cobblestone');
  const cropMat=new THREE.MeshStandardMaterial({color:0x6caa36,roughness:1});
  for(let row=0;row<3;row++)for(let col=0;col<4;col++){
@@ -280,20 +322,33 @@ function addFarm(){
  addFence(17,-18,10,13);
 }
 function addWell(){
+ addGroundShadow(0,-18,3.7,3.7,.72);
  for(const dx of [-.8,.8])for(const dz of [-.8,.8])solidBlock(scene,dx,.25,-18+dz,.35,.7,.35,'cobblestone');
  decoBlock(scene,0,.35,-18,2.3,.18,2.3,'cobblestone');
  decoBlock(scene,0,.46,-18,1.2,.05,1.2,'stone');
+ const waterMat=new THREE.MeshStandardMaterial({color:0x3d9fc7,roughness:.22,metalness:.05,transparent:true,opacity:.88});
+ const water=new THREE.Mesh(new THREE.BoxGeometry(1.15,.045,1.15),waterMat);water.position.set(0,.49,-18);scene.add(water);
  for(const dx of [-1,1])solidBlock(scene,dx,.95,-18,.22,1.9,.22,'oak_log');
  decoBlock(scene,0,2,-18,2.8,.25,2.4,'oak_planks');
  decoBlock(scene,0,2.23,-18,2.4,.2,2,'oak_planks');
 }
 function makeVillager(x,z,robeColor=0x786047){
- const g=new THREE.Group(),robe=mat(robeColor,1,0),skin=mat(0xb99a78,1,0),nose=mat(0x9b7a5d,1,0),eye=mat(0x536b39,1,0),dark=mat(0x554333,1,0);
- box(g,.58,.85,.36,robe,0,.82,0);box(g,.54,.48,.48,skin,0,1.52,0);box(g,.12,.19,.15,nose,0,1.47,-.30);
- box(g,.08,.055,.025,eye,-.13,1.58,-.247);box(g,.08,.055,.025,eye,.13,1.58,-.247);
- box(g,.45,.12,.39,dark,0,1.16,-.02);box(g,.18,.55,.22,robe,-.36,1.03,0);box(g,.18,.55,.22,robe,.36,1.03,0);
- box(g,.16,.55,.24,robe,-.14,.25,0);box(g,.16,.55,.24,robe,.14,.25,0);
- const head=new THREE.Group();head.position.y=1.52;g.add(head);g.position.set(x,0,z);scene.add(g);worldColliders.push({minX:x-.32,maxX:x+.32,minZ:z-.32,maxZ:z+.32,bottom:0,top:1.8});villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
+ addGroundShadow(x,z,1.2,1.2,.42);
+ const g=new THREE.Group();
+ const robe=mat(robeColor,1,0),skin=mat(0xb99a78,1,0),nose=mat(0x9b7a5d,1,0),eye=mat(0x444b35,1,0),brow=mat(0x46382d,1,0),belt=mat(0x4a3b2b,1,0),boots=mat(0x41352c,1,0);
+ box(g,.64,.88,.42,robe,0,.76,0);
+ box(g,.18,.5,.22,robe,-.35,.92,0);box(g,.18,.5,.22,robe,.35,.92,0);
+ box(g,.52,.17,.28,robe,0,1.05,-.075);
+ box(g,.18,.35,.22,boots,-.14,.23,0);box(g,.18,.35,.22,boots,.14,.23,0);
+ box(g,.48,.08,.43,belt,0,.45,0);
+ const head=new THREE.Group();head.position.set(0,1.48,0);g.add(head);
+ box(head,.58,.58,.58,skin,0,.02,0);
+ box(head,.15,.21,.22,nose,0,.005,-.355);
+ box(head,.09,.05,.025,eye,-.13,.085,-.298);box(head,.09,.05,.025,eye,.13,.085,-.298);
+ box(head,.31,.065,.035,brow,0,.15,-.3);
+ g.position.set(x,0,z);scene.add(g);
+ worldColliders.push({minX:x-.34,maxX:x+.34,minZ:z-.34,maxZ:z+.34,bottom:0,top:1.85});
+ villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
 }
 function addMinecraftVillage(){
  decoBlock(scene,0,-1,-20,100,2,100,'grass');
@@ -305,6 +360,37 @@ function addMinecraftVillage(){
  for(const h of [[-27,-8,3,2],[27,-17,2,3],[-25,-38,3,2],[26,-36,2,3]]){decoBlock(scene,h[0],.5,h[1],h[2],1,h[3],'grass');decoBlock(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
  makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);
 }
+
+let shadowTexture=null,shadowMaterial=null;
+const clouds=[];
+function initGroundShadowTexture(){
+ if(shadowTexture)return;
+ const c=document.createElement('canvas');c.width=64;c.height=64;
+ const ctx=c.getContext('2d'),g=ctx.createRadialGradient(32,32,4,32,32,31);
+ g.addColorStop(0,'rgba(18,25,18,.42)');g.addColorStop(.45,'rgba(18,25,18,.22)');g.addColorStop(1,'rgba(18,25,18,0)');
+ ctx.fillStyle=g;ctx.fillRect(0,0,64,64);
+ shadowTexture=new THREE.CanvasTexture(c);shadowTexture.colorSpace=THREE.SRGBColorSpace;
+ shadowMaterial=new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false,opacity:.72,toneMapped:false});
+}
+function addGroundShadow(x,z,w,d,opacity=.72){
+ initGroundShadowTexture();
+ const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),shadowMaterial.clone());
+ mesh.material.opacity=opacity;mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.018,z);mesh.renderOrder=1;scene.add(mesh);return mesh;
+}
+function addCloud(x,y,z,scale=1,speed=.16){
+ const g=new THREE.Group(),material=addCloud.material||(addCloud.material=new THREE.MeshLambertMaterial({color:0xffffff}));
+ const parts=[[0,0,0,7,1.15,2.5],[-2.25,.2,.05,4.1,1.05,2.6],[2.35,.28,-.08,4.3,1.35,2.9],[.45,-.12,.9,5.3,.85,2.0]];
+ for(const [px,py,pz,w,h,d] of parts){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w*scale,h*scale,d*scale),material);mesh.position.set(px*scale,py*scale,pz*scale);mesh.castShadow=false;mesh.receiveShadow=false;g.add(mesh);}
+ g.position.set(x,y,z);scene.add(g);clouds.push({group:g,speed});
+}
+function addClouds(){
+ const specs=[[-34,23,-18,1,.14],[-20,27,-48,1.12,.1],[5,24,-62,1.2,.13],[28,21,-42,.95,.17],[40,25,-8,1.05,.12],[-41,22,3,.9,.11],[7,30,-3,.8,.09],[36,27,-65,.85,.1]];
+ for(const c of specs)addCloud(...c);
+ const sunMat=new THREE.MeshBasicMaterial({color:0xfff2bd,toneMapped:false});
+ const sun=new THREE.Mesh(new THREE.SphereGeometry(2.3,12,10),sunMat);sun.position.set(38,29,-78);scene.add(sun);
+}
+function updateClouds(dt){for(const c of clouds){c.group.position.x+=c.speed*dt;if(c.group.position.x>66)c.group.position.x=-66;}}
+
 function labelSprite(name,color){
  const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
  x.clearRect(0,0,c.width,c.height);x.font='700 42px Arial';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
@@ -376,7 +462,7 @@ function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;
 function animateLimbs(a,t,s){const v=Math.sin(t*10.5)*Math.min(1,s)*.53;a.la.rotation.x=v;a.ra.rotation.x=-v;a.ll.rotation.x=-v;a.rl.rotation.x=v;}
 function updatePlayer(dt){
  const oldY=p.y,m=moveInput(),sprinting=p.sprint||keys.has('ShiftLeft')||keys.has('ShiftRight'),speed=p.sneak?1.6:(sprinting?5.4:3.65);
- const wx=m.x*Math.cos(p.yaw)-m.z*Math.sin(p.yaw),wz=-m.x*Math.sin(p.yaw)-m.z*Math.cos(p.yaw);
+ const wx=m.x*Math.cos(p.yaw)+m.z*Math.sin(p.yaw),wz=m.x*Math.sin(p.yaw)-m.z*Math.cos(p.yaw);
  if(p.jump){p.jumpBuffer=.16;p.jump=false;}else p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);
  if(p.grounded)p.coyote=.11;else p.coyote=Math.max(0,p.coyote-dt);
  if((p.jumpBuffer>0||(p.jumpHeld&&p.grounded))&&(p.grounded||p.coyote>0)){p.vy=7.2;p.grounded=false;p.jumpBuffer=0;p.coyote=0;}
@@ -395,14 +481,14 @@ function updatePlayer(dt){
  if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;}
 }
 
-function snapshot(){return{id:myId||'local',name:nick,x:p.x,y:p.y,z:p.z,yaw:localAvatar?localAvatar.group.rotation.y:0,color:localColor,moving:moveInput().len>.08};}
+function snapshot(){return{id:myId||'local',name:nick,x:p.x,y:p.y,z:p.z,yaw:p.yaw,color:localColor,moving:moveInput().len>.08};}
 function roomSnapshot(){const arr=[snapshot()],now=Date.now();for(const [id,s] of hostStates){if(now-s.updated<15000)arr.push(s);}return arr;}
 function sendSafe(c,data){if(c&&c.open){try{c.send(data);}catch(e){}}}
 function updateRemote(list){
  if(!Array.isArray(list))return;const active=new Set();
  for(const s of list){if(!s||typeof s.id!=='string'||s.id===myId||s.id==='local'||safeName(s.name)===nick)continue;active.add(s.id);const n=safeName(s.name),color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:colorFor(s.id);let a=remoteAvatars.get(s.id);
  if(!a){a=avatar(n,color);remoteAvatars.set(s.id,a);}else if(a.name!==n){a.group.remove(a.label);a.tex.dispose();const lab=labelSprite(n,color);a.label=lab.sprite;a.tex=lab.tex;a.group.add(lab.sprite);a.name=n;}
- a.target.set(Number(s.x)||0,Number(s.y)||0,Number(s.z)||0);a.yaw=Number(s.yaw)||0;a.moving=!!s.moving;}
+ a.target.set(Number(s.x)||0,Number(s.y)||0,Number(s.z)||0);a.yaw=-(Number(s.yaw)||0);a.moving=!!s.moving;}
  for(const [id,a] of remoteAvatars){if(!active.has(id)){dropAvatar(a);remoteAvatars.delete(id);}}
  const count=1+remoteAvatars.size;$('playerCount').textContent=count+' '+(count===1?'игрок':count<5?'игрока':'игроков');
 }
@@ -422,13 +508,13 @@ function setupOnline(){
 function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
 function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;$('startOverlay').classList.add('hidden');stage.classList.add('playing');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
 function setupScene(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,62,115);
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd5ff);scene.fog=new THREE.Fog(0x9bd5ff,88,155);
  camera=new THREE.PerspectiveCamera(75,1,.1,180);
  const mobile=matchMedia('(max-width:760px)').matches;
  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!mobile,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.05:1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=false;
  scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.8));const sun=new THREE.DirectionalLight(0xfff2cf,1.65);sun.position.set(-30,55,18);sun.castShadow=false;scene.add(sun);
- addMinecraftVillage();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+ addMinecraftVillage();addClouds();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
 }
 
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
@@ -461,7 +547,7 @@ function animate(){
  const dt=Math.min(.025,clock?clock.getDelta():.016);
  if(!renderer)return;
  if(started){
-  gameTime+=dt;updatePlayer(dt);updateCamera();updateVillageAnimations(dt);
+  gameTime+=dt;updatePlayer(dt);updateCamera();updateVillageAnimations(dt);updateClouds(dt);
   for(const a of remoteAvatars.values()){
    a.group.position.lerp(a.target,Math.min(1,dt*12));
    let delta=a.yaw-a.group.rotation.y;while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;
@@ -481,7 +567,7 @@ function controls(){
  window.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='Space')p.jumpHeld=false;if(e.code==='ControlLeft'||e.code==='ControlRight'){p.sneak=false;$('sneakButton').classList.remove('held');}});
  window.addEventListener('blur',()=>{keys.clear();p.sprint=false;p.sneak=false;p.jumpHeld=false;$('sprintButton').classList.remove('held');$('sprintButton').setAttribute('aria-pressed','false');$('sneakButton').classList.remove('held');$('sneakButton').setAttribute('aria-pressed','false');resetJoy();look.active=false;});
  canvas.addEventListener('pointerdown',e=>{if(!started)return;look.active=true;look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY;try{canvas.setPointerCapture(e.pointerId);}catch(err){}});
- canvas.addEventListener('pointermove',e=>{if(!look.active||look.id!==e.pointerId)return;const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;p.yaw-=dx*.006;p.pitch=THREE.MathUtils.clamp(p.pitch-dy*.0045,-1.15,1.15);});
+ canvas.addEventListener('pointermove',e=>{if(!look.active||look.id!==e.pointerId)return;const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;p.yaw+=dx*.005;p.pitch=THREE.MathUtils.clamp(p.pitch-dy*.004,-1.05,1.05);});
  const endLook=e=>{if(look.id===e.pointerId){look.active=false;look.id=null;}};canvas.addEventListener('pointerup',endLook);canvas.addEventListener('pointercancel',endLook);
  const j=$('joystick');j.addEventListener('pointerdown',e=>{e.preventDefault();if(!started)return;joy.active=true;joy.id=e.pointerId;j.classList.add('active');try{j.setPointerCapture(e.pointerId);}catch(err){}setJoy(e);});
  j.addEventListener('pointermove',e=>{if(joy.active&&joy.id===e.pointerId)setJoy(e);});const ej=e=>{if(joy.id===e.pointerId)resetJoy();};j.addEventListener('pointerup',ej);j.addEventListener('pointercancel',ej);j.addEventListener('lostpointercapture',resetJoy);
@@ -494,7 +580,13 @@ function controls(){
  $('attackButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)attack();});
 }
 
-function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей деревне и встречай других игроков.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));controls();setupScene();updateProgress();animate();}
+function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей деревне и встречай других игроков.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));
+ const musicPanel=$('musicPanel'),musicFrame=$('musicFrame'),musicToggle=$('musicToggleButton');
+ const openMusic=()=>{musicPanel.hidden=false;musicToggle.setAttribute('aria-expanded','true');musicFrame.src='https://www.youtube-nocookie.com/embed/2S54N2mFV_A?autoplay=1&controls=1&loop=1&playlist=2S54N2mFV_A&playsinline=1&rel=0';};
+ const closeMusic=()=>{musicPanel.hidden=true;musicToggle.setAttribute('aria-expanded','false');musicFrame.src='about:blank';};
+ musicToggle.addEventListener('click',()=>musicPanel.hidden?openMusic():closeMusic());
+ $('musicCloseButton').addEventListener('click',closeMusic);
+ controls();setupScene();updateProgress();animate();}
 init();
 </script>
 <script>
