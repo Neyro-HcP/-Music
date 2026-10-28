@@ -400,7 +400,7 @@ const blockMaterials={
  spruce_planks:[mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks],
  oak_log:[mcMaterials.oakLog,mcMaterials.oakLog,mcMaterials.oakLogTop,mcMaterials.oakLogTop,mcMaterials.oakLog,mcMaterials.oakLog],
  leaves:[mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves],
- sand:[mcMaterials.dirt,mcMaterials.dirt,mcMaterials.sand,mcMaterials.sand,mcMaterials.dirt,mcMaterials.dirt]
+ sand:[mcMaterials.sand,mcMaterials.sand,mcMaterials.sand,mcMaterials.sand,mcMaterials.sand,mcMaterials.sand]
 };
 const mapWaterMaterial=new THREE.MeshStandardMaterial({color:0x579fce,transparent:true,opacity:.76,roughness:.2,metalness:.05,side:THREE.DoubleSide});
 const mapGlassMaterial=new THREE.MeshStandardMaterial({color:0xbdeeff,transparent:true,opacity:.42,roughness:.12,metalness:0,side:THREE.DoubleSide});
@@ -414,7 +414,7 @@ function repeatedBoxGeometry(w,h,d){
 function block(parent,x,y,z,w,h,d,type='stone'){
  const geo=repeatedBoxGeometry(w,h,d),mesh=new THREE.Mesh(geo,blockMaterials[type]||blockMaterials.stone);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);
  if(type==='grass'){
-  const invisible=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+  const invisible=block.invisibleGrassMaterial||(block.invisibleGrassMaterial=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
   const overlayGeo=repeatedBoxGeometry(w+.004,h,d+.004);
   const overlay=new THREE.Mesh(overlayGeo,[mcMaterials.grassSideOverlay,mcMaterials.grassSideOverlay,invisible,invisible,mcMaterials.grassSideOverlay,mcMaterials.grassSideOverlay]);
   overlay.position.set(x,y,z);overlay.renderOrder=1;parent.add(overlay);
@@ -604,7 +604,7 @@ function updateClouds(dt){for(const c of clouds){c.group.position.x+=c.speed*dt;
 function addPlantInstances(points,material,width=.42,height=.62){
  const geo=new THREE.PlaneGeometry(width,height),a=new THREE.InstancedMesh(geo,material,points.length),b=new THREE.InstancedMesh(geo,material,points.length),dummy=new THREE.Object3D();
  a.frustumCulled=false;b.frustumCulled=false;
- for(let i=0;i<points.length;i++){const [x,z,scale=1]=points[i];dummy.position.set(x,.045+height*scale/2,z);dummy.scale.set(1,scale,1);dummy.rotation.set(0,(i%3)*.16,0);dummy.updateMatrix();a.setMatrixAt(i,dummy.matrix);dummy.rotation.y=Math.PI/2+(i%3)*.16;dummy.updateMatrix();b.setMatrixAt(i,dummy.matrix);}
+ for(let i=0;i<points.length;i++){const [x,z,scale=1]=points[i];const baseY=customWorldMap?mapTopAt(customWorldMap,Math.round(x),Math.round(z)):0;dummy.position.set(x,baseY+.045+height*scale/2,z);dummy.scale.set(1,scale,1);dummy.rotation.set(0,(i%3)*.16,0);dummy.updateMatrix();a.setMatrixAt(i,dummy.matrix);dummy.rotation.y=Math.PI/2+(i%3)*.16;dummy.updateMatrix();b.setMatrixAt(i,dummy.matrix);}
  a.instanceMatrix.needsUpdate=true;b.instanceMatrix.needsUpdate=true;scene.add(a,b);
 }
 function addFlowerPatches(){
@@ -678,6 +678,7 @@ function platformAt(x,z,maxTop=Infinity){
  if(x<villageBounds.minX||x>villageBounds.maxX||z<villageBounds.minZ||z>villageBounds.maxZ)return null;
  if(customWorldMap){
   const bx=Math.round(x),bz=Math.round(z),top=mapTopAt(customWorldMap,bx,bz,maxTop);
+  if(top===0&&maxTop>.9)return null;
   return {id:0,x:bx,z:bz,top,w:1,d:1,checkpoint:false,ground:top===0};
  }
  return {id:0,x:0,z:-20,top:0,w:100,d:100,checkpoint:false,ground:true};
