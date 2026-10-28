@@ -90,7 +90,7 @@ let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode
 let nick='Игрок',localColor=palette[0],localAvatar=null,checkpointIndex=0,activePlatform=0;
 let checkpoint={x:0,y:0,z:4};
 const connections=new Map(),hostStates=new Map(),remoteAvatars=new Map(),keys=new Set();
-const p={x:0,y:0,z:4,vy:0,yaw:0,pitch:.15,grounded:true,jump:false,jumpHeld:false,jumpBuffer:0,coyote:0,sprint:false};
+const p={x:0,y:0,z:4,vy:0,yaw:0,pitch:0,grounded:true,jump:false,jumpHeld:false,jumpBuffer:0,coyote:0,sprint:false,sneak:false};
 const joy={active:false,id:null,x:0,y:0};const look={active:false,id:null,x:0,y:0};
 const camTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
 const rings=[];
@@ -303,34 +303,45 @@ function avatar(name,color){
 }
 
 function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.userData&&o.userData.disposeOnDrop&&o.material)o.material.dispose();});if(a.tex)a.tex.dispose();}
-function platformAt(x,z,maxTop=Infinity){let found=null;for(let i=defs.length-1;i>=0;i--){const a=defs[i];if(a.top>maxTop)continue;if(Math.abs(x-a.x)<=a.w/2-.22&&Math.abs(z-a.z)<=a.d/2-.22&&(!found||a.top>found.top))found=a;}return found;}
+function platformAt(x,z,maxTop=Infinity){
+ if(maxTop<0)return null;
+ if(x<villageBounds.minX||x>villageBounds.maxX||z<villageBounds.minZ||z>villageBounds.maxZ)return null;
+ return {id:0,x:0,z:-20,top:0,w:100,d:100,checkpoint:false,ground:true};
+}
+function isBlocked(x,z,feetY=p.y){
+ const radius=.29,headY=feetY+1.78;
+ if(x-radius<villageBounds.minX||x+radius>villageBounds.maxX||z-radius<villageBounds.minZ||z+radius>villageBounds.maxZ)return true;
+ for(const b of worldColliders){
+  if(headY<=b.bottom+.02||feetY>=b.top-.03)continue;
+  if(x+radius>b.minX&&x-radius<b.maxX&&z+radius>b.minZ&&z-radius<b.maxZ)return true;
+ }
+ return false;
+}
+
 function updateProgress(){$('progressLabel').textContent=villagers.length+' жителей';$('progressBar').style.width='100%';}
 function setCheckpoint(){}
 function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;p.jumpHeld=false;p.jumpBuffer=0;p.coyote=.12;if(localAvatar)localAvatar.group.position.set(p.x,p.y,p.z);if(show)toast('Возврат к контрольной точке');}
 function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(keys.has('KeyW')||keys.has('ArrowUp'))z++;if(keys.has('KeyS')||keys.has('ArrowDown'))z--;x+=joy.x;z+=joy.y;const l=Math.hypot(x,z);if(l>1){x/=l;z/=l;}return{x,z,len:Math.min(1,l)};}
 function animateLimbs(a,t,s){const v=Math.sin(t*10.5)*Math.min(1,s)*.53;a.la.rotation.x=v;a.ra.rotation.x=-v;a.ll.rotation.x=-v;a.rl.rotation.x=v;}
 function updatePlayer(dt){
- const oldY=p.y,m=moveInput(),sprinting=p.sprint||keys.has('ShiftLeft')||keys.has('ShiftRight'),speed=sprinting?6.4:4.35;
+ const oldY=p.y,m=moveInput(),sprinting=p.sprint||keys.has('ShiftLeft')||keys.has('ShiftRight'),speed=p.sneak?1.6:(sprinting?5.4:3.65);
  const wx=m.x*Math.cos(p.yaw)-m.z*Math.sin(p.yaw),wz=-m.x*Math.sin(p.yaw)-m.z*Math.cos(p.yaw);
  if(p.jump){p.jumpBuffer=.16;p.jump=false;}else p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);
- if(p.grounded)p.coyote=.12;else p.coyote=Math.max(0,p.coyote-dt);
- if((p.jumpBuffer>0||(p.jumpHeld&&p.grounded))&&(p.grounded||p.coyote>0)){p.vy=8.1;p.grounded=false;p.jumpBuffer=0;p.coyote=0;}
- p.x+=wx*speed*dt;p.z+=wz*speed*dt;
+ if(p.grounded)p.coyote=.11;else p.coyote=Math.max(0,p.coyote-dt);
+ if((p.jumpBuffer>0||(p.jumpHeld&&p.grounded))&&(p.grounded||p.coyote>0)){p.vy=7.2;p.grounded=false;p.jumpBuffer=0;p.coyote=0;}
+ const dx=wx*speed*dt,dz=wz*speed*dt;
+ // Resolve each axis separately so the player slides along walls instead of sticking.
+ if(!isBlocked(p.x+dx,p.z,p.y))p.x+=dx;
+ if(!isBlocked(p.x,p.z+dz,p.y))p.z+=dz;
  const support=platformAt(p.x,p.z,p.y+.12);
- if(p.grounded){
-  if(support&&Math.abs(p.y-support.top)<.15){p.y=support.top;p.vy=0;updateProgress(support);setCheckpoint(support);}
-  else p.grounded=false;
- }
+ if(p.grounded&&!support)p.grounded=false;
  if(!p.grounded){
-  p.vy-=24*dt;p.y+=p.vy*dt;
-  if(p.vy<=0){
-   let landing=null;
-   for(const a of defs){const overlap=Math.abs(p.x-a.x)<=a.w/2-.18&&Math.abs(p.z-a.z)<=a.d/2-.18;if(overlap&&oldY>=a.top-.04&&p.y<=a.top&&(!landing||a.top>landing.top))landing=a;}
-   if(landing){p.y=landing.top;p.vy=0;p.grounded=true;p.coyote=.12;updateProgress(landing);setCheckpoint(landing);}
-  }
+  p.vy-=21*dt;p.y+=p.vy*dt;
+  if(p.vy<=0&&support&&oldY>=support.top-.02&&p.y<=support.top){p.y=support.top;p.vy=0;p.grounded=true;p.coyote=.11;}
  }
- if(!p.grounded&&p.y<-24)respawn();
- if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);if(m.len>.08)localAvatar.group.rotation.y=Math.atan2(-wx,-wz);animateLimbs(localAvatar,gameTime,m.len*(sprinting?1.35:1));}
+ if(p.grounded){p.y=0;p.vy=0;}
+ if(!platformAt(p.x,p.z)||p.y<-10)respawn(false);
+ if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;}
 }
 
 function snapshot(){return{id:myId||'local',name:nick,x:p.x,y:p.y,z:p.z,yaw:localAvatar?localAvatar.group.rotation.y:0,color:localColor,moving:moveInput().len>.08};}
@@ -338,7 +349,7 @@ function roomSnapshot(){const arr=[snapshot()],now=Date.now();for(const [id,s] o
 function sendSafe(c,data){if(c&&c.open){try{c.send(data);}catch(e){}}}
 function updateRemote(list){
  if(!Array.isArray(list))return;const active=new Set();
- for(const s of list){if(!s||typeof s.id!=='string'||s.id===myId)continue;active.add(s.id);const n=safeName(s.name),color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:colorFor(s.id);let a=remoteAvatars.get(s.id);
+ for(const s of list){if(!s||typeof s.id!=='string'||s.id===myId||s.id==='local'||safeName(s.name)===nick)continue;active.add(s.id);const n=safeName(s.name),color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:colorFor(s.id);let a=remoteAvatars.get(s.id);
  if(!a){a=avatar(n,color);remoteAvatars.set(s.id,a);}else if(a.name!==n){a.group.remove(a.label);a.tex.dispose();const lab=labelSprite(n,color);a.label=lab.sprite;a.tex=lab.tex;a.group.add(lab.sprite);a.name=n;}
  a.target.set(Number(s.x)||0,Number(s.y)||0,Number(s.z)||0);a.yaw=Number(s.yaw)||0;a.moving=!!s.moving;}
  for(const [id,a] of remoteAvatars){if(!active.has(id)){dropAvatar(a);remoteAvatars.delete(id);}}
@@ -358,27 +369,69 @@ function setupOnline(){
  peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
 }
 function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
-function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);started=true;$('startOverlay').classList.add('hidden');if(online)setupOnline();else{mode='offline';status('Одиночная тренировка');$('inviteButton').disabled=true;}}
+function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;$('startOverlay').classList.add('hidden');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
 function setupScene(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,70,155);
- camera=new THREE.PerspectiveCamera(70,1,.1,300);
- renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!matchMedia('(max-width:760px)').matches,alpha:false,powerPreference:'high-performance'});
- renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia('(max-width:760px)').matches?1.25:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=!matchMedia('(max-width:760px)').matches;
- scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.85));const sun=new THREE.DirectionalLight(0xfff2cf,2.25);sun.position.set(-30,55,18);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;scene.add(sun);
- addMinecraftWorld();addMinecraftVillage();camera.position.set(0,4,10);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,62,115);
+ camera=new THREE.PerspectiveCamera(75,1,.1,180);
+ const mobile=matchMedia('(max-width:760px)').matches;
+ renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!mobile,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.05:1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=false;
+ scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.8));const sun=new THREE.DirectionalLight(0xfff2cf,1.65);sun.position.set(-30,55,18);sun.castShadow=false;scene.add(sun);
+ addMinecraftVillage();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
 }
 
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-function updateCamera(dt){const dist=5.6,h=Math.cos(p.pitch)*dist;camTarget.set(p.x+Math.sin(p.yaw)*h,p.y+2.05+Math.sin(p.pitch)*dist,p.z+Math.cos(p.yaw)*h);camera.position.lerp(camTarget,Math.min(1,dt*6.5));lookTarget.set(p.x,p.y+1.08,p.z);camera.lookAt(lookTarget);}
-function animate(){requestAnimationFrame(animate);const dt=Math.min(.033,clock?clock.getDelta():.016);if(!renderer)return;if(started){gameTime+=dt;updatePlayer(dt);updateCamera(dt);for(const a of remoteAvatars.values()){a.group.position.lerp(a.target,Math.min(1,dt*12));let delta=a.yaw-a.group.rotation.y;while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;a.group.rotation.y+=delta*Math.min(1,dt*12);animateLimbs(a,gameTime,a.moving?1:0);}if(mode==='guest'&&conn&&conn.open&&performance.now()-lastSync>100){lastSync=performance.now();sendSafe(conn,{type:'state',...snapshot()});}if(mode==='host'&&performance.now()-lastSync>110){lastSync=performance.now();broadcast();}}else{camTarget.set(11,10,14);camera.position.lerp(camTarget,.02);camera.lookAt(0,1,-17);}const time=performance.now()*.00025;rings.forEach((r,i)=>r.rotation.z=Math.PI/2+time*(i%2?-1:1));renderer.render(scene,camera);}
+function updateCamera(){
+ const eye=p.sneak?1.34:1.62;
+ camera.position.set(p.x,p.y+eye,p.z);
+ lookTarget.set(p.x+Math.sin(p.yaw)*Math.cos(p.pitch)*4,p.y+eye+Math.sin(p.pitch)*4,p.z-Math.cos(p.yaw)*Math.cos(p.pitch)*4);
+ camera.lookAt(lookTarget);
+}
+function interact(){
+ let target=null,best=4;
+ for(const v of villagers){
+  const dx=v.group.position.x-p.x,dz=v.group.position.z-p.z,dist=Math.hypot(dx,dz);
+  if(dist>=best)continue;
+  const facing=(dx*Math.sin(p.yaw)-dz*Math.cos(p.yaw))/(dist||1);
+  if(facing>.25){target=v;best=dist;}
+ }
+ if(target){target.group.rotation.y=p.yaw+Math.PI;toast('Житель: хмм…',1700);}
+ else toast('Поблизости нет жителей',1300);
+}
+function attack(){
+ const cross=$('crosshair');cross.classList.add('hit');setTimeout(()=>cross.classList.remove('hit'),120);
+}
+function updateVillageAnimations(dt){
+ for(const v of villagers){v.phase+=dt;v.head.rotation.y=Math.sin(v.phase*.55)*.08;v.group.position.y=Math.sin(v.phase*1.15)*.025;}
+}
+
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(.025,clock?clock.getDelta():.016);
+ if(!renderer)return;
+ if(started){
+  gameTime+=dt;updatePlayer(dt);updateCamera();updateVillageAnimations(dt);
+  for(const a of remoteAvatars.values()){
+   a.group.position.lerp(a.target,Math.min(1,dt*12));
+   let delta=a.yaw-a.group.rotation.y;while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;
+   a.group.rotation.y+=delta*Math.min(1,dt*12);animateLimbs(a,gameTime,a.moving?1:0);
+  }
+  if(mode==='guest'&&conn&&conn.open&&performance.now()-lastSync>140){lastSync=performance.now();sendSafe(conn,{type:'state',...snapshot()});}
+  if(mode==='host'&&performance.now()-lastSync>140){lastSync=performance.now();broadcast();}
+ }else{
+  camera.position.set(0,4,10);camera.lookAt(0,1,-10);
+ }
+ renderer.render(scene,camera);
+}
+function setJoy
 function setJoy(e){const r=$('joyRing').getBoundingClientRect(),knob=$('joyKnob'),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=Math.max(18,(r.width-knob.offsetWidth)/2-3),len=Math.hypot(dx,dy),s=len>max?max/len:1,nx=dx*s,ny=dy*s;knob.style.transform='translate('+nx+'px,'+ny+'px)';let ax=nx/max,ay=-ny/max;const mag=Math.hypot(ax,ay),dead=.12;if(mag<dead){ax=0;ay=0;}else{const adjusted=Math.min(1,(mag-dead)/(1-dead)),scale=adjusted/(mag||1);ax*=scale;ay*=scale;}joy.x=ax;joy.y=ay;}
 function resetJoy(){joy.active=false;joy.id=null;joy.x=0;joy.y=0;$('joystick').classList.remove('active');$('joyKnob').style.transform='translate(0,0)';}
 function controls(){
- window.addEventListener('keydown',e=>{if(!started||e.target instanceof HTMLInputElement)return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Space'&&!e.repeat){p.jump=true;p.jumpHeld=true;}});
- window.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='Space')p.jumpHeld=false;});
- window.addEventListener('blur',()=>{keys.clear();p.sprint=false;p.jumpHeld=false;$('sprintButton').classList.remove('held');$('sprintButton').setAttribute('aria-pressed','false');resetJoy();look.active=false;});
+ window.addEventListener('keydown',e=>{if(!started||e.target instanceof HTMLInputElement)return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Space'&&!e.repeat){p.jump=true;p.jumpHeld=true;}if(e.code==='KeyE')interact();if(e.code==='KeyF')attack();if(e.code==='ControlLeft'||e.code==='ControlRight'){p.sneak=true;$('sneakButton').classList.add('held');}});
+ window.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='Space')p.jumpHeld=false;if(e.code==='ControlLeft'||e.code==='ControlRight'){p.sneak=false;$('sneakButton').classList.remove('held');}});
+ window.addEventListener('blur',()=>{keys.clear();p.sprint=false;p.sneak=false;p.jumpHeld=false;$('sprintButton').classList.remove('held');$('sprintButton').setAttribute('aria-pressed','false');$('sneakButton').classList.remove('held');$('sneakButton').setAttribute('aria-pressed','false');resetJoy();look.active=false;});
  canvas.addEventListener('pointerdown',e=>{if(!started)return;look.active=true;look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY;try{canvas.setPointerCapture(e.pointerId);}catch(err){}});
- canvas.addEventListener('pointermove',e=>{if(!look.active||look.id!==e.pointerId)return;const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;p.yaw-=dx*.006;p.pitch=THREE.MathUtils.clamp(p.pitch+dy*.0045,-.28,.72);});
+ canvas.addEventListener('pointermove',e=>{if(!look.active||look.id!==e.pointerId)return;const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;p.yaw-=dx*.006;p.pitch=THREE.MathUtils.clamp(p.pitch-dy*.0045,-1.15,1.15);});
  const endLook=e=>{if(look.id===e.pointerId){look.active=false;look.id=null;}};canvas.addEventListener('pointerup',endLook);canvas.addEventListener('pointercancel',endLook);
  const j=$('joystick');j.addEventListener('pointerdown',e=>{e.preventDefault();if(!started)return;joy.active=true;joy.id=e.pointerId;j.classList.add('active');try{j.setPointerCapture(e.pointerId);}catch(err){}setJoy(e);});
  j.addEventListener('pointermove',e=>{if(joy.active&&joy.id===e.pointerId)setJoy(e);});const ej=e=>{if(joy.id===e.pointerId)resetJoy();};j.addEventListener('pointerup',ej);j.addEventListener('pointercancel',ej);j.addEventListener('lostpointercapture',resetJoy);
@@ -386,6 +439,9 @@ function controls(){
  jump.addEventListener('pointerup',releaseJump);jump.addEventListener('pointercancel',releaseJump);jump.addEventListener('lostpointercapture',releaseJump);
  const sprint=$('sprintButton');const toggleSprint=e=>{e.preventDefault();if(!started)return;p.sprint=!p.sprint;sprint.classList.toggle('held',p.sprint);sprint.setAttribute('aria-pressed',String(p.sprint));sprint.textContent=p.sprint?'БЕГ ВКЛ':'БЕГ';};
  sprint.addEventListener('pointerdown',toggleSprint);
+ const sneak=$('sneakButton');const toggleSneak=e=>{e.preventDefault();if(!started)return;p.sneak=!p.sneak;sneak.classList.toggle('held',p.sneak);sneak.setAttribute('aria-pressed',String(p.sneak));};sneak.addEventListener('pointerdown',toggleSneak);
+ $('interactButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)interact();});
+ $('attackButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)attack();});
 }
 
 function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей комнате и проходи паркур вместе с другими игроками.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));controls();setupScene();animate();}
