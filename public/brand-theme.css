@@ -162,3 +162,25 @@ a { accent-color: var(--nsp-pink); }
 @media (prefers-reduced-motion: reduce) {
   .brand-mark i { animation: none !important; }
 }
+
+/* Keep the Hub controls and scenery in the same brand palette. */
+.hub-stage {
+  background: radial-gradient(ellipse at 50% 18%, #210c2c, #0b0713 45%, #06030a) !important;
+}
+.start-card {
+  border-color: rgba(220, 0, 255, .2) !important;
+  background: linear-gradient(145deg, rgba(22, 7, 29, .98), rgba(7, 4, 12, .97)) !important;
+}
+.start-btn {
+  border-color: rgba(239, 0, 220, .72) !important;
+  background: linear-gradient(112deg, #f000dc, #9400ff) !important;
+  color: #fffaff !important;
+  box-shadow: 0 8px 26px rgba(210, 0, 255, .2) !important;
+}
+.practice-btn:hover {
+  border-color: rgba(239, 0, 220, .38) !important;
+  background: rgba(145, 0, 190, .18) !important;
+  color: #fffaff !important;
+}
+.player-count { border-color: rgba(220, 0, 255, .2) !important; }
+.hub-toast { border-color: rgba(220, 0, 255, .28) !important; }
