@@ -47,6 +47,59 @@
 }
 @media(max-height:620px) and (max-width:760px){.hub-stage{height:calc(100dvh - 105px)}.start-card{padding:15px 17px}.start-logo{margin-bottom:10px}.start-description{margin:8px 0 11px}.name-label{margin-bottom:8px}.start-note{margin-top:7px}.joy-ring{width:88px;height:88px}.joy-knob{width:38px;height:38px}.look-hint{bottom:96px}}
 [hidden]{display:none!important}
+
+/* First-person controls inspired by Minecraft Bedrock mobile layout */
+.hub-stage{border-radius:2px;touch-action:none}
+#hubCanvas{touch-action:none;cursor:crosshair}
+.hud-left,.hud-right,.hub-bottom-left{z-index:8}
+.hub-stage-label{color:#fff;text-shadow:1px 1px 1px #29311f}
+.player-count,.hub-progress{border-radius:2px;background:rgba(26,31,25,.78);border:1px solid rgba(255,255,255,.25)}
+.hub-small-btn{border-radius:2px}
+.crosshair{position:absolute;z-index:6;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%);display:grid;grid-template-columns:1fr 3px 1fr;grid-template-rows:1fr 3px 1fr;gap:0;pointer-events:none;opacity:0;filter:drop-shadow(0 1px 1px #000)}
+.hub-stage.playing .crosshair{opacity:.95}
+.crosshair i,.crosshair b{display:block}
+.crosshair b:nth-of-type(1){grid-column:2;grid-row:1 / 4;background:#fff;border:1px solid rgba(0,0,0,.85)}
+.crosshair b:nth-of-type(2){grid-column:1 / 4;grid-row:2;background:#fff;border:1px solid rgba(0,0,0,.85)}
+.crosshair.hit{transform:translate(-50%,-50%) scale(1.32);filter:drop-shadow(0 0 2px #fff)}
+.touch-controls{z-index:10}
+.joystick{touch-action:none;user-select:none;-webkit-user-select:none}
+.touch-actions{display:grid!important;grid-template-columns:44px 44px 68px;grid-template-rows:44px 44px;grid-template-areas:"interact sneak jump" "attack sprint jump";align-items:center;justify-items:center;gap:7px;width:170px;height:95px;pointer-events:auto}
+.action-btn{grid-area:interact}.sneak-btn{grid-area:sneak}.attack-btn{grid-area:attack}.sprint-btn{grid-area:sprint}.jump-btn{grid-area:jump}
+.touch-btn{display:grid;place-items:center;width:44px;height:44px;padding:0;border:2px solid rgba(246,248,240,.88);border-radius:50%;background:rgba(38,45,35,.76);color:#fff;text-shadow:1px 1px #222;font:800 8px/1 Manrope,system-ui,sans-serif;letter-spacing:0;box-shadow:inset 0 0 0 2px rgba(0,0,0,.13),0 2px 4px rgba(0,0,0,.24);touch-action:none;user-select:none;-webkit-user-select:none}
+.jump-btn{width:68px;height:68px;border-radius:50%;border-color:#eaf3e1;background:rgba(113,164,66,.88);font-size:9px}
+.sprint-btn{width:44px;height:44px;margin:0;background:rgba(60,70,51,.85)}
+.action-btn{background:rgba(115,126,94,.88)}
+.attack-btn{background:rgba(121,75,54,.86)}
+.sneak-btn{background:rgba(75,91,67,.86)}
+.touch-btn.held{filter:brightness(1.2);transform:scale(.96);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2),0 1px 2px rgba(0,0,0,.24)}
+.sprint-btn.held,.sneak-btn.held{background:rgba(117,166,70,.96)}
+.jump-btn.held{background:rgba(141,190,81,.98)}
+.look-hint{color:rgba(255,255,255,.7);text-shadow:1px 1px #333;bottom:20px;max-width:45%}
+@media(max-width:760px){
+ .hub-stage{height:calc(100dvh - 123px);min-height:300px;margin:0 7px 7px}
+ .hub-bottom-left{left:10px;bottom:12px;width:min(185px,48%)}
+ .hub-progress{padding:7px 9px}
+ .progress-head{font-size:9px}
+ .touch-controls{position:absolute;inset:0;pointer-events:none}
+ .joystick{left:12px;bottom:15px}
+ .joy-ring{width:112px;height:112px}
+ .joy-knob{width:48px;height:48px;border-radius:50%}
+ .touch-actions{position:absolute;right:10px;bottom:16px;width:161px;height:91px;grid-template-columns:40px 40px 67px;grid-template-rows:42px 42px;gap:7px}
+ .touch-btn{width:40px;height:40px;font-size:7px}
+ .jump-btn{width:67px;height:67px;font-size:9px}
+ .hub-toast{bottom:128px}
+ .look-hint{bottom:140px}
+}
+@media(max-height:600px) and (max-width:760px){
+ .hub-stage{height:calc(100dvh - 100px)}
+ .joy-ring{width:96px;height:96px}
+ .joy-knob{width:42px;height:42px}
+ .touch-actions{bottom:10px}
+ .touch-btn{width:36px;height:36px;font-size:6px}
+ .jump-btn{width:60px;height:60px;font-size:8px}
+ .hub-toast{bottom:112px}
+ .look-hint{display:none}
+}
 </style>
 </head>
 <body class="hub-body">
@@ -68,6 +121,7 @@
  <div class="joystick" id="joystick"><div class="joy-ring" id="joyRing"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div>
  <div class="touch-actions">
   <button class="touch-btn action-btn" id="interactButton" type="button">ДЕЙСТВИЕ</button>
+  <button class="touch-btn attack-btn" id="attackButton" type="button">УДАР</button>
   <button class="touch-btn sneak-btn" id="sneakButton" type="button" aria-pressed="false">КРАСТЬСЯ</button>
   <button class="touch-btn sprint-btn" id="sprintButton" type="button" aria-pressed="false">БЕГ</button>
   <button class="touch-btn jump-btn" id="jumpButton" type="button">ПРЫЖОК</button>
@@ -221,7 +275,7 @@ function addFence(x,z,w,d){
 function addFarm(){
  decoBlock(scene,17,.045,-18,9,.09,12,'dirt');decoBlock(scene,17,.07,-18,1,.04,10,'cobblestone');
  const cropMat=new THREE.MeshStandardMaterial({color:0x6caa36,roughness:1});
- for(let row=0;row<4;row++)for(let col=0;col<5;col++){
+ for(let row=0;row<3;row++)for(let col=0;col<4;col++){
   const h=.35+(row+col)%3*.12,stem=new THREE.Mesh(new THREE.BoxGeometry(.13,h,.13),cropMat);
   stem.position.set(14.5+col*1.1,.08+h/2,-22+row*1.1);scene.add(stem);
  }
@@ -241,14 +295,14 @@ function makeVillager(x,z,robeColor=0x786047){
  box(g,.08,.055,.025,eye,-.13,1.58,-.247);box(g,.08,.055,.025,eye,.13,1.58,-.247);
  box(g,.45,.12,.39,dark,0,1.16,-.02);box(g,.18,.55,.22,robe,-.36,1.03,0);box(g,.18,.55,.22,robe,.36,1.03,0);
  box(g,.16,.55,.24,robe,-.14,.25,0);box(g,.16,.55,.24,robe,.14,.25,0);
- const head=new THREE.Group();head.position.y=1.52;g.add(head);g.position.set(x,0,z);scene.add(g);villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
+ const head=new THREE.Group();head.position.y=1.52;g.add(head);g.position.set(x,0,z);scene.add(g);worldColliders.push({minX:x-.32,maxX:x+.32,minZ:z-.32,maxZ:z+.32,bottom:0,top:1.8});villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
 }
 function addMinecraftVillage(){
  decoBlock(scene,0,-1,-20,100,2,100,'grass');
  addPath(0,.5,4,54);addPath(-8,-13,15,2.8);addPath(8,-24,15,2.8);addPath(0,-35,4,16);
  buildHouse(-10,-7);buildHouse(9,-9);buildHouse(-10,-25);buildHouse(10,-29);
  addWell();addFarm();
- const treeSpecs=[[-18,-2,4],[-18,-15,5],[17,-1,4],[18,-13,4],[-19,-31,5],[19,-36,5],[-27,-45,4],[28,-47,5],[29,8,4],[-28,7,4]];
+ const treeSpecs=[[-18,-2,4],[-18,-15,5],[17,-1,4],[18,-13,4],[-19,-31,5],[19,-36,5]];
  for(const t of treeSpecs)addTree(t[0],t[1],t[2]);
  for(const h of [[-27,-8,3,2],[27,-17,2,3],[-25,-38,3,2],[26,-36,2,3]]){decoBlock(scene,h[0],.5,h[1],h[2],1,h[3],'grass');decoBlock(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
  makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);
@@ -369,7 +423,7 @@ function setupOnline(){
  peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
 }
 function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
-function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;$('startOverlay').classList.add('hidden');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
+function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;$('startOverlay').classList.add('hidden');stage.classList.add('playing');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
 function setupScene(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x87ceeb);scene.fog=new THREE.Fog(0x87ceeb,62,115);
  camera=new THREE.PerspectiveCamera(75,1,.1,180);
@@ -444,7 +498,7 @@ function controls(){
  $('attackButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)attack();});
 }
 
-function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей комнате и проходи паркур вместе с другими игроками.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));controls();setupScene();animate();}
+function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей деревне и встречай других игроков.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));controls();setupScene();updateProgress();animate();}
 init();
 </script>
 <script>
