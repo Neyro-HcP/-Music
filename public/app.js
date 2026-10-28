@@ -488,6 +488,22 @@
       ctx.fillRect(0, 0, w, h);
     }
 
+    const beatKick = clamp(Math.max(audioValues.beat || 0, (audioValues.bass || 0) * 3.4), 0, 1);
+    // Shake and edge blur belong to the background only; foreground visualizers remain stable.
+    if (beatKick > 0.015) {
+      const sx = Math.sin(now * .071) * beatKick * 7;
+      const sy = Math.cos(now * .083) * beatKick * 5;
+      ctx.save();
+      ctx.globalAlpha = .14 + beatKick * .16;
+      ctx.fillStyle = state.colorOne;
+      ctx.fillRect(sx, sy, w, h);
+      ctx.restore();
+      const edge = ctx.createRadialGradient(w*.5,h*.5,Math.min(w,h)*.24,w*.5,h*.5,Math.max(w,h)*.72);
+      edge.addColorStop(0,'rgba(0,0,0,0)');
+      edge.addColorStop(.68,'rgba(0,0,0,'+(beatKick*.08)+')');
+      edge.addColorStop(1,'rgba(0,0,0,'+(beatKick*.42)+')');
+      ctx.fillStyle=edge;ctx.fillRect(0,0,w,h);
+    }
     const pulse = audioValues.level(6, 64);
     const glow = ctx.createRadialGradient(w * 0.5, h * 0.48, 4, w * 0.5, h * 0.48, Math.max(w, h) * 0.65);
     glow.addColorStop(0, rgba(state.colorTwo, 0.055 + pulse * 0.045));
@@ -1107,7 +1123,10 @@
     return ({none:'',punch:'contrast(1.22) saturate(1.18)',mono:'grayscale(1) contrast(1.08)',warm:'sepia(.25) saturate(1.25)',cold:'hue-rotate(16deg) saturate(1.22)',bloom:'brightness(1.18) saturate(1.45)'})[filter] || '';
   }
   function drawSelectedVisualizer(w,h,now,values) {
-    if (state.style === 'spectrum') drawSpectrum(w,h,now,values);
+    if (state.style === 'minimal') drawMinimalWave(w,h,now,values);
+    else if (state.style === 'pulse') drawBeatLine(w,h,now,values);
+    else if (state.style === 'dots') drawDotGrid(w,h,now,values);
+    else if (state.style === 'spectrum') drawSpectrum(w,h,now,values);
     else if (state.style === 'orbit') drawOrbit(w,h,now,values);
     else if (state.style === 'wave') drawWave(w,h,now,values);
     else if (state.style === 'aurora') drawAurora(w,h,now,values);
@@ -1119,6 +1138,23 @@
     else if (state.style === 'shockwave') drawShockwave(w,h,now,values);
     else if (state.style === 'bars3d') drawBars3d(w,h,now,values);
   }
+  function drawMinimalWave(w,h,now,values) {
+    const mid=h*.52, amp=h*.15, n=lowPowerDevice?100:160;
+    ctx.save();ctx.lineWidth=Math.max(1.5,state.visualLineWidth*1.6);ctx.lineCap='round';ctx.strokeStyle=state.colorOne;ctx.shadowColor=state.colorOne;ctx.shadowBlur=Math.min(18,state.glow);
+    for(let pass=0;pass<2;pass++){ctx.beginPath();for(let i=0;i<=n;i++){const x=i/n*w;const level=values.level(Math.floor(i/n*audioBandCount),audioBandCount);const y=mid+Math.sin(i*.075+now*.0012+pass*.65)*amp*.18+(level-.12)*amp*1.8+Math.sin(i*.027-now*.0007)*amp*.16;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.globalAlpha=pass?.42:1;ctx.stroke();}ctx.restore();
+  }
+  function drawBeatLine(w,h,now,values) {
+    const pulse=clamp(Math.max(values.beat||0,(values.bass||0)*3.2),0,1), y=h*.52, half=w*.34;
+    ctx.save();ctx.lineCap='round';ctx.shadowColor=state.colorOne;ctx.shadowBlur=Math.min(24,state.glow+pulse*12);ctx.strokeStyle=state.colorOne;ctx.lineWidth=2+pulse*3;ctx.globalAlpha=.45+pulse*.55;
+    ctx.beginPath();ctx.moveTo(w*.5-half,y);ctx.lineTo(w*.5+half,y);ctx.stroke();
+    const radius=5+pulse*22;ctx.globalAlpha=.25+pulse*.6;ctx.beginPath();ctx.arc(w*.5,y,radius,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=1;ctx.fillStyle=state.colorTwo;ctx.beginPath();ctx.arc(w*.5,y,2.5+pulse*3,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  function drawDotGrid(w,h,now,values) {
+    const cols=lowPowerDevice?24:34, rows=lowPowerDevice?12:18, pulse=clamp(Math.max(values.beat||0,(values.bass||0)*2.8),0,1);
+    ctx.save();ctx.fillStyle=state.colorOne;ctx.shadowColor=state.colorOne;ctx.shadowBlur=Math.min(12,state.glow);
+    for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const idx=Math.floor((x/cols)*audioBandCount);const lev=values.level(idx,audioBandCount);const center=1-Math.abs(y-(rows-1)/2)/((rows-1)/2);const size=.8+lev*3.1+center*pulse*1.7;ctx.globalAlpha=.22+lev*.55+center*pulse*.2;ctx.beginPath();ctx.arc((x+.5)*w/cols,(y+.5)*h/rows,size,0,Math.PI*2);ctx.fill();}ctx.restore();
+  }
   function drawVisualizerLayer(w,h,now,values,layer) {
     const original={colorOne:state.colorOne,colorTwo:state.colorTwo,glow:state.glow,visualizerGradient:state.visualizerGradient};
     const colorOne=layer?layer.colorOne:state.colorOne,colorTwo=layer?layer.colorTwo:state.colorTwo;
@@ -1126,9 +1162,9 @@
     const shadow=layer?layer.shadow:state.visualizerShadow;
     state.colorOne=colorOne;state.colorTwo=gradient?colorTwo:colorOne;state.glow=glow;state.visualizerGradient=gradient;
     const impact=state.cameraShakeMode==='beat'?values.beat:state.cameraShakeMode==='bass'?clamp(values.bass*3.6,0,1):Math.max(values.beat,clamp(values.bass*3.6,0,1));
-    const dx=w*state.visualX/100+(state.cameraShakeEnabled?state.cameraShake*impact*Math.sin(now*.117):0)+(layer?w*layer.x/100:0);
-    const dy=h*state.visualY/100+(state.cameraShakeEnabled?state.cameraShake*impact*.72*Math.cos(now*.151):0)+(layer?h*layer.y/100:0);
-    const scale=state.visualScale/100*(1+impact*state.visualizerPulse/100*.34)*(layer?layer.scale/100:1);
+    const dx=w*state.visualX/100+(layer?w*layer.x/100:0);
+    const dy=h*state.visualY/100+(layer?h*layer.y/100:0);
+    const scale=state.visualScale/100*(1+impact*state.visualizerPulse/100*.18)*(layer?layer.scale/100:1);
     ctx.save();ctx.translate(w*.5+dx,h*.5+dy);if(state.visualizerRotationSpeed)ctx.rotate(now/1000*state.visualizerRotationSpeed);ctx.scale(scale,scale);ctx.translate(-w*.5,-h*.5);
     ctx.globalAlpha=state.visualOpacity/100*(layer?layer.opacity/100:1);
     if ('filter' in ctx) {
@@ -1167,7 +1203,6 @@
     }
 
     ctx.save();
-    if (state.cameraShakeEnabled) ctx.translate(shakeX * 0.32, shakeY * 0.32);
     if (state.showLogo) drawCenterLogo(w,h,now,values);
     drawTypography(w, h);
     ctx.restore();
