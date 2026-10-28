@@ -1633,16 +1633,19 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(!('DeviceOrientationEvent'in window)){status('Датчик наклона недоступен');return;}
     try{
       createSound();
-      if(typeof DeviceOrientationEvent.requestPermission==='function'){
-        const result=await DeviceOrientationEvent.requestPermission();
-        if(result!=='granted'){status('Разреши доступ к датчику в браузере');return;}
-      }
-      let shakePermission=true;
+      const orientationPermission=typeof DeviceOrientationEvent.requestPermission==='function'
+        ?DeviceOrientationEvent.requestPermission():Promise.resolve('granted');
       const Motion=window.DeviceMotionEvent;
+      let shakePermissionRequest=Promise.resolve('granted');
       if(Motion&&typeof Motion.requestPermission==='function'){
-        try{shakePermission=(await Motion.requestPermission())==='granted';}
-        catch(_){shakePermission=false;}
+        try{shakePermissionRequest=Motion.requestPermission();}
+        catch(_){shakePermissionRequest=Promise.resolve('denied');}
       }
+      const orientationResult=await orientationPermission;
+      if(orientationResult!=='granted'){status('Разреши доступ к датчику в браузере');return;}
+      let shakePermission=true;
+      try{shakePermission=(await shakePermissionRequest)==='granted';}
+      catch(_){shakePermission=false;}
       tiltEnabled=true;
       gravityX=0;gravityY=-12;gravityZ=0;
       lastWakeGravity={x:0,y:-12,z:0};
