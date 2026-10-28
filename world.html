@@ -135,6 +135,50 @@
  .touch-btn{width:58px!important;height:58px!important;font-size:9px!important}
  .jump-btn{width:82px!important;height:82px!important}
 }
+
+.music-panel{max-width:calc(100% - 18px);padding:12px}
+.music-file-label{display:block;margin:2px 0 8px;padding:9px 10px;border:1px solid rgba(255,255,255,.22);border-radius:5px;background:#33442e;color:#fff;font:600 11px Manrope,system-ui,sans-serif;text-align:center;cursor:pointer}
+#musicFileInput{display:block;width:100%;max-width:100%;color:#dfe8d8;font:10px Manrope,system-ui,sans-serif}
+.music-file-name{margin:8px 0;color:rgba(255,255,255,.65);font:10px Manrope,system-ui,sans-serif;overflow-wrap:anywhere}
+#localMusicAudio{display:block;width:100%;height:38px;margin-top:7px}
+.map-editor-overlay{position:absolute;z-index:35;inset:0;display:grid;place-items:center;padding:8px;background:rgba(10,14,11,.76);backdrop-filter:blur(5px);touch-action:pan-y}
+.map-editor-card{width:min(880px,100%);max-height:calc(100% - 4px);overflow:auto;padding:14px;border:1px solid rgba(224,231,210,.24);border-radius:8px;background:#20271e;color:#f4f7ee;box-shadow:0 18px 60px rgba(0,0,0,.48)}
+.map-editor-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.map-editor-heading h2{margin:0 0 5px;font:800 20px/1.15 Manrope,system-ui,sans-serif;letter-spacing:-.04em}
+.map-editor-heading p{margin:0;color:#bdc9b4;font:11px/1.45 Manrope,system-ui,sans-serif}
+.map-close{flex:0 0 34px;width:34px;height:34px;border:1px solid #627057;border-radius:4px;background:#303b2b;color:#fff;font:25px/1 system-ui;cursor:pointer}
+.map-editor-main{display:grid;grid-template-columns:minmax(0,1fr) 218px;gap:14px;align-items:start}
+.map-grid-wrap{min-width:0}
+#mapEditorCanvas{display:block;width:100%;height:auto;aspect-ratio:1;background:#202531;border:1px solid #65715b;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+.map-editor-legend{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:#c2cfb8;font:10px/1.3 "DM Mono",monospace}
+.map-editor-tools{display:flex;flex-direction:column;gap:7px;min-width:0}
+.map-layer-label{color:#d8e1d0;font:600 11px Manrope,system-ui,sans-serif}
+#mapEditorLayer{width:100%;height:35px;padding:0 8px;border:1px solid #64735a;border-radius:4px;background:#303b2b;color:#fff;font:12px Manrope,system-ui,sans-serif}
+.map-palette{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.map-palette-btn{display:flex;align-items:center;gap:5px;min-width:0;min-height:34px;padding:5px;border:1px solid #4e5c47;border-radius:4px;background:#293325;color:#eaf0e5;font:600 9px/1.2 Manrope,system-ui,sans-serif;text-align:left;cursor:pointer}
+.map-palette-btn i{display:block;flex:0 0 14px;width:14px;height:14px;background:var(--block-color);border:1px solid rgba(255,255,255,.25);image-rendering:pixelated}
+.map-palette-btn.selected{border-color:#e5ff9b;background:#465637;box-shadow:inset 0 0 0 1px #e5ff9b}
+.map-action{width:100%;min-height:35px;padding:7px;border:1px solid #8da36f;border-radius:4px;background:#526d3f;color:white;font:700 10px/1.3 Manrope,system-ui,sans-serif;cursor:pointer}
+.map-action.secondary{border-color:#57664c;background:#303b2b}
+.map-action.apply{border-color:#e5ff9b;background:#8eaf54;color:#17220f}
+.map-file-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.map-editor-note{margin:1px 0 0;color:#b5c0ac;font:9px/1.5 Manrope,system-ui,sans-serif}
+@media(max-width:760px){
+ .music-panel{top:82px;right:8px;width:min(300px,calc(100% - 16px))}
+ .map-editor-overlay{padding:4px}
+ .map-editor-card{padding:9px;border-radius:6px}
+ .map-editor-heading{margin-bottom:7px}
+ .map-editor-heading h2{font-size:16px}
+ .map-editor-heading p{font-size:9px}
+ .map-editor-main{grid-template-columns:minmax(0,1fr) minmax(118px,.74fr);gap:8px}
+ .map-palette{grid-template-columns:1fr}
+ .map-palette-btn{min-height:28px;font-size:8px;padding:4px}
+ .map-palette-btn i{width:12px;height:12px;flex-basis:12px}
+ .map-action{font-size:9px;min-height:31px;padding:5px}
+ .map-editor-note{font-size:8px}
+ .map-editor-legend{font-size:8px;flex-wrap:wrap}
+}
+
 </style>
 </head>
 <body class="hub-body">
@@ -149,12 +193,48 @@
 <main class="hub-stage" id="hubStage">
 <canvas id="hubCanvas" aria-label="Трёхмерный мир НсП Hub"></canvas>
 <div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">МИР / ДЕРЕВНЯ</div></div>
-<div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="musicToggleButton" type="button" aria-expanded="false">Музыка C418</button><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
+<div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="musicToggleButton" type="button" aria-expanded="false">Музыка</button><button class="hub-small-btn" id="editorOpenButton" type="button">Редактор карты</button><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
 <div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ОБЫЧНЫЙ МИР</span><b id="progressLabel">ДЕРЕВНЯ</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — ходьба · SPACE — прыжок · SHIFT — бег · мышь — обзор · E — действие</p></div>
 <div class="crosshair" id="crosshair" aria-hidden="true"><i></i><b></b><i></i><b></b></div>
 <div class="music-panel" id="musicPanel" hidden>
- <div class="music-panel-head"><span>C418 · Minecraft</span><button type="button" id="musicCloseButton" aria-label="Закрыть музыку">×</button></div>
- <iframe id="musicFrame" title="Официальный музыкальный плеер C418" width="320" height="180" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+ <div class="music-panel-head"><span>Музыка</span><button type="button" id="musicCloseButton" aria-label="Закрыть музыку">×</button></div>
+ <label class="music-file-label" for="musicFileInput">Выбрать аудиофайл с устройства</label>
+ <input id="musicFileInput" type="file" accept="audio/*">
+ <div class="music-file-name" id="musicFileName">Файл не выбран</div>
+ <audio id="localMusicAudio" controls loop preload="none"></audio>
+</div>
+<div class="map-editor-overlay" id="mapEditorOverlay" hidden>
+ <section class="map-editor-card" aria-label="Редактор карты">
+  <div class="map-editor-heading"><div><h2>Редактор карты</h2><p>Клетка — один блок. Выбери блок и слой, затем нажимай на карту.</p></div><button class="map-close" id="mapEditorClose" type="button" aria-label="Закрыть редактор">×</button></div>
+  <div class="map-editor-main">
+   <div class="map-grid-wrap"><canvas id="mapEditorCanvas" width="600" height="600" aria-label="Сетка карты 15 на 15"></canvas><div class="map-editor-legend"><span id="mapEditorStatus">225 блоков</span><span id="mapEditorCoordinates">Слой 0</span></div></div>
+   <div class="map-editor-tools">
+    <label class="map-layer-label" for="mapEditorLayer">Высота слоя</label>
+    <select id="mapEditorLayer"><option value="0">0 · Земля</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select>
+    <div class="map-palette" id="mapEditorPalette">
+     <button type="button" class="map-palette-btn selected" data-block="grass"><i style="--block-color:#72a844"></i>Трава</button>
+     <button type="button" class="map-palette-btn" data-block="dirt"><i style="--block-color:#805533"></i>Земля</button>
+     <button type="button" class="map-palette-btn" data-block="path"><i style="--block-color:#947b59"></i>Тропа</button>
+     <button type="button" class="map-palette-btn" data-block="stone"><i style="--block-color:#858585"></i>Камень</button>
+     <button type="button" class="map-palette-btn" data-block="cobblestone"><i style="--block-color:#777777"></i>Булыжник</button>
+     <button type="button" class="map-palette-btn" data-block="oak_planks"><i style="--block-color:#b18b58"></i>Дубовые доски</button>
+     <button type="button" class="map-palette-btn" data-block="spruce_planks"><i style="--block-color:#70513b"></i>Еловые доски</button>
+     <button type="button" class="map-palette-btn" data-block="oak_log"><i style="--block-color:#79542f"></i>Бревно</button>
+     <button type="button" class="map-palette-btn" data-block="leaves"><i style="--block-color:#4c8534"></i>Листва</button>
+     <button type="button" class="map-palette-btn" data-block="water"><i style="--block-color:#479fd0"></i>Вода</button>
+     <button type="button" class="map-palette-btn" data-block="glass"><i style="--block-color:#9bd9e8"></i>Стекло</button>
+     <button type="button" class="map-palette-btn" data-block="sand"><i style="--block-color:#d6c58b"></i>Песок</button>
+     <button type="button" class="map-palette-btn" data-block="eraser"><i style="--block-color:#252935"></i>Ластик</button>
+     <button type="button" class="map-palette-btn" data-block="spawn"><i style="--block-color:#d8f47b"></i>Спавн</button>
+    </div>
+    <button class="map-action" id="mapSaveButton" type="button">Сохранить на устройстве</button>
+    <div class="map-file-actions"><button class="map-action secondary" id="mapExportButton" type="button">Скачать JSON</button><button class="map-action secondary" id="mapImportButton" type="button">Загрузить JSON</button><input type="file" id="mapImportFile" accept="application/json,.json" hidden></div>
+    <button class="map-action secondary" id="mapClearLayerButton" type="button">Очистить слой</button>
+    <button class="map-action apply" id="mapApplyButton" type="button">Применить и играть</button>
+    <p class="map-editor-note">Сохранение на этом устройстве. Чтобы сделать карту основой проекта, скачай JSON и пришли его сюда.</p>
+   </div>
+  </div>
+ </section>
 </div>
 <div class="touch-controls" id="touchControls">
  <div class="joystick" id="joystick"><div class="joy-ring" id="joyRing"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div>
@@ -168,7 +248,7 @@
  <div class="look-hint">Проводи по экрану — обзор от первого лица</div>
 </div>
 <div class="hub-toast" id="toast" role="status" aria-live="polite"></div>
-<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">МИР / ВИД ОТ ПЕРВОГО ЛИЦА</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Исследуй деревню с домами и жителями. Управление как в мобильном Minecraft: джойстик, перекрестие, прыжок, бег и действие.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
+<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">МИР / ВИД ОТ ПЕРВОГО ЛИЦА</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Исследуй деревню с домами и жителями. Управление как в мобильном Minecraft: джойстик, перекрестие, прыжок, бег и действие.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="practice-btn" id="editorStartButton" type="button">Редактор карты</button><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
 </main>
 <script type="module">
 import * as THREE from 'three';
@@ -188,6 +268,39 @@ const rings=[];
 const worldColliders=[];
 const villagers=[];
 const villageBounds={minX:-48,maxX:48,minZ:-68,maxZ:28};
+const MAP_SIZE=15,MAP_HALF=7,MAP_STORAGE_KEY='nspHubMapV1';
+const MAP_BLOCK_TYPES=new Set(['grass','dirt','path','stone','cobblestone','oak_planks','spruce_planks','oak_log','leaves','water','glass','sand']);
+let customWorldMap=null,editorMap=null,editorBlock='grass',musicObjectUrl=null;
+function mapKey(x,y,z){return x+','+y+','+z;}
+function createDefaultMap(){
+ const m={version:1,width:MAP_SIZE,depth:MAP_SIZE,spawn:{x:0,z:0},blocks:[]};
+ for(let z=-MAP_HALF;z<=MAP_HALF;z++)for(let x=-MAP_HALF;x<=MAP_HALF;x++)m.blocks.push({x,y:0,z,type:'grass'});
+ return m;
+}
+function validateMapData(raw){
+ if(!raw||raw.version!==1||raw.width!==MAP_SIZE||raw.depth!==MAP_SIZE||!Array.isArray(raw.blocks)||raw.blocks.length>2500)return null;
+ const seen=new Set(),blocks=[];
+ for(const b of raw.blocks){
+  if(!b||!Number.isInteger(b.x)||!Number.isInteger(b.y)||!Number.isInteger(b.z)||b.x< -MAP_HALF||b.x>MAP_HALF||b.z< -MAP_HALF||b.z>MAP_HALF||b.y<0||b.y>8||!MAP_BLOCK_TYPES.has(b.type))continue;
+  const key=mapKey(b.x,b.y,b.z);if(seen.has(key))continue;seen.add(key);blocks.push({x:b.x,y:b.y,z:b.z,type:b.type});
+ }
+ const spawn=raw.spawn&&Number.isInteger(raw.spawn.x)&&Number.isInteger(raw.spawn.z)&&raw.spawn.x>=-MAP_HALF&&raw.spawn.x<=MAP_HALF&&raw.spawn.z>=-MAP_HALF&&raw.spawn.z<=MAP_HALF?{x:raw.spawn.x,z:raw.spawn.z}:{x:0,z:0};
+ return {version:1,width:MAP_SIZE,depth:MAP_SIZE,spawn,blocks};
+}
+function loadStoredMap(){
+ try{const value=localStorage.getItem(MAP_STORAGE_KEY);if(!value)return null;return validateMapData(JSON.parse(value));}catch(e){return null;}
+}
+function saveStoredMap(m){
+ try{localStorage.setItem(MAP_STORAGE_KEY,JSON.stringify(m));return true;}catch(e){toast('Не удалось сохранить карту в браузере');return false;}
+}
+function cloneMap(m){return JSON.parse(JSON.stringify(m));}
+function mapTopAt(m,x,z,maxTop=Infinity){
+ let top=0;
+ for(const b of m.blocks){if(b.x===x&&b.z===z&&b.y+1<=maxTop+.001&&b.y+1>top)top=b.y+1;}
+ return top;
+}
+function mapBlockAt(m,x,y,z){return m.blocks.find(b=>b.x===x&&b.y===y&&b.z===z);}
+
 function status(text,state){$('hubStatus').textContent=text;$('hubStatusDot').className='status-dot'+(state==='online'?' online':state==='warning'?' warning':'');}
 function toast(text,ms){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),ms||2300);}
 function safeName(value){return String(value||'Игрок').replace(/[<>]/g,'').trim().slice(0,18)||'Игрок';}
@@ -197,7 +310,7 @@ function box(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGe
 const vanillaAssetBase='https://assets.mcasset.cloud/1.21.11/assets/minecraft/textures/';
 function pixelBlockTexture(kind){
  const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');
- const colors={grassTop:['#79b84d','#71ad45','#8ac65a','#659f3e'],grassSide:['#805533','#70472c','#93643b','#69442b'],dirt:['#805533','#70472c','#93643b','#69442b'],stone:['#777777','#686868','#878787','#5f5f5f'],cobblestone:['#777777','#696969','#898989','#585858'],oak_planks:['#b28a55','#9c7548','#c19a63','#87623c'],oak_log:['#81562e','#674322','#9a6d3a','#4e351e'],oak_log_top:['#976e40','#b58a56','#79542f','#d0a06a'],oak_leaves:['#4d8b35','#427a2c','#659b3d','#376d2a']};
+ const colors={grassTop:['#79b84d','#71ad45','#8ac65a','#659f3e'],grassSide:['#805533','#70472c','#93643b','#69442b'],dirt:['#805533','#70472c','#93643b','#69442b'],sand:['#d6c58b','#c5b47b','#e2d397','#bca975'],stone:['#777777','#686868','#878787','#5f5f5f'],cobblestone:['#777777','#696969','#898989','#585858'],oak_planks:['#b28a55','#9c7548','#c19a63','#87623c'],oak_log:['#81562e','#674322','#9a6d3a','#4e351e'],oak_log_top:['#976e40','#b58a56','#79542f','#d0a06a'],oak_leaves:['#4d8b35','#427a2c','#659b3d','#376d2a']};
  const pal=colors[kind]||colors.stone;x.fillStyle=pal[0];x.fillRect(0,0,16,16);let seed=0;for(const ch of kind)seed=(seed*33+ch.charCodeAt(0))>>>0;const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
  if(kind==='grassSide'){for(let y=3;y<16;y++)for(let xx=0;xx<16;xx++)if(rand()>.52){x.fillStyle=pal[1+Math.floor(rand()*3)];x.fillRect(xx,y,1,1);}x.fillStyle='#6ba84a';for(let xx=0;xx<16;xx++)x.fillRect(xx,0,1,rand()>.72?2:3);x.fillStyle='#8ac65a';for(let xx=0;xx<16;xx++)if(rand()>.46)x.fillRect(xx,0,1,1);}
  else if(kind==='oak_planks'){for(let y=0;y<16;y+=4){x.fillStyle=pal[1];x.fillRect(0,y,16,1);for(let xx=0;xx<16;xx++)if(rand()>.55){x.fillStyle=pal[2];x.fillRect(xx,y+1+Math.floor(rand()*3),1,1);}}}
@@ -258,6 +371,7 @@ const mcTextures={
  oakLeaves:makeVanillaTexture('block/oak_leaves',pixelBlockTexture('oak_leaves')),
  sprucePlanks:makeVanillaTexture('block/spruce_planks',pixelBlockTexture('oak_planks')),
  dirtPathTop:makeVanillaTexture('block/dirt_path_top',pixelBlockTexture('dirt')),
+ sand:makeVanillaTexture('block/sand',pixelBlockTexture('sand')),
  wheat:makeVanillaTexture('block/wheat_stage7',pixelWheatTexture(),false),
  poppy:makeVanillaTexture('block/poppy',pixelFlowerTexture('poppy'),false),
  dandelion:makeVanillaTexture('block/dandelion',pixelFlowerTexture('dandelion'),false),
@@ -285,8 +399,13 @@ const blockMaterials={
  oak_planks:[mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks],
  spruce_planks:[mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks],
  oak_log:[mcMaterials.oakLog,mcMaterials.oakLog,mcMaterials.oakLogTop,mcMaterials.oakLogTop,mcMaterials.oakLog,mcMaterials.oakLog],
- leaves:[mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves]
+ leaves:[mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves],
+ sand:[mcMaterials.dirt,mcMaterials.dirt,mcMaterials.sand,mcMaterials.sand,mcMaterials.dirt,mcMaterials.dirt]
 };
+const mapWaterMaterial=new THREE.MeshStandardMaterial({color:0x579fce,transparent:true,opacity:.76,roughness:.2,metalness:.05,side:THREE.DoubleSide});
+const mapGlassMaterial=new THREE.MeshStandardMaterial({color:0xbdeeff,transparent:true,opacity:.42,roughness:.12,metalness:0,side:THREE.DoubleSide});
+blockMaterials.water=[mapWaterMaterial,mapWaterMaterial,mapWaterMaterial,mapWaterMaterial,mapWaterMaterial,mapWaterMaterial];
+blockMaterials.glass=[mapGlassMaterial,mapGlassMaterial,mapGlassMaterial,mapGlassMaterial,mapGlassMaterial,mapGlassMaterial];
 function repeatedBoxGeometry(w,h,d){
  const geo=new THREE.BoxGeometry(w,h,d),uv=geo.attributes.uv;
  for(let i=0;i<uv.count;i++){const face=Math.floor(i/4),uScale=(face===0||face===1)?d:w,vScale=(face===2||face===3)?d:h;uv.setXY(i,uv.getX(i)*uScale,uv.getY(i)*vScale);}
@@ -374,23 +493,71 @@ function addWell(){
  decoBlock(scene,0,2,-18,2.8,.25,2.4,'oak_planks');
  decoBlock(scene,0,2.23,-18,2.4,.2,2,'oak_planks');
 }
-function makeVillager(x,z,robeColor=0x786047){
- addGroundShadow(x,z,1.2,1.2,.42);
+
+function addCustomMap(){
+ const m=customWorldMap||createDefaultMap();
+ villageBounds.minX=-MAP_SIZE/2;villageBounds.maxX=MAP_SIZE/2;villageBounds.minZ=-MAP_SIZE/2;villageBounds.maxZ=MAP_SIZE/2;
+ decoBlock(scene,0,-1,0,MAP_SIZE+2,2,MAP_SIZE+2,'grass');
+ worldColliders.length=0;
+ for(const b of m.blocks)solidBlock(scene,b.x,b.y+.5,b.z,1,1,1,b.type);
+ const sx=m.spawn.x,sz=m.spawn.z,sy=mapTopAt(m,sx,sz);
+ p.x=sx;p.y=sy;p.z=sz;p.vy=0;p.grounded=true;p.yaw=0;p.pitch=0;
+ checkpoint={x:sx,y:sy,z:sz};
+ for(const [x,z,c] of [[-4,-3,0x786047],[3,-4,0x655a70],[-3,4,0x786047],[4,3,0x6c6450]]){
+  makeVillager(x,z,c,mapTopAt(m,x,z));
+ }
+ addFlowerPatches();
+}
+
+function pixelCanvas(kind,baseColor=0x806047){
+ const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d'),px=(col,a,b,w=1,h=1)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
+ let seed=kind.length*317+baseColor;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+ const hex=n=>'#'+n.toString(16).padStart(6,'0');
+ if(kind==='face'){
+  const pal=['#bd9775','#c7a181','#b48b6a','#d0aa86','#a77e61'];x.fillStyle=pal[0];x.fillRect(0,0,16,16);
+  for(let i=0;i<30;i++)px(pal[1+Math.floor(rand()*4)],Math.floor(rand()*16),Math.floor(rand()*16));
+  px('#352a22',3,5,4,2);px('#352a22',9,5,4,2);px('#191714',4,7,2,2);px('#191714',10,7,2,2);
+  px('#e2be9a',4,9,2,1);px('#e2be9a',10,9,2,1);px('#8b634c',7,8,2,4);px('#b48b6a',6,11,4,2);px('#72513c',6,13,4,1);
+ }else if(kind==='skin'){
+  const pal=['#bd9775','#c7a181','#b48b6a','#d0aa86'];x.fillStyle=pal[0];x.fillRect(0,0,16,16);for(let i=0;i<24;i++)px(pal[Math.floor(rand()*pal.length)],Math.floor(rand()*16),Math.floor(rand()*16));
+ }else if(kind==='robe'){
+  const base=baseColor,shade=n=>hex(Math.max(0,Math.min(255,((base>>16)&255)+n))*65536+Math.max(0,Math.min(255,((base>>8)&255)+n))*256+Math.max(0,Math.min(255,(base&255)+n)));
+  x.fillStyle=shade(0);x.fillRect(0,0,16,16);for(let i=0;i<45;i++)px(shade(rand()>.5?10:-10),Math.floor(rand()*16),Math.floor(rand()*16));
+  px('#554333',0,14,16,2);px('#9a7958',2,4,2,1);px('#9a7958',12,7,2,1);
+ }else if(kind==='arm'){
+  const base=baseColor,parts=[base,base^0x151515,base^0x080808];x.fillStyle=hex(base);x.fillRect(0,0,16,16);for(let i=0;i<22;i++)px(hex(parts[Math.floor(rand()*parts.length)]),Math.floor(rand()*16),Math.floor(rand()*16));
+  px('#4a3829',0,12,16,4);
+ }else{
+  x.fillStyle='#4a3829';x.fillRect(0,0,16,16);for(let i=0;i<18;i++)px(i%2?'#5b4534':'#3a2d23',Math.floor(rand()*16),Math.floor(rand()*16));
+ }
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;tex.generateMipmaps=false;
+ return new THREE.MeshStandardMaterial({map:tex,color:0xffffff,roughness:1,metalness:0});
+}
+function villagerBox(parent,w,h,d,mats,x,y,z){
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mats);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+
+function makeVillager(x,z,robeColor=0x786047,baseY=0){
+ addGroundShadow(x,z,1.2,1.2,.42,baseY+.018);
  const g=new THREE.Group();
- const robe=mat(robeColor,1,0),skin=mat(0xb99a78,1,0),nose=mat(0x9b7a5d,1,0),eye=mat(0x444b35,1,0),brow=mat(0x46382d,1,0),belt=mat(0x4a3b2b,1,0),boots=mat(0x41352c,1,0);
- box(g,.64,.88,.42,robe,0,.76,0);
- box(g,.18,.5,.22,robe,-.35,.92,0);box(g,.18,.5,.22,robe,.35,.92,0);
- box(g,.52,.17,.28,robe,0,1.05,-.075);
- box(g,.18,.35,.22,boots,-.14,.23,0);box(g,.18,.35,.22,boots,.14,.23,0);
- box(g,.48,.08,.43,belt,0,.45,0);
- const head=new THREE.Group();head.position.set(0,1.48,0);g.add(head);
- box(head,.58,.58,.58,skin,0,.02,0);
- box(head,.15,.21,.22,nose,0,.005,-.355);
- box(head,.09,.05,.025,eye,-.13,.085,-.298);box(head,.09,.05,.025,eye,.13,.085,-.298);
- box(head,.31,.065,.035,brow,0,.15,-.3);
- g.position.set(x,0,z);scene.add(g);
- worldColliders.push({minX:x-.34,maxX:x+.34,minZ:z-.34,maxZ:z+.34,bottom:0,top:1.85});
- villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
+ const skinSide=pixelCanvas('skin'),skinFace=pixelCanvas('face'),skinTop=pixelCanvas('skin');
+ const robeSide=pixelCanvas('robe',robeColor),robeFront=pixelCanvas('robe',robeColor),robeTop=pixelCanvas('arm',robeColor),arms=pixelCanvas('arm',robeColor),boot=pixelCanvas('boot');
+ const skinMats=[skinSide,skinSide,skinTop,skinTop,skinSide,skinFace];
+ const robeMats=[robeSide,robeSide,robeTop,boot,robeFront,robeFront];
+ const armMats=[arms,arms,robeTop,boot,arms,arms];
+ villagerBox(g,.62,.88,.42,robeMats,0,.75,0);
+ villagerBox(g,.19,.48,.22,armMats,-.16,1.02,-.245);
+ villagerBox(g,.19,.48,.22,armMats,.16,1.02,-.245);
+ villagerBox(g,.48,.12,.18,robeMats,0,1.05,-.255);
+ villagerBox(g,.18,.35,.22,[boot,boot,boot,boot,boot,boot],-.14,.22,0);
+ villagerBox(g,.18,.35,.22,[boot,boot,boot,boot,boot,boot],.14,.22,0);
+ const head=new THREE.Group();head.position.set(0,1.49,0);g.add(head);
+ villagerBox(head,.58,.58,.58,skinMats,0,0,0);
+ const nose=pixelCanvas('skin');const noseMats=[nose,nose,nose,nose,nose,nose];
+ villagerBox(head,.13,.2,.2,noseMats,0,-.025,-.36);
+ g.position.set(x,baseY,z);scene.add(g);
+ worldColliders.push({minX:x-.34,maxX:x+.34,minZ:z-.34,maxZ:z+.34,bottom:baseY,top:baseY+1.85});
+ villagers.push({group:g,head,homeX:x,homeZ:z,baseY,phase:Math.random()*6.28});
 }
 function addMinecraftVillage(){
  decoBlock(scene,0,-1,-20,100,2,100,'grass');
@@ -509,6 +676,10 @@ function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)
 function platformAt(x,z,maxTop=Infinity){
  if(maxTop<0)return null;
  if(x<villageBounds.minX||x>villageBounds.maxX||z<villageBounds.minZ||z>villageBounds.maxZ)return null;
+ if(customWorldMap){
+  const bx=Math.round(x),bz=Math.round(z),top=mapTopAt(customWorldMap,bx,bz,maxTop);
+  return {id:0,x:bx,z:bz,top,w:1,d:1,checkpoint:false,ground:top===0};
+ }
  return {id:0,x:0,z:-20,top:0,w:100,d:100,checkpoint:false,ground:true};
 }
 function isBlocked(x,z,feetY=p.y){
@@ -521,7 +692,7 @@ function isBlocked(x,z,feetY=p.y){
  return false;
 }
 
-function updateProgress(){$('progressLabel').textContent=villagers.length+' жителей';$('progressBar').style.width='100%';}
+function updateProgress(){$('progressLabel').textContent=customWorldMap?'КАРТА '+customWorldMap.blocks.length+' БЛОКОВ':villagers.length+' жителей';$('progressBar').style.width='100%';}
 function setCheckpoint(){}
 function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;p.jumpHeld=false;p.jumpBuffer=0;p.coyote=.1;p.sneak=false;if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;}if(show)toast('Возврат в деревню');}
 function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(keys.has('KeyW')||keys.has('ArrowUp'))z++;if(keys.has('KeyS')||keys.has('ArrowDown'))z--;x+=joy.x;z+=joy.y;const l=Math.hypot(x,z);if(l>1){x/=l;z/=l;}return{x,z,len:Math.min(1,l)};}
@@ -580,7 +751,7 @@ function setupScene(){
  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!mobile,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.05:1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=false;
  scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.8));const sun=new THREE.DirectionalLight(0xfff2cf,1.65);sun.position.set(-30,55,18);sun.castShadow=false;scene.add(sun);
- addMinecraftVillage();addClouds();createFirstPersonHand();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+ customWorldMap=loadStoredMap();if(customWorldMap)addCustomMap();else addMinecraftVillage();addClouds();createFirstPersonHand();camera.position.set(p.x,Math.max(1.62,p.y+1.62),p.z);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
 }
 
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();if(firstPersonHand)firstPersonHand.position.x=Math.min(.48,.2+camera.aspect*.14);}
@@ -605,7 +776,7 @@ function attack(){
  const cross=$('crosshair');cross.classList.add('hit');setTimeout(()=>cross.classList.remove('hit'),120);handSwing=1;
 }
 function updateVillageAnimations(dt){
- for(const v of villagers){v.phase+=dt;v.head.rotation.y=Math.sin(v.phase*.55)*.08;v.group.position.y=Math.sin(v.phase*1.15)*.025;}
+ for(const v of villagers){v.phase+=dt;v.head.rotation.y=Math.sin(v.phase*.55)*.08;v.group.position.y=v.baseY+Math.sin(v.phase*1.15)*.025;}
 }
 
 function animate(){
@@ -646,13 +817,93 @@ function controls(){
  $('attackButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)attack();});
 }
 
+
+const mapEditorCanvas=$('mapEditorCanvas'),mapEditorCtx=mapEditorCanvas.getContext('2d');
+const mapBlockColors={grass:'#72a844',dirt:'#805533',path:'#947b59',stone:'#858585',cobblestone:'#777777',oak_planks:'#b18b58',spruce_planks:'#70513b',oak_log:'#79542f',leaves:'#4c8534',water:'#479fd0',glass:'#9bd9e8',sand:'#d6c58b'};
+function editorHighest(x,z){return editorMap.blocks.filter(b=>b.x===x&&b.z===z).sort((a,b)=>b.y-a.y)[0]||null;}
+function drawMapEditor(){
+ if(!editorMap||!mapEditorCtx)return;
+ const ctx=mapEditorCtx,size=mapEditorCanvas.width/MAP_SIZE,layer=Number($('mapEditorLayer').value)||0;
+ ctx.clearRect(0,0,mapEditorCanvas.width,mapEditorCanvas.height);
+ for(let row=0;row<MAP_SIZE;row++)for(let col=0;col<MAP_SIZE;col++){
+  const x=col-MAP_HALF,z=row-MAP_HALF,b=editorHighest(x,z),px=col*size,py=row*size;
+  ctx.fillStyle=b?(mapBlockColors[b.type]||'#555'): '#202531';ctx.fillRect(px+1,py+1,size-2,size-2);
+  if(b&&b.y>0){ctx.fillStyle='rgba(0,0,0,.42)';ctx.fillRect(px+size-15,py+2,13,12);ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(b.y),px+size-8.5,py+8);}
+  if(b&&b.y===layer){ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1;ctx.strokeRect(px+2,py+2,size-4,size-4);}
+  ctx.strokeStyle='rgba(8,12,17,.7)';ctx.lineWidth=1;ctx.strokeRect(px,py,size,size);
+ }
+ const sx=editorMap.spawn.x+MAP_HALF,sz=editorMap.spawn.z+MAP_HALF;
+ ctx.strokeStyle='#ecff91';ctx.lineWidth=3;ctx.strokeRect(sx*size+3,sz*size+3,size-6,size-6);
+ ctx.beginPath();ctx.moveTo(sx*size+size*.28,sz*size+size*.5);ctx.lineTo(sx*size+size*.72,sz*size+size*.5);ctx.moveTo(sx*size+size*.5,sz*size+size*.28);ctx.lineTo(sx*size+size*.5,sz*size+size*.72);ctx.stroke();
+ $('mapEditorStatus').textContent=editorMap.blocks.length+' блоков';
+ $('mapEditorCoordinates').textContent='Слой '+layer+' · Спавн '+editorMap.spawn.x+','+editorMap.spawn.z;
+}
+function updateEditorBlockCount(){drawMapEditor();}
+function openMapEditor(){
+ editorMap=cloneMap(customWorldMap||loadStoredMap()||createDefaultMap());
+ $('mapEditorOverlay').hidden=false;drawMapEditor();
+}
+function closeMapEditor(){$('mapEditorOverlay').hidden=true;}
+function saveEditorMap(){
+ const clean=validateMapData(editorMap);if(!clean){toast('Не удалось проверить карту');return false;}
+ editorMap=clean;if(!saveStoredMap(clean))return false;toast('Карта сохранена на этом устройстве');return true;
+}
+function exportEditorMap(){
+ const clean=validateMapData(editorMap);if(!clean){toast('Сначала проверь карту');return;}
+ const blob=new Blob([JSON.stringify(clean,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nsp-hub-map.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('JSON карты скачан');
+}
+function applyEditorMap(){if(!saveEditorMap())return;window.location.reload();}
+function editMapCell(e){
+ e.preventDefault();if(!editorMap)return;
+ const rect=mapEditorCanvas.getBoundingClientRect(),col=Math.floor((e.clientX-rect.left)/rect.width*MAP_SIZE),row=Math.floor((e.clientY-rect.top)/rect.height*MAP_SIZE);
+ if(col<0||col>=MAP_SIZE||row<0||row>=MAP_SIZE)return;
+ const x=col-MAP_HALF,z=row-MAP_HALF,y=Number($('mapEditorLayer').value)||0;
+ if(editorBlock==='spawn'){editorMap.spawn={x,z};drawMapEditor();return;}
+ const existing=mapBlockAt(editorMap,x,y,z);
+ if(existing){editorMap.blocks=editorMap.blocks.filter(b=>!(b.x===x&&b.y===y&&b.z===z));}
+ if(editorBlock!=='eraser')editorMap.blocks.push({x,y,z,type:editorBlock});
+ drawMapEditor();
+}
+function bindMapEditor(){
+ $('editorOpenButton').addEventListener('click',openMapEditor);
+ $('editorStartButton').addEventListener('click',openMapEditor);
+ $('mapEditorClose').addEventListener('click',closeMapEditor);
+ mapEditorCanvas.addEventListener('pointerdown',editMapCell);
+ $('mapEditorLayer').addEventListener('change',drawMapEditor);
+ $('mapEditorPalette').querySelectorAll('[data-block]').forEach(button=>button.addEventListener('click',()=>{
+  editorBlock=button.dataset.block;
+  $('mapEditorPalette').querySelectorAll('[data-block]').forEach(b=>b.classList.toggle('selected',b===button));
+ }));
+ $('mapSaveButton').addEventListener('click',saveEditorMap);
+ $('mapExportButton').addEventListener('click',exportEditorMap);
+ $('mapImportButton').addEventListener('click',()=>$('mapImportFile').click());
+ $('mapImportFile').addEventListener('change',async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  try{const parsed=JSON.parse(await f.text()),clean=validateMapData(parsed);if(!clean)throw new Error('invalid map');editorMap=clean;saveStoredMap(clean);drawMapEditor();toast('Карта загружена');}
+  catch(err){toast('Не удалось прочитать JSON карты');}
+  e.target.value='';
+ });
+ $('mapClearLayerButton').addEventListener('click',()=>{
+  if(!editorMap)return;const y=Number($('mapEditorLayer').value)||0;
+  editorMap.blocks=editorMap.blocks.filter(b=>b.y!==y);drawMapEditor();
+ });
+ $('mapApplyButton').addEventListener('click',applyEditorMap);
+}
+
 function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей деревне и встречай других игроков.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));
- const musicPanel=$('musicPanel'),musicFrame=$('musicFrame'),musicToggle=$('musicToggleButton');
- const openMusic=()=>{musicPanel.hidden=false;musicToggle.setAttribute('aria-expanded','true');musicFrame.src='https://www.youtube-nocookie.com/embed/2S54N2mFV_A?autoplay=1&controls=1&loop=1&playlist=2S54N2mFV_A&playsinline=1&rel=0';};
- const closeMusic=()=>{musicPanel.hidden=true;musicToggle.setAttribute('aria-expanded','false');musicFrame.src='about:blank';};
+ const musicPanel=$('musicPanel'),musicToggle=$('musicToggleButton'),musicFile=$('musicFileInput'),musicAudio=$('localMusicAudio');
+ const openMusic=()=>{musicPanel.hidden=false;musicToggle.setAttribute('aria-expanded','true');};
+ const closeMusic=()=>{musicPanel.hidden=true;musicToggle.setAttribute('aria-expanded','false');};
  musicToggle.addEventListener('click',()=>musicPanel.hidden?openMusic():closeMusic());
  $('musicCloseButton').addEventListener('click',closeMusic);
- controls();setupScene();updateProgress();animate();}
+ musicFile.addEventListener('change',()=>{
+  const file=musicFile.files&&musicFile.files[0];if(!file)return;
+  if(musicObjectUrl)URL.revokeObjectURL(musicObjectUrl);
+  musicObjectUrl=URL.createObjectURL(file);musicAudio.src=musicObjectUrl;$('musicFileName').textContent=file.name;musicAudio.load();
+  musicAudio.play().catch(()=>toast('Нажми ▶ на плеере, чтобы включить звук'));
+ });
+ bindMapEditor();controls();setupScene();updateProgress();animate();}
 init();
 </script>
 <script>
