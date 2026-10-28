@@ -38,11 +38,15 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let liquidLevel = -2, liquidTargetLevel = -1, liquidPouring = false;
   let liquidEnergy = 0, liquidSurfaceAccumulator = 0, nextPourWaveAt = 0;
   let liquidSurfaceTilt = 0, targetLiquidSurfaceTilt = 0;
+  let liquidAngle = 0, liquidAngularVelocity = 0, bubbleSpawnAccumulator = 0;
   let liquidCutoff = 0, liquidDownX = 0, liquidDownY = -1;
   let liquidTangentX = -1, liquidTangentY = 0;
   let liquidSurfaceAx = 0, liquidSurfaceAy = 0, liquidSurfaceBx = 0, liquidSurfaceBy = 0;
   let nextLiquidAsmrAt = 0, lastLiquidTiltImpulseAt = 0;
-  let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null;
+  let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null, liquidBubbleMesh = null;
+  const liquidBubbles = [];
+  const MAX_LIQUID_BUBBLES = coarsePointer ? 16 : 28;
+  const bubbleDummy = new THREE.Object3D();
   const liquidWaveImpulses = [];
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
   const items = [];
@@ -224,6 +228,11 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       color:0x8df34e,roughness:.13,metalness:0,transparent:true,opacity:.9,
       clearcoat:1,clearcoatRoughness:.06,depthWrite:false,side:THREE.DoubleSide
     });
+    materials.liquidBubble = new THREE.MeshPhysicalMaterial({
+      color:0xf4fdff,roughness:.1,metalness:0,transparent:true,opacity:.9,
+      clearcoat:1,clearcoatRoughness:.045,emissive:0x8ddfff,emissiveIntensity:.06,
+      depthWrite:false
+    });
   }
 
   function createRenderer() {
@@ -288,6 +297,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     geometries.liquidSurface.rotateX(-Math.PI/2);
     geometries.liquidSurface.userData.basePositions = new Float32Array(geometries.liquidSurface.attributes.position.array);
     geometries.liquidPour = new THREE.CylinderGeometry(.035,.075,1,coarsePointer?7:10,1,true);
+    geometries.liquidBubble = new THREE.SphereGeometry(1,coarsePointer?8:12,coarsePointer?6:8);
     geometries.shadow = new THREE.PlaneGeometry(1,1);
     geometries.floor = new THREE.BoxGeometry(1,.12,1.2);
     geometries.ring = new THREE.TorusGeometry(.12,.018,5,42);
@@ -312,6 +322,12 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidPourMesh.visible = false;
     liquidPourMesh.renderOrder = 4;
     scene.add(liquidPourMesh);
+    liquidBubbleMesh = new THREE.InstancedMesh(geometries.liquidBubble,materials.liquidBubble,MAX_LIQUID_BUBBLES);
+    liquidBubbleMesh.count = 0;
+    liquidBubbleMesh.renderOrder = 6;
+    liquidBubbleMesh.frustumCulled = false;
+    liquidBubbleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(liquidBubbleMesh);
 
     const stars = new THREE.BufferGeometry();
     const starCount = coarsePointer ? 65 : 100;
@@ -777,6 +793,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function clearLiquidVisuals(){
     liquidWaveImpulses.length=0;
+    liquidBubbles.length=0;
+    if(liquidBubbleMesh)liquidBubbleMesh.count=0;
+    bubbleSpawnAccumulator=0;
     liquidEnergy=0;
     liquidPouring=false;
     if(liquidVolumeMesh)liquidVolumeMesh.visible=false;
@@ -843,9 +862,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const width=Math.max(.2,sideX*2-.16);
     const left=-width*.5,right=width*.5,bottom=floorY,top=ceilY;
     const corners=[{x:left,y:bottom},{x:right,y:bottom},{x:right,y:top},{x:left,y:top}];
-    const magnitude=Math.hypot(gravityX,gravityY);
-    const downX=magnitude>.1?gravityX/magnitude:0;
-    const downY=magnitude>.1?gravityY/magnitude:-1;
+    const downX=Math.sin(liquidAngle);
+    const downY=-Math.cos(liquidAngle);
     const projections=corners.map(p=>downX*p.x+downY*p.y);
     const minimum=Math.min(...projections),maximum=Math.max(...projections);
     const fill=clamp((liquidLevel-floorY)/Math.max(.1,ceilY-floorY),.002,.998);
@@ -893,6 +911,19 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function liquidSignedDepthAt(x,y){
     return liquidDownX*x+liquidDownY*y-liquidCutoff;
+  }
+
+  function advanceLiquidDynamics(dt){
+    const targetAngle=Math.atan2(gravityX,-gravityY);
+    const error=Math.atan2(Math.sin(targetAngle-liquidAngle),Math.cos(targetAngle-liquidAngle));
+    const water=liquidMode==='water';
+    const stiffness=water?12:4.2;
+    const damping=water?4.1:4.0;
+    liquidAngularVelocity=clamp(liquidAngularVelocity+(error*stiffness-liquidAngularVelocity*damping)*dt,-5.2,5.2);
+    liquidAngle+=liquidAngularVelocity*dt;
+    liquidAngle=Math.atan2(Math.sin(liquidAngle),Math.cos(liquidAngle));
+    const slosh=Math.abs(liquidAngularVelocity);
+    if(slosh>.12)liquidEnergy=Math.max(liquidEnergy,Math.min(.9,slosh*.24));
   }
 
   function addSurfaceWaveImpulse(along,z,amplitude){
@@ -951,6 +982,67 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidEnergy=Math.min(1.6,liquidEnergy+amplitude*2.8);
   }
 
+  function spawnLiquidBubbles(count=1){
+    if(!liquidMode||!liquidSurfaceMesh?.visible||liquidBubbles.length>=MAX_LIQUID_BUBBLES)return;
+    for(let i=0;i<count&&liquidBubbles.length<MAX_LIQUID_BUBBLES;i++){
+      const t=random(.06,.94);
+      const edgeX=liquidSurfaceAx+(liquidSurfaceBx-liquidSurfaceAx)*t;
+      const edgeY=liquidSurfaceAy+(liquidSurfaceBy-liquidSurfaceAy)*t;
+      const inset=random(.045,.14);
+      const x=edgeX+liquidDownX*inset;
+      const y=edgeY+liquidDownY*inset;
+      const buoyancy=random(.32,.68);
+      liquidBubbles.push({
+        x,y,z:random(.49,.62),
+        vx:-liquidDownX*buoyancy+liquidTangentX*liquidAngularVelocity*.07+random(-.09,.09),
+        vy:-liquidDownY*buoyancy+liquidTangentY*liquidAngularVelocity*.07+random(-.09,.09),
+        vz:random(-.045,.045),life:random(.7,1.55),size:random(.018,.039)
+      });
+    }
+  }
+
+  function updateLiquidBubbles(dt){
+    if(!liquidBubbleMesh)return;
+    if(!liquidMode){
+      liquidBubbleMesh.count=0;
+      liquidBubbles.length=0;
+      return;
+    }
+    bubbleSpawnAccumulator+=dt;
+    const slosh=Math.abs(liquidAngularVelocity);
+    const spawnEvery=liquidPouring?(liquidMode==='water'?.24:.36):slosh>.22?clamp(.3/(slosh+.25),.075,.26):liquidEnergy>.24?.3:Infinity;
+    if(bubbleSpawnAccumulator>=spawnEvery){
+      const count=slosh>1.35?3:slosh>.55?2:1;
+      spawnLiquidBubbles(count);
+      bubbleSpawnAccumulator=0;
+    }
+    for(let i=liquidBubbles.length-1;i>=0;i--){
+      const bubble=liquidBubbles[i];
+      bubble.life-=dt;
+      const buoyancy=liquidMode==='water'?.78:.38;
+      bubble.vx+=(-liquidDownX*buoyancy-bubble.vx*.34)*dt;
+      bubble.vy+=(-liquidDownY*buoyancy-bubble.vy*.34)*dt;
+      bubble.vz*=Math.exp(-dt*.8);
+      bubble.x+=bubble.vx*dt;
+      bubble.y+=bubble.vy*dt;
+      bubble.z+=bubble.vz*dt;
+      if(liquidSignedDepthAt(bubble.x,bubble.y)<-.012)bubble.life=Math.min(bubble.life,.16);
+      if(bubble.x<-sideX||bubble.x>sideX||bubble.y<floorY||bubble.y>ceilY)bubble.life=Math.min(bubble.life,.12);
+      if(bubble.life<=0)liquidBubbles.splice(i,1);
+    }
+    liquidBubbleMesh.count=liquidBubbles.length;
+    for(let i=0;i<liquidBubbles.length;i++){
+      const bubble=liquidBubbles[i];
+      const fade=bubble.life<.16?clamp(bubble.life/.16,0,1):1;
+      bubbleDummy.position.set(bubble.x,bubble.y,bubble.z);
+      bubbleDummy.scale.setScalar(bubble.size*fade);
+      bubbleDummy.rotation.set(bubble.x*1.8,bubble.y*1.3,0);
+      bubbleDummy.updateMatrix();
+      liquidBubbleMesh.setMatrixAt(i,bubbleDummy.matrix);
+    }
+    liquidBubbleMesh.instanceMatrix.needsUpdate=true;
+  }
+
   function setLiquidMode(mode){
     if(liquidMode===mode){
       liquidMode=null;
@@ -962,8 +1054,13 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       status('Жидкость убрана');
       return;
     }
+    const wasOff=!liquidMode;
     clearLiquidVisuals();
     liquidMode=mode;
+    if(wasOff){
+      liquidAngle=Math.atan2(gravityX,-gravityY);
+      liquidAngularVelocity=0;
+    }
     liquidLevel=floorY+.045;
     liquidTargetLevel=floorY+(ceilY-floorY)*(mode==='water'?.76:.62);
     liquidPouring=true;
@@ -975,6 +1072,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidVolumeMesh.visible=true;
     liquidSurfaceMesh.visible=true;
     liquidPourMesh.visible=true;
+    if(liquidBubbleMesh)liquidBubbleMesh.visible=true;
     for(const button of document.querySelectorAll('[data-liquid]')){
       button.setAttribute('aria-pressed',String(button.dataset.liquid===mode));
     }
@@ -1010,6 +1108,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       }
       if(submerged>.12&&previous<=.12){
         addWaveImpulse(pos.x,pos.y,pos.z,clamp(Math.hypot(item.body.velocity.x,item.body.velocity.y)*.025,.035,.16));
+        spawnLiquidBubbles(3);
         playImpact('water',Math.hypot(item.body.velocity.x,item.body.velocity.y),pos.x);
       }
     }
@@ -1018,6 +1117,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     function updateLiquids(dt){
     if(!liquidMode)return;
     const step=Math.min(dt,.035);
+    advanceLiquidDynamics(step);
     const nowSeconds=performance.now()/1000;
     if(liquidPouring){
       const fillSpeed=liquidMode==='water'?.72:.34;
@@ -1044,6 +1144,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidEnergy*=Math.exp(-step*(liquidMode==='water'?1.5:.9));
     updateLiquidLayout();
 
+    updateLiquidBubbles(step);
     liquidSurfaceAccumulator+=step;
     if(liquidSurfaceAccumulator<1/30)return;
     liquidSurfaceAccumulator=0;
