@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080912">
+<meta name="description" content="НсП Hub — 3D-мир в браузере с паркуром и совместной игрой.">
+<title>НсП Hub — 3D-мир</title>
+<link rel="icon" href="./public/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./public/app.css?v=followers-grid-20261027">
+<link rel="stylesheet" href="./public/site-nav.css?v=site-tabs-20261027">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<style>
+:root{--hb-bg:#080912;--hb-purple:#b8a5ff;--hb-cyan:#6de8ff;--hb-line:rgba(216,205,255,.16)}
+*{box-sizing:border-box}html,body{min-height:100%}.hub-body{overflow:hidden;background:var(--hb-bg);color:#f7f5ff;overscroll-behavior:none}
+.hub-topbar{position:relative;z-index:20}.hub-stage{position:relative;height:calc(100dvh - 95px);min-height:410px;margin:0 16px 12px;overflow:hidden;isolation:isolate;border:1px solid rgba(203,190,255,.14);border-radius:23px;background:radial-gradient(ellipse at 50% 18%,#1b1c39,#0b0d1a 45%,#06070d);box-shadow:0 22px 65px rgba(0,0,0,.35);touch-action:none}
+#hubCanvas{display:block;width:100%;height:100%;outline:none;touch-action:none}
+.hud{position:absolute;z-index:3;display:flex;flex-direction:column;gap:8px;pointer-events:none}.hud-left{left:20px;top:18px;align-items:flex-start}.hud-right{right:18px;top:18px;align-items:flex-end;pointer-events:auto}
+.hub-mark{display:flex;align-items:center;gap:7px;font:800 17px/1 Manrope,system-ui,sans-serif;letter-spacing:-.08em}.hub-mark i{color:var(--hb-cyan);font:normal 700 10px/1 "DM Mono",monospace;letter-spacing:.13em}
+.hub-status{display:flex;align-items:center;gap:7px;color:rgba(242,239,255,.7);font:500 10px/1.4 "DM Mono",monospace}.status-dot,.online-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#a5a1b5}.status-dot.online,.online-dot{background:#61f2bd;box-shadow:0 0 10px #61f2bd}.status-dot.warning{background:#ffc77a;box-shadow:0 0 10px #ffc77a}.hub-stage-label{margin-top:4px;color:rgba(222,218,244,.4);font:10px/1 "DM Mono",monospace;letter-spacing:.16em}
+.player-count{display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--hb-line);border-radius:11px;background:rgba(7,8,15,.55);color:#f5f2ff;font:11px/1 "DM Mono",monospace;backdrop-filter:blur(14px)}
+.hub-small-btn{min-height:34px;padding:0 12px;border:1px solid rgba(184,165,255,.25);border-radius:10px;background:rgba(17,15,35,.72);color:#f3efff;font:600 10px Manrope,system-ui,sans-serif;cursor:pointer;backdrop-filter:blur(12px)}.hub-small-btn:hover:not(:disabled){background:rgba(82,65,135,.68);border-color:rgba(184,165,255,.6)}.hub-small-btn:disabled{opacity:.45;cursor:default}
+.hub-bottom-left{position:absolute;z-index:3;left:20px;bottom:18px;width:min(380px,48%);pointer-events:none}.hub-progress{max-width:290px;padding:12px 14px;border:1px solid var(--hb-line);border-radius:13px;background:rgba(8,9,17,.63);backdrop-filter:blur(14px)}.progress-head{display:flex;justify-content:space-between;margin-bottom:9px;color:rgba(235,231,255,.57);font:10px/1 "DM Mono",monospace;letter-spacing:.1em}.progress-head b{color:#f3efff;font-weight:500;letter-spacing:0}.progress-track{height:4px;overflow:hidden;border-radius:9px;background:rgba(255,255,255,.1)}.progress-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#9273ff,#6de8ff);box-shadow:0 0 12px rgba(109,232,255,.6);transition:width .25s}.desktop-hint{margin:10px 0 0;color:rgba(230,226,250,.56);font:10px/1.55 "DM Mono",monospace}
+.hub-toast{position:absolute;z-index:12;left:50%;bottom:95px;max-width:calc(100% - 32px);transform:translate(-50%,8px);padding:11px 16px;border:1px solid rgba(185,165,255,.24);border-radius:11px;background:rgba(8,9,17,.9);color:#f5f2ff;box-shadow:0 10px 30px rgba(0,0,0,.22);font:600 12px/1.4 Manrope,system-ui,sans-serif;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;backdrop-filter:blur(18px)}.hub-toast.visible{opacity:1;transform:translate(-50%,0)}
+.start-overlay{position:absolute;z-index:10;inset:0;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at center,rgba(8,9,17,.27),rgba(5,6,12,.76));backdrop-filter:blur(3px);transition:opacity .3s,visibility .3s}.start-overlay.hidden{visibility:hidden;opacity:0;pointer-events:none}
+.start-card{width:min(420px,100%);padding:29px;border:1px solid rgba(209,196,255,.18);border-radius:22px;background:linear-gradient(145deg,rgba(15,16,31,.97),rgba(8,9,17,.95));box-shadow:0 35px 100px rgba(0,0,0,.47),inset 0 1px rgba(255,255,255,.04)}
+.start-logo{display:flex;gap:8px;align-items:center;margin-bottom:23px;font:800 21px/1 Manrope,system-ui,sans-serif;letter-spacing:-.09em}.start-logo i{color:var(--hb-cyan);font:normal 700 11px/1 "DM Mono",monospace;letter-spacing:.13em}.start-kicker{margin-bottom:9px;color:var(--hb-purple);font:10px/1.4 "DM Mono",monospace;letter-spacing:.16em}.start-card h1{margin:0;color:#faf8ff;font:800 clamp(30px,5vw,42px)/1.08 Manrope,system-ui,sans-serif;letter-spacing:-.06em}.start-description{margin:13px 0 21px;color:rgba(231,227,249,.67);font:13px/1.65 Manrope,system-ui,sans-serif}
+.name-label{display:block;margin-bottom:14px;color:rgba(234,230,250,.67);font:600 11px/1.5 Manrope,system-ui,sans-serif}.name-label input{display:block;width:100%;height:44px;margin-top:7px;padding:0 13px;border:1px solid rgba(206,193,255,.17);border-radius:10px;outline:0;background:rgba(255,255,255,.035);color:#fff;font:500 13px Manrope,system-ui,sans-serif}.name-label input:focus{border-color:rgba(184,165,255,.7);box-shadow:0 0 0 3px rgba(184,165,255,.09)}
+.start-btn,.practice-btn{display:block;width:100%;min-height:45px;padding:0 15px;border-radius:11px;font:800 12px Manrope,system-ui,sans-serif;cursor:pointer}.start-btn{border:1px solid rgba(193,178,255,.6);background:linear-gradient(110deg,#8f74ed,#6453c6 65%,#4c91b4);color:#fff;box-shadow:0 8px 26px rgba(116,91,216,.19)}.start-btn:hover{filter:brightness(1.1)}.practice-btn{min-height:40px;margin-top:8px;border:1px solid rgba(221,214,255,.12);background:rgba(255,255,255,.025);color:rgba(239,235,255,.77)}.start-note{margin:14px 0 0;color:rgba(220,216,241,.43);font:10px/1.6 "DM Mono",monospace}.error-note{margin-top:12px;padding:10px;border:1px solid rgba(255,176,130,.3);border-radius:9px;color:#ffc3a3;font:11px/1.45 Manrope,system-ui,sans-serif}
+.touch-controls{display:none}
+@media(max-width:1080px){.hub-stage{height:calc(100dvh - 91px);margin-left:12px;margin-right:12px}}
+@media(max-width:760px){.hub-body{overflow:hidden}.hub-stage{height:calc(100dvh - 123px);min-height:350px;margin:0 7px 7px;border-radius:17px}.hud-left{top:11px;left:12px;gap:6px}.hud-right{top:10px;right:10px;gap:6px}.hub-mark{font-size:15px}.hub-status{max-width:145px;font-size:9px}.hub-stage-label{font-size:8px}.player-count{padding:7px 9px;font-size:10px}.hub-small-btn{min-height:31px;padding:0 9px;font-size:9px}.hub-bottom-left{left:12px;bottom:15px;width:min(210px,55%)}.hub-progress{padding:9px 10px}.progress-head{font-size:9px;margin-bottom:7px}.desktop-hint{display:none}.touch-controls{position:absolute;z-index:5;inset:auto 0 0;display:block;pointer-events:none}.joystick{position:absolute;left:14px;bottom:21px;display:flex;flex-direction:column;align-items:center;gap:7px;color:rgba(237,233,255,.58);font:8px/1 "DM Mono",monospace;letter-spacing:.12em;pointer-events:auto;touch-action:none}.joy-ring{display:grid;place-items:center;width:108px;height:108px;border:1px solid rgba(219,208,255,.24);border-radius:50%;background:rgba(9,10,22,.3);box-shadow:inset 0 0 0 12px rgba(255,255,255,.02);backdrop-filter:blur(8px)}.joy-knob{width:46px;height:46px;border:1px solid rgba(212,201,255,.52);border-radius:50%;background:radial-gradient(circle at 35% 25%,rgba(192,177,255,.74),rgba(88,72,149,.7));box-shadow:0 3px 18px rgba(0,0,0,.32)}.touch-actions{position:absolute;right:14px;bottom:26px;display:flex;align-items:flex-end;gap:9px;pointer-events:auto}.touch-btn{display:grid;place-items:center;border-radius:50%;color:#fff;font:800 9px Manrope,system-ui,sans-serif;letter-spacing:.04em;touch-action:none;user-select:none;-webkit-user-select:none}.sprint-btn{width:51px;height:51px;margin-bottom:7px;border:1px solid rgba(110,225,255,.3);background:rgba(22,67,88,.68)}.jump-btn{width:70px;height:70px;border:1px solid rgba(190,174,255,.48);background:linear-gradient(145deg,rgba(143,113,237,.9),rgba(74,61,144,.9));box-shadow:0 0 28px rgba(131,104,230,.2)}.sprint-btn.held{filter:brightness(1.25)}.look-hint{position:absolute;left:50%;bottom:115px;width:max-content;max-width:60%;transform:translateX(-50%);color:rgba(237,233,255,.43);font:8px/1.35 "DM Mono",monospace;text-align:center;pointer-events:none}.hub-toast{bottom:170px;font-size:11px}.start-overlay{padding:12px}.start-card{max-width:390px;padding:22px 20px 18px;border-radius:19px}.start-logo{margin-bottom:17px}.start-description{margin-bottom:16px;font-size:12px}.start-note{margin-top:10px;font-size:9px}}
+@media(max-height:620px) and (max-width:760px){.hub-stage{height:calc(100dvh - 105px)}.start-card{padding:15px 17px}.start-logo{margin-bottom:10px}.start-description{margin:8px 0 11px}.name-label{margin-bottom:8px}.start-note{margin-top:7px}.joy-ring{width:88px;height:88px}.joy-knob{width:38px;height:38px}.look-hint{bottom:96px}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body class="hub-body">
+<div class="site-noise" aria-hidden="true"></div>
+<header class="topbar hub-topbar">
+<a class="brand" href="./" aria-label="Главная"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span></a>
+<nav class="site-tabs" aria-label="Разделы сайта">
+<a class="site-tab" href="./">Визуализатор</a><a class="site-tab" href="./phone.html">RGB Phone</a><a class="site-tab" href="./tools.html">Инструменты</a><a class="site-tab" href="./games.html">Игры</a><a class="site-tab" href="./world.html" aria-current="page">НсП Hub</a>
+</nav>
+<div class="topbar-actions"><a class="top-export phone-nav-link" href="./games.html">К играм ↗</a></div>
+</header>
+<main class="hub-stage" id="hubStage">
+<canvas id="hubCanvas" aria-label="Трёхмерный мир НсП Hub"></canvas>
+<div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">ПАРКУР / 01</div></div>
+<div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
+<div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ПАРКУР</span><b id="progressLabel">0 / 10</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — движение · SPACE — прыжок · SHIFT — бег · зажми мышь и веди — обзор</p></div>
+<div class="touch-controls" id="touchControls"><div class="joystick" id="joystick"><div class="joy-ring"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div><div class="touch-actions"><button class="touch-btn sprint-btn" id="sprintButton" type="button">БЕГ</button><button class="touch-btn jump-btn" id="jumpButton" type="button">ПРЫЖОК</button></div><div class="look-hint">Проведи по миру, чтобы повернуть камеру</div></div>
+<div class="hub-toast" id="toast" role="status" aria-live="polite"></div>
+<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">3D-МИР / ОНЛАЙН</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Бегай, прыгай по платформам и проходи паркур. Создай комнату и отправь ссылку друзьям.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
+</main>
+<script type="module">
+import * as THREE from 'three';
+const $ = id => document.getElementById(id);
+const canvas = $('hubCanvas'), stage = $('hubStage');
+const invitedRoom = new URLSearchParams(location.search).get('room');
+const palette = ['#b8a5ff','#6de8ff','#ff86bf','#a6ffb7','#ffd27b','#8fa7ff','#ff9a77'];
+const defs = [
+{id:0,x:0,z:1,top:0,w:14,d:14,checkpoint:true},
+{id:1,x:-2,z:-8,top:.65,w:4.2,d:4.2},
+{id:2,x:1.8,z:-12.9,top:1.3,w:3.5,d:3.5,checkpoint:true},
+{id:3,x:4.8,z:-17.5,top:1.95,w:3.2,d:3.2},
+{id:4,x:2.2,z:-22.3,top:2.6,w:3.2,d:3.2,checkpoint:true},
+{id:5,x:-1.8,z:-27.2,top:3.25,w:3.2,d:3.2},
+{id:6,x:-4.2,z:-32,top:3.9,w:3.2,d:3.2,checkpoint:true},
+{id:7,x:-1,z:-36.9,top:4.55,w:3.2,d:3.2},
+{id:8,x:3,z:-41.8,top:5.2,w:3.2,d:3.2,checkpoint:true},
+{id:9,x:4.7,z:-46.5,top:5.85,w:3.3,d:3.3},
+{id:10,x:.8,z:-51.8,top:6.5,w:5,d:5,checkpoint:true,finish:true}
+];
+let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode='offline',toastTimer=0,gameTime=0,lastSync=0,finishShown=false;
+let nick='Игрок',localColor=palette[0],localAvatar=null,checkpointIndex=0,activePlatform=0;
+let checkpoint={x:0,y:0,z:4},progress=-1;
+const connections=new Map(),hostStates=new Map(),remoteAvatars=new Map(),keys=new Set();
+const p={x:0,y:0,z:4,vy:0,yaw:0,pitch:.15,grounded:true,jump:false,sprint:false};
+const joy={active:false,id:null,x:0,y:0};const look={active:false,id:null,x:0,y:0};
+const camTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
+const rings=[];
+function status(text,state){$('hubStatus').textContent=text;$('hubStatusDot').className='status-dot'+(state==='online'?' online':state==='warning'?' warning':'');}
+function toast(text,ms){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),ms||2300);}
+function safeName(value){return String(value||'Игрок').replace(/[<>]/g,'').trim().slice(0,18)||'Игрок';}
+function colorFor(id){let h=0;for(const c of String(id||''))h=((h<<5)-h+c.charCodeAt(0))|0;return palette[Math.abs(h)%palette.length];}
+function mat(color,roughness=.58,metalness=.2){return new THREE.MeshStandardMaterial({color,roughness,metalness});}
+function box(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
+function addPlatform(def){
+ const g=new THREE.Group(),thick=def.id===0?.9:.62,col=def.finish?0x6de8ff:def.id%2?0x9c86ff:0x65daf5;
+ const body=box(g,def.w,thick,def.d,mat(def.id===0?0x171829:def.finish?0x17182b:0x111321,.48,.42),def.x,def.top-thick/2,def.z);
+ const edge=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(def.w,thick,def.d)),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.72}));edge.position.copy(body.position);g.add(edge);
+ const strip=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.82}),y=def.top+.018,inset=.22;
+ box(g,def.w-inset*2,.025,.045,strip,def.x,y,def.z-def.d/2+inset);box(g,def.w-inset*2,.025,.045,strip,def.x,y,def.z+def.d/2-inset);
+ box(g,.045,.025,def.d-inset*2,strip,def.x-def.w/2+inset,y,def.z);box(g,.045,.025,def.d-inset*2,strip,def.x+def.w/2-inset,y,def.z);
+ scene.add(g);
+ if(def.checkpoint||def.finish){const ring=new THREE.Mesh(new THREE.TorusGeometry(def.finish?1.1:.55,.04,8,40),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.9}));ring.rotation.x=Math.PI/2;ring.position.set(def.x,def.top+.07,def.z);scene.add(ring);rings.push(ring);}
+ if(def.finish){const a=mat(0x252344,.32,.45),glow=new THREE.MeshBasicMaterial({color:0x6de8ff});box(g,.28,3.2,.28,a,def.x-2.1,def.top+1.6,def.z-1);box(g,.28,3.2,.28,a,def.x+2.1,def.top+1.6,def.z-1);box(g,4.5,.28,.28,a,def.x,def.top+3.2,def.z-1);box(g,3.8,.05,.06,glow,def.x,def.top+3.02,def.z-1);}
+}
+function labelSprite(name,color){const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.fillStyle='rgba(7,8,17,.78)';x.fillRect(40,22,432,84);x.strokeStyle=color;x.lineWidth=3;x.strokeRect(40,22,432,84);x.fillStyle='#fff';x.font='700 43px Manrope,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(String(name||'Игрок').slice(0,18),256,65,390);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sprite.scale.set(2.1,.52,1);sprite.position.y=2.2;return {sprite,tex};}
+function avatar(name,color){
+ const g=new THREE.Group(),main=mat(color,.46,.16),dark=mat(0x191b2b,.62,.12),skin=mat(0xe1c5b5,.7,0),acc=new THREE.MeshBasicMaterial({color:color});
+ box(g,.54,.66,.3,main,0,1.02,0);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.22,14,12),skin);head.position.y=1.56;g.add(head);
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.225,14,8,0,Math.PI*2,0,Math.PI/2),dark);hair.position.y=1.62;g.add(hair);
+ const la=box(g,.16,.58,.18,dark,-.39,1.01,0),ra=box(g,.16,.58,.18,dark,.39,1.01,0),ll=box(g,.2,.53,.22,dark,-.15,.3,0),rl=box(g,.2,.53,.22,dark,.15,.3,0);
+ box(g,.36,.035,.022,acc,0,1.16,-.16);
+ const foot=new THREE.Mesh(new THREE.TorusGeometry(.34,.018,6,28),acc);foot.rotation.x=Math.PI/2;foot.position.y=.035;g.add(foot);
+ const lab=labelSprite(name,color);g.add(lab.sprite);scene.add(g);
+ return {group:g,la,ra,ll,rl,label:lab.sprite,tex:lab.tex,name:name,target:new THREE.Vector3(),yaw:0,moving:false};
+}
+function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});a.tex.dispose();}
+function platformAt(x,z){for(let i=defs.length-1;i>=0;i--){const a=defs[i];if(Math.abs(x-a.x)<=a.w/2-.22&&Math.abs(z-a.z)<=a.d/2-.22)return a;}return null;}
+function updateProgress(a){if(!a)return;activePlatform=Math.max(activePlatform,a.id);if(activePlatform!==progress){progress=activePlatform;$('progressLabel').textContent=Math.min(10,progress)+' / 10';$('progressBar').style.width=Math.min(100,progress*10)+'%';}}
+function setCheckpoint(a){if(!a.checkpoint||a.id<=checkpointIndex)return;checkpointIndex=a.id;checkpoint={x:a.x,y:a.top,z:a.z+.35};toast(a.finish?'Паркур пройден!':'Контрольная точка сохранена');if(a.finish&&!finishShown){finishShown=true;const s=Math.floor(gameTime);toast('Финиш! Время: '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),5000);}}
+function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;if(localAvatar)localAvatar.group.position.set(p.x,p.y,p.z);if(show)toast('Возврат к контрольной точке');}
+function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(keys.has('KeyW')||keys.has('ArrowUp'))z++;if(keys.has('KeyS')||keys.has('ArrowDown'))z--;x+=joy.x;z+=joy.y;const l=Math.hypot(x,z);if(l>1){x/=l;z/=l;}return{x,z,len:Math.min(1,l)};}
+function animateLimbs(a,t,s){const v=Math.sin(t*10.5)*Math.min(1,s)*.53;a.la.rotation.x=v;a.ra.rotation.x=-v;a.ll.rotation.x=-v;a.rl.rotation.x=v;}
+function updatePlayer(dt){
+ const oldY=p.y,m=moveInput(),speed=p.sprint||keys.has('ShiftLeft')||keys.has('ShiftRight')?7.1:5.1,wx=m.x*Math.cos(p.yaw)-m.z*Math.sin(p.yaw),wz=-m.x*Math.sin(p.yaw)-m.z*Math.cos(p.yaw);
+ if(p.grounded&&p.jump){p.vy=9.1;p.grounded=false;}p.jump=false;p.x+=wx*speed*dt;p.z+=wz*speed*dt;
+ const support=platformAt(p.x,p.z);
+ if(p.grounded&&support&&Math.abs(p.y-support.top)<.09){p.y=support.top;p.vy=0;}
+ else{p.grounded=false;p.vy-=20*dt;p.y+=p.vy*dt;}
+ if(!p.grounded&&p.vy<=0){let landing=null;for(const a of defs){const overlap=Math.abs(p.x-a.x)<=a.w/2-.18&&Math.abs(p.z-a.z)<=a.d/2-.18;if(overlap&&oldY>=a.top-.03&&p.y<=a.top&&(!landing||a.top>landing.top))landing=a;}if(landing){p.y=landing.top;p.vy=0;p.grounded=true;updateProgress(landing);setCheckpoint(landing);}}
+ else if(p.grounded&&support){updateProgress(support);setCheckpoint(support);}
+ if(!p.grounded&&p.y<-18)respawn();
+ if(localAvatar){localAvatar.group.position.set(p.x,p.y,p.z);if(m.len>.08)localAvatar.group.rotation.y=Math.atan2(-wx,-wz);animateLimbs(localAvatar,gameTime,m.len*(speed/5.1));}
+}
+function snapshot(){return{id:myId||'local',name:nick,x:p.x,y:p.y,z:p.z,yaw:localAvatar?localAvatar.group.rotation.y:0,color:localColor,moving:moveInput().len>.08};}
+function roomSnapshot(){const arr=[snapshot()],now=Date.now();for(const [id,s] of hostStates){if(now-s.updated<15000)arr.push(s);}return arr;}
+function sendSafe(c,data){if(c&&c.open){try{c.send(data);}catch(e){}}}
+function updateRemote(list){
+ if(!Array.isArray(list))return;const active=new Set();
+ for(const s of list){if(!s||typeof s.id!=='string'||s.id===myId)continue;active.add(s.id);const n=safeName(s.name),color=/^#[0-9a-f]{6}$/i.test(s.color||'')?s.color:colorFor(s.id);let a=remoteAvatars.get(s.id);
+ if(!a){a=avatar(n,color);remoteAvatars.set(s.id,a);}else if(a.name!==n){a.group.remove(a.label);a.tex.dispose();const lab=labelSprite(n,color);a.label=lab.sprite;a.tex=lab.tex;a.group.add(lab.sprite);a.name=n;}
+ a.target.set(Number(s.x)||0,Number(s.y)||0,Number(s.z)||0);a.yaw=Number(s.yaw)||0;a.moving=!!s.moving;}
+ for(const [id,a] of remoteAvatars){if(!active.has(id)){dropAvatar(a);remoteAvatars.delete(id);}}
+ const count=1+remoteAvatars.size;$('playerCount').textContent=count+' '+(count===1?'игрок':count<5?'игрока':'игроков');
+}
+function broadcast(){if(mode!=='host')return;const packet={type:'snapshot',players:roomSnapshot()};for(const c of connections.values())sendSafe(c,packet);updateRemote(packet.players);}
+function addHostConnection(c){
+ connections.set(c.peer,c);
+ c.on('open',()=>{hostStates.set(c.peer,{id:c.peer,name:'Подключение…',x:0,y:0,z:4,yaw:0,color:colorFor(c.peer),moving:false,updated:Date.now()});sendSafe(c,{type:'welcome',players:roomSnapshot()});broadcast();});
+ c.on('data',d=>{if(!d||typeof d!=='object')return;const old=hostStates.get(c.peer)||{};if(d.type==='hello'){hostStates.set(c.peer,{...old,id:c.peer,name:safeName(d.name),color:old.color||colorFor(c.peer),updated:Date.now()});broadcast();}else if(d.type==='state'){hostStates.set(c.peer,{...old,id:c.peer,name:old.name&&old.name!=='Подключение…'?old.name:safeName(d.name),x:THREE.MathUtils.clamp(Number(d.x)||0,-120,120),y:THREE.MathUtils.clamp(Number(d.y)||0,-30,60),z:THREE.MathUtils.clamp(Number(d.z)||0,-140,80),yaw:Number(d.yaw)||0,color:old.color||colorFor(c.peer),moving:!!d.moving,updated:Date.now()});updateRemote(Array.from(hostStates.values()));}});
+ c.on('close',()=>{connections.delete(c.peer);hostStates.delete(c.peer);broadcast();});c.on('error',()=>{connections.delete(c.peer);hostStates.delete(c.peer);broadcast();});
+}
+function setupOnline(){
+ if(!window.Peer){status('Онлайн-модуль недоступен','warning');toast('Можно продолжить в одиночном режиме.');return;}
+ mode=invitedRoom?'guest':'host';status(mode==='host'?'Создаём комнату…':'Подключаемся…');$('inviteButton').disabled=true;peer=new window.Peer(undefined,{debug:0});
+ peer.on('open',id=>{myId=id;$('inviteButton').disabled=false;if(mode==='host'){status('Комната создана','online');toast('Мир создан. Скопируй ссылку и отправь друзьям.',3400);}else{conn=peer.connect(invitedRoom,{reliable:true,serialization:'json'});conn.on('open',()=>{status('Ты в комнате','online');sendSafe(conn,{type:'hello',name:nick});sendSafe(conn,{type:'state',...snapshot()});});conn.on('data',d=>{if(d&&(d.type==='welcome'||d.type==='snapshot')){status('Ты в комнате','online');updateRemote(d.players);}});conn.on('close',()=>{status('Связь потеряна','warning');toast('Связь с комнатой потеряна.');});conn.on('error',()=>{status('Не удалось войти','warning');toast('Комната недоступна. Попроси владельца открыть мир заново.',4000);});}});
+ peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
+}
+function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
+function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);started=true;$('startOverlay').classList.add('hidden');if(online)setupOnline();else{mode='offline';status('Одиночная тренировка');$('inviteButton').disabled=true;}}
+function setupScene(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x080912);scene.fog=new THREE.FogExp2(0x080912,.0125);
+ camera=new THREE.PerspectiveCamera(68,1,.1,220);
+ renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!matchMedia('(max-width:760px)').matches,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia('(max-width:760px)').matches?1.35:1.6));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;renderer.shadowMap.enabled=!matchMedia('(max-width:760px)').matches;
+ scene.add(new THREE.HemisphereLight(0xc8ceff,0x141322,1.8));const sun=new THREE.DirectionalLight(0xded8ff,2.4);sun.position.set(-8,22,8);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+ const cyan=new THREE.PointLight(0x52dfff,26,28,2);cyan.position.set(-2,5,-8);scene.add(cyan);const purple=new THREE.PointLight(0x8d63ff,22,34,2);purple.position.set(4,7,-29);scene.add(purple);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(260,260),mat(0x090b16,.94,.08));floor.rotation.x=-Math.PI/2;floor.position.set(0,-8.9,-24);scene.add(floor);
+ const grid=new THREE.GridHelper(160,80,0x3c3569,0x1a2034);grid.position.set(0,-8.85,-25);grid.material.transparent=true;grid.material.opacity=.35;scene.add(grid);
+ const starPos=[];for(let i=0;i<420;i++)starPos.push((Math.random()-.5)*140,5+Math.random()*60,-90+Math.random()*100);const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));scene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xc5c5ff,size:.13,transparent:true,opacity:.65})));
+ for(let i=0;i<42;i++){const side=i%2?-1:1,h=4+Math.random()*21,w=1.4+Math.random()*4;box(scene,w,h,2+Math.random()*3,mat(i%3?0x121426:0x17162c,.76,.28),side*(16+Math.random()*55),h/2-2,-5-Math.random()*70);}
+ for(const d of defs)addPlatform(d);
+ const tower=mat(0x1a1930,.38,.55),glow=new THREE.MeshBasicMaterial({color:0xb8a5ff});box(scene,.28,7.2,.28,tower,-5.5,3.6,4.5);box(scene,.28,7.2,.28,tower,5.5,3.6,4.5);box(scene,11.25,.28,.28,tower,0,7.2,4.5);box(scene,9.5,.05,.07,glow,0,7.02,4.5);
+ camera.position.set(11,10,14);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+}
+function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+function updateCamera(dt){const dist=5.6,h=Math.cos(p.pitch)*dist;camTarget.set(p.x+Math.sin(p.yaw)*h,p.y+2.05+Math.sin(p.pitch)*dist,p.z+Math.cos(p.yaw)*h);camera.position.lerp(camTarget,Math.min(1,dt*6.5));lookTarget.set(p.x,p.y+1.08,p.z);camera.lookAt(lookTarget);}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(.033,clock?clock.getDelta():.016);if(!renderer)return;if(started){gameTime+=dt;updatePlayer(dt);updateCamera(dt);for(const a of remoteAvatars.values()){a.group.position.lerp(a.target,Math.min(1,dt*12));let delta=a.yaw-a.group.rotation.y;while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;a.group.rotation.y+=delta*Math.min(1,dt*12);animateLimbs(a,gameTime,a.moving?1:0);}if(mode==='guest'&&conn&&conn.open&&performance.now()-lastSync>100){lastSync=performance.now();sendSafe(conn,{type:'state',...snapshot()});}if(mode==='host'&&performance.now()-lastSync>110){lastSync=performance.now();broadcast();}}else{camTarget.set(11,10,14);camera.position.lerp(camTarget,.02);camera.lookAt(0,1,-17);}const time=performance.now()*.00025;rings.forEach((r,i)=>r.rotation.z=Math.PI/2+time*(i%2?-1:1));renderer.render(scene,camera);}
+function setJoy(e){const r=$('joystick').getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2-8),max=34,len=Math.hypot(dx,dy),s=len>max?max/len:1,nx=dx*s,ny=dy*s;$('joyKnob').style.transform='translate('+nx+'px,'+ny+'px)';joy.x=nx/max;joy.y=-ny/max;const l=Math.hypot(joy.x,joy.y);if(l>1){joy.x/=l;joy.y/=l;}}
+function resetJoy(){joy.active=false;joy.id=null;joy.x=0;joy.y=0;$('joyKnob').style.transform='translate(0,0)';}
+function controls(){
+ window.addEventListener('keydown',e=>{if(!started||e.target instanceof HTMLInputElement)return;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys.add(e.code);if(e.code==='Space'&&!e.repeat)p.jump=true;});
+ window.addEventListener('keyup',e=>keys.delete(e.code));window.addEventListener('blur',()=>{keys.clear();p.sprint=false;resetJoy();look.active=false;});
+ canvas.addEventListener('pointerdown',e=>{if(!started)return;look.active=true;look.id=e.pointerId;look.x=e.clientX;look.y=e.clientY;try{canvas.setPointerCapture(e.pointerId);}catch(err){}});
+ canvas.addEventListener('pointermove',e=>{if(!look.active||look.id!==e.pointerId)return;const dx=e.clientX-look.x,dy=e.clientY-look.y;look.x=e.clientX;look.y=e.clientY;p.yaw-=dx*.006;p.pitch=THREE.MathUtils.clamp(p.pitch+dy*.0045,-.28,.72);});
+ const endLook=e=>{if(look.id===e.pointerId){look.active=false;look.id=null;}};canvas.addEventListener('pointerup',endLook);canvas.addEventListener('pointercancel',endLook);
+ const j=$('joystick');j.addEventListener('pointerdown',e=>{e.preventDefault();if(!started)return;joy.active=true;joy.id=e.pointerId;try{j.setPointerCapture(e.pointerId);}catch(err){}setJoy(e);});j.addEventListener('pointermove',e=>{if(joy.active&&joy.id===e.pointerId)setJoy(e);});const ej=e=>{if(joy.id===e.pointerId)resetJoy();};j.addEventListener('pointerup',ej);j.addEventListener('pointercancel',ej);
+ $('jumpButton').addEventListener('pointerdown',e=>{e.preventDefault();if(started)p.jump=true;});const sprint=$('sprintButton'),endSprint=()=>{p.sprint=false;sprint.classList.remove('held');};sprint.addEventListener('pointerdown',e=>{e.preventDefault();p.sprint=true;sprint.classList.add('held');try{sprint.setPointerCapture(e.pointerId);}catch(err){}});sprint.addEventListener('pointerup',endSprint);sprint.addEventListener('pointercancel',endSprint);sprint.addEventListener('lostpointercapture',endSprint);
+}
+function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerName').value=s;}catch(e){}if(invitedRoom){$('startTitle').textContent='Вход в комнату';$('startDescription').textContent='Подключись к общей комнате и проходи паркур вместе с другими игроками.';$('startButton').textContent='Подключиться и играть';$('startNote').textContent='Владелец комнаты должен оставаться в игре, пока остальные подключаются.';}if(!window.Peer)$('errorNote').hidden=false;$('startButton').addEventListener('click',()=>start(true));$('practiceButton').addEventListener('click',()=>start(false));$('inviteButton').addEventListener('click',invite);$('respawnButton').addEventListener('click',()=>respawn(true));controls();setupScene();animate();}
+init();
+</script>
+<script>
+window.addEventListener('error',function(e){if(/three|webgl|module|failed to fetch/i.test(String(e.message||''))){var n=document.getElementById('errorNote');if(n)n.hidden=false;}});
+</script>
+</body>
+</html>
