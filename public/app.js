@@ -56,6 +56,9 @@
     visualScale: 100,
     visualOpacity: 100,
     visualLineWidth: 1,
+    barCount: 72,
+    barWidth: 0.72,
+    barRiseMode: 'left-right',
     titleX: 6,
     titleY: 78,
     titleSize: 100,
@@ -225,6 +228,9 @@
     $('#visualScaleRange').value = state.visualScale;
     $('#visualOpacityRange').value = state.visualOpacity;
     $('#visualLineWidthRange').value = state.visualLineWidth;
+    $('#barCountRange').value = state.barCount;
+    $('#barWidthRange').value = state.barWidth;
+    $('#barRiseModeSelect').value = state.barRiseMode;
     $('#titleXRange').value = state.titleX;
     $('#titleYRange').value = state.titleY;
     $('#titleSizeRange').value = state.titleSize;
@@ -271,6 +277,8 @@
     $('#visualScaleOutput').textContent = state.visualScale + '%';
     $('#visualOpacityOutput').textContent = state.visualOpacity + '%';
     $('#visualLineWidthOutput').textContent = Number(state.visualLineWidth).toFixed(1) + '×';
+    $('#barCountOutput').textContent = String(state.barCount);
+    $('#barWidthOutput').textContent = Number(state.barWidth).toFixed(2).replace(/0$/, '') + '×';
     $('#titleXOutput').textContent = state.titleX + '%';
     $('#titleYOutput').textContent = state.titleY + '%';
     $('#titleSizeOutput').textContent = state.titleSize + '%';
@@ -330,7 +338,7 @@
     $('#canvasAspectBadge').textContent = ratio.label;
   }
   function setStyle(style) {
-    if (!['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'matrix', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(style)) return;
+    if (!['spectrum', 'bars3d', 'minimal', 'pulse', 'dots'].includes(style)) return;
     state.style = style;
     $$('.preset-card').forEach(function (button) {
       button.classList.toggle('active', button.dataset.style === style);
@@ -346,7 +354,10 @@
       scope: 'Осциллограмма',
       tunnel: 'Туннель',
       shockwave: 'Ударная волна',
-      bars3d: 'Стена частот'
+      bars3d: 'Палки · спектр',
+      minimal: 'Палки · волна',
+      pulse: 'Палки · бит',
+      dots: 'Точечная сетка'
     };
     $('#previewStatus').textContent = state.file ? 'Аудио' : 'Демо · ' + statusNames[style];
     // The capped animation loop renders the new style on the next frame instead of blocking the click.
@@ -1077,47 +1088,68 @@
     ctx.restore();
   }
 
-  // Mirrored frequency wall for hard, bass-led visuals.
-  function drawBars3d(w, h, now, values) {
-    const count = Math.max(56, Math.min(112, Math.floor(w / 11)));
-    const gap = Math.max(2, w * 0.0026);
-    const cell = (w - 72) / count;
-    const barW = Math.max(1.2, cell - gap);
-    const mid = h * 0.53, maxH = h * 0.34;
-    const gradient = ctx.createLinearGradient(0, mid - maxH, 0, mid + maxH);
-    gradient.addColorStop(0, state.colorTwo);
-    gradient.addColorStop(0.48, state.colorOne);
-    gradient.addColorStop(1, rgba(state.colorTwo, 0.22));
-    ctx.save();
-    ctx.fillStyle = gradient;
-    for (let i = 0; i < count; i++) {
-      const level = Math.max(0.025, Math.pow(values.level(i, count), 0.78));
-      const kick = (values.beat || 0) * 0.16 * (1 - i / count);
-      const barH = Math.min(maxH, maxH * (level * 0.92 + kick));
-      const x = 36 + i * cell + (cell - barW) * 0.5;
-      ctx.globalAlpha = 0.94;
-      if (ctx.roundRect) {
-        ctx.beginPath(); ctx.roundRect(x, mid - barH, barW, barH, Math.min(4, barW * 0.35)); ctx.fill();
-        ctx.beginPath(); ctx.roundRect(x, mid + 6, barW, barH * 0.7, Math.min(4, barW * 0.35)); ctx.fill();
-      } else {
-        ctx.fillRect(x, mid - barH, barW, barH);
-        ctx.fillRect(x, mid + 6, barW, barH * 0.7);
+  // Shared motion envelope lets the three stick visualizers move in distinct directions.
+  function barMotionEnvelope(index, count, now) {
+    const position = count <= 1 ? 0.5 : index / (count - 1);
+    const seconds = now / 1000;
+    const phase = (seconds * 0.44) % 1;
+    const gaussian = function (distance, spread) { return Math.exp(-Math.pow(distance / spread, 2)); };
+    switch (state.barRiseMode) {
+      case 'right-left': return gaussian(position - (1 - phase), 0.115);
+      case 'both-edges': return Math.max(gaussian(position - phase * 0.5, 0.11), gaussian((1 - position) - phase * 0.5, 0.11));
+      case 'center-out': return gaussian(Math.abs(position - 0.5) - phase * 0.5, 0.105);
+      case 'random': {
+        const tick = Math.floor(seconds * 3.3);
+        const raw = Math.sin((index + 1) * 127.1 + tick * 311.7) * 43758.5453;
+        const noise = raw - Math.floor(raw);
+        return noise > 0.46 ? Math.pow((noise - 0.46) / 0.54, 0.55) : noise * 0.22;
       }
-      if (i % 6 === 0) {
-        ctx.globalAlpha = 0.4;
-        ctx.shadowColor = state.colorOne;
-        ctx.shadowBlur = Math.min(14, state.glow * 0.55);
-        ctx.fillRect(x, mid - barH, barW, Math.max(2, state.visualLineWidth * 2));
-        ctx.shadowBlur = 0;
-      }
+      case 'alternate': return (index % 2 ? 0.9 : 0.2) * (0.5 + 0.5 * Math.sin(seconds * 4.2 + index * 0.035));
+      case 'wave': return 0.5 + 0.5 * Math.sin(position * Math.PI * 2.4 - seconds * 3.4);
+      case 'uniform': return 0.36 + 0.14 * Math.sin(seconds * 3.1 + index * 0.013);
+      case 'left-right':
+      default: return gaussian(position - phase, 0.115);
     }
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = rgba(state.colorOne, 0.6);
-    ctx.lineWidth = Math.max(1, state.visualLineWidth);
-    ctx.beginPath(); ctx.moveTo(30, mid + 2); ctx.lineTo(w - 30, mid + 2); ctx.stroke();
-    ctx.restore();
   }
 
+  function stickBarLevel(index, count, now, values, style) {
+    const sound = clamp(Math.pow(Math.max(0, values.level(index, count)), 0.78), 0, 1);
+    const motion = barMotionEnvelope(index, count, now);
+    const beat = clamp(values.beat || 0, 0, 1);
+    const bass = clamp((values.bass || 0) * 3.2, 0, 1);
+    const emphasis = style === 'pulse' ? 0.34 : style === 'minimal' ? 0.23 : 0.28;
+    const musicKick = style === 'pulse' ? beat * 0.5 + bass * 0.24 : beat * 0.26 + bass * 0.12;
+    return clamp(sound * (style === 'minimal' ? 0.76 : 0.82) + motion * emphasis + musicKick, 0.025, 1.18);
+  }
+
+  // Clean spectrum wall: upward sticks with a subtle reflection.
+  function drawBars3d(w, h, now, values) {
+    const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
+    const left = w * 0.045, right = w * 0.955, usable = right - left;
+    const cell = usable / count;
+    const barW = Math.max(1, Math.min(cell * 0.94, cell * state.barWidth));
+    const baseline = h * 0.63, maxH = h * 0.37;
+    const gradient = ctx.createLinearGradient(0, baseline - maxH, 0, baseline + maxH * 0.45);
+    gradient.addColorStop(0, state.colorTwo);
+    gradient.addColorStop(0.42, state.colorOne);
+    gradient.addColorStop(1, rgba(state.colorTwo, 0.16));
+    ctx.save(); ctx.fillStyle = gradient;
+    ctx.shadowColor = state.colorOne; ctx.shadowBlur = Math.min(16, state.glow * 0.65);
+    for (let i = 0; i < count; i++) {
+      const level = stickBarLevel(i, count, now, values, 'bars3d');
+      const height = Math.min(maxH, maxH * level);
+      const x = left + i * cell + (cell - barW) * 0.5;
+      ctx.globalAlpha = 0.92;
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, baseline - height, barW, height, Math.min(4, barW * 0.4)); ctx.fill(); }
+      else ctx.fillRect(x, baseline - height, barW, height);
+      ctx.globalAlpha = 0.17;
+      const reflectionH = Math.min(maxH * 0.36, height * 0.42);
+      ctx.fillRect(x, baseline + 4, barW, reflectionH);
+      if (i % 5 === 0) { ctx.globalAlpha = 0.62; ctx.fillRect(x, baseline - height - 2, barW, Math.max(1.4, state.visualLineWidth * 1.5)); }
+    }
+    ctx.shadowBlur = 0; ctx.globalAlpha = 0.45; ctx.strokeStyle = rgba(state.colorOne, 0.6);
+    ctx.lineWidth = Math.max(1, state.visualLineWidth); ctx.beginPath(); ctx.moveTo(left, baseline + 1); ctx.lineTo(right, baseline + 1); ctx.stroke(); ctx.restore();
+  }
 
   function visualizerFilterCss(filter) {
     return ({none:'',punch:'contrast(1.22) saturate(1.18)',mono:'grayscale(1) contrast(1.08)',warm:'sepia(.25) saturate(1.25)',cold:'hue-rotate(16deg) saturate(1.22)',bloom:'brightness(1.18) saturate(1.45)'})[filter] || '';
@@ -1138,17 +1170,58 @@
     else if (state.style === 'shockwave') drawShockwave(w,h,now,values);
     else if (state.style === 'bars3d') drawBars3d(w,h,now,values);
   }
+  // Minimal rising sticks form a moving audio wave without a heavy wall effect.
   function drawMinimalWave(w,h,now,values) {
-    const mid=h*.52, amp=h*.15, n=lowPowerDevice?100:160;
-    ctx.save();ctx.lineWidth=Math.max(1.5,state.visualLineWidth*1.6);ctx.lineCap='round';ctx.strokeStyle=state.colorOne;ctx.shadowColor=state.colorOne;ctx.shadowBlur=Math.min(18,state.glow);
-    for(let pass=0;pass<2;pass++){ctx.beginPath();for(let i=0;i<=n;i++){const x=i/n*w;const level=values.level(Math.floor(i/n*audioBandCount),audioBandCount);const y=mid+Math.sin(i*.075+now*.0012+pass*.65)*amp*.18+(level-.12)*amp*1.8+Math.sin(i*.027-now*.0007)*amp*.16;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.globalAlpha=pass?.42:1;ctx.stroke();}ctx.restore();
+    const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
+    const left = w * 0.055, usable = w * 0.89, cell = usable / count;
+    const barW = Math.max(1, Math.min(cell * 0.9, cell * state.barWidth * 0.72));
+    const baseline = h * 0.69, maxH = h * 0.29;
+    ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = state.colorOne; ctx.shadowColor = state.colorOne;
+    ctx.shadowBlur = Math.min(16, state.glow * 0.72); ctx.lineWidth = Math.max(1, barW);
+    const points = [];
+    for (let i = 0; i < count; i++) {
+      const level = stickBarLevel(i, count, now, values, 'minimal');
+      const height = Math.min(maxH, maxH * level);
+      const x = left + i * cell + cell * 0.5;
+      const y = baseline - height;
+      points.push({ x: x, y: y });
+      ctx.globalAlpha = 0.34 + level * 0.6;
+      ctx.beginPath(); ctx.moveTo(x, baseline); ctx.lineTo(x, y); ctx.stroke();
+    }
+    ctx.shadowBlur = 0; ctx.globalAlpha = 0.26; ctx.lineWidth = Math.max(1, state.visualLineWidth);
+    ctx.strokeStyle = state.colorTwo; ctx.beginPath();
+    points.forEach(function (point, i) { if (i === 0) ctx.moveTo(point.x, point.y); else ctx.lineTo(point.x, point.y); });
+    ctx.stroke();
+    ctx.globalAlpha = 0.48; ctx.strokeStyle = rgba(state.colorOne, 0.6); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(left, baseline + 1); ctx.lineTo(left + usable, baseline + 1); ctx.stroke(); ctx.restore();
   }
+  // Beat sticks: denser stems with more energy around each kick.
   function drawBeatLine(w,h,now,values) {
-    const pulse=clamp(Math.max(values.beat||0,(values.bass||0)*3.2),0,1), y=h*.52, half=w*.34;
-    ctx.save();ctx.lineCap='round';ctx.shadowColor=state.colorOne;ctx.shadowBlur=Math.min(24,state.glow+pulse*12);ctx.strokeStyle=state.colorOne;ctx.lineWidth=2+pulse*3;ctx.globalAlpha=.45+pulse*.55;
-    ctx.beginPath();ctx.moveTo(w*.5-half,y);ctx.lineTo(w*.5+half,y);ctx.stroke();
-    const radius=5+pulse*22;ctx.globalAlpha=.25+pulse*.6;ctx.beginPath();ctx.arc(w*.5,y,radius,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=1;ctx.fillStyle=state.colorTwo;ctx.beginPath();ctx.arc(w*.5,y,2.5+pulse*3,0,Math.PI*2);ctx.fill();ctx.restore();
+    const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
+    const left = w * 0.075, usable = w * 0.85, cell = usable / count;
+    const barW = Math.max(1, Math.min(cell * 0.96, cell * state.barWidth * 1.08));
+    const baseline = h * 0.55, maxH = h * 0.31;
+    const beat = clamp(Math.max(values.beat || 0, (values.bass || 0) * 3.2), 0, 1);
+    ctx.save(); ctx.fillStyle = state.colorOne; ctx.shadowColor = state.colorOne;
+    ctx.shadowBlur = Math.min(24, state.glow + beat * 12);
+    for (let i = 0; i < count; i++) {
+      const position = count <= 1 ? 0.5 : i / (count - 1);
+      const centerFocus = 0.42 + 0.58 * (1 - Math.abs(position - 0.5) * 2);
+      const level = Math.min(1, stickBarLevel(i, count, now, values, 'pulse') * centerFocus + beat * centerFocus * 0.22);
+      const height = Math.max(2, Math.min(maxH, maxH * level));
+      const x = left + i * cell + (cell - barW) * 0.5;
+      ctx.globalAlpha = 0.42 + level * 0.56;
+      ctx.fillRect(x, baseline - height, barW, height);
+      ctx.globalAlpha = 0.12 + level * 0.22;
+      ctx.fillRect(x, baseline + 3, barW, height * 0.32);
+      if (i % 3 === 0) {
+        ctx.globalAlpha = 0.7; ctx.fillStyle = state.colorTwo;
+        ctx.beginPath(); ctx.arc(x + barW * 0.5, baseline - height, Math.max(1.1, barW * 0.58), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = state.colorOne;
+      }
+    }
+    ctx.shadowBlur = 0; ctx.globalAlpha = 0.5; ctx.strokeStyle = rgba(state.colorOne, 0.56);
+    ctx.lineWidth = Math.max(1, state.visualLineWidth); ctx.beginPath(); ctx.moveTo(left, baseline + 1); ctx.lineTo(left + usable, baseline + 1); ctx.stroke(); ctx.restore();
   }
   function drawDotGrid(w,h,now,values) {
     const cols=lowPowerDevice?24:34, rows=lowPowerDevice?12:18, pulse=clamp(Math.max(values.beat||0,(values.bass||0)*2.8),0,1);
@@ -1580,6 +1653,8 @@
     $('#visualScaleOutput').textContent = state.visualScale + '%';
     $('#visualOpacityOutput').textContent = state.visualOpacity + '%';
     $('#visualLineWidthOutput').textContent = Number(state.visualLineWidth).toFixed(1) + '×';
+    $('#barCountOutput').textContent = String(state.barCount);
+    $('#barWidthOutput').textContent = Number(state.barWidth).toFixed(2).replace(/0$/, '') + '×';
     $('#titleXOutput').textContent = state.titleX + '%';
     $('#titleYOutput').textContent = state.titleY + '%';
     $('#titleSizeOutput').textContent = state.titleSize + '%';
@@ -1758,6 +1833,9 @@
         visualScale: state.visualScale,
         visualOpacity: state.visualOpacity,
         visualLineWidth: state.visualLineWidth,
+        barCount: state.barCount,
+        barWidth: state.barWidth,
+        barRiseMode: state.barRiseMode,
         titleX: state.titleX,
         titleY: state.titleY,
         titleSize: state.titleSize,
@@ -1821,7 +1899,8 @@
       if (!v) return;
       const legacyNspPalette = v.colorOne === '#d6b57c' && v.colorTwo === '#8b97b0' && v.background === '#08090d';
       const loadedStyle = v.style === 'matrix' ? 'spectrum' : v.style;
-      if (['spectrum', 'orbit', 'wave', 'aurora', 'radial', 'impact', 'scope', 'tunnel', 'shockwave', 'bars3d'].includes(loadedStyle)) state.style = loadedStyle;
+      if (['spectrum', 'bars3d', 'minimal', 'pulse', 'dots'].includes(loadedStyle)) state.style = loadedStyle;
+      if (['left-right','right-left','both-edges','center-out','random','alternate','wave','uniform'].includes(v.barRiseMode)) state.barRiseMode = v.barRiseMode;
       if (/^#[0-9a-f]{6}$/i.test(v.colorOne || '')) state.colorOne = legacyNspPalette ? '#b8a5ff' : v.colorOne;
       if (/^#[0-9a-f]{6}$/i.test(v.colorTwo || '')) state.colorTwo = legacyNspPalette ? '#f5f3ff' : v.colorTwo;
       if (/^#[0-9a-f]{6}$/i.test(v.gradientMidColor || '')) state.gradientMidColor = v.gradientMidColor;
@@ -1863,6 +1942,7 @@
         vignette: [0, 100], backgroundOpacity: [0, 100], logoSize: [6, 34], logoOpacity: [20, 100],
         logoX: [5, 95], logoY: [5, 95], visualX: [-35, 35], visualY: [-35, 35],
         visualScale: [35, 175], visualOpacity: [10, 100], visualLineWidth: [0.5, 3],
+        barCount: [16, 180], barWidth: [0.25, 2.5],
         titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
         particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3], gradientAngle: [0, 345], gradientMidPosition: [10, 60],
@@ -2021,6 +2101,7 @@
     ['logoSizeRange', 'logoSize'], ['logoOpacityRange', 'logoOpacity'], ['logoXRange', 'logoX'],
     ['logoYRange', 'logoY'], ['visualXRange', 'visualX'], ['visualYRange', 'visualY'],
     ['visualScaleRange', 'visualScale'], ['visualOpacityRange', 'visualOpacity'], ['visualLineWidthRange', 'visualLineWidth'],
+    ['barCountRange', 'barCount'], ['barWidthRange', 'barWidth'],
     ['titleXRange', 'titleX'], ['titleYRange', 'titleY'], ['titleSizeRange', 'titleSize'], ['titleOpacityRange', 'titleOpacity'],
     ['artistXRange', 'artistX'], ['artistYRange', 'artistY'], ['artistSizeRange', 'artistSize'], ['artistOpacityRange', 'artistOpacity'],
     ['logoPulseAmountRange','logoPulseAmount'], ['logoHaloCountRange','logoHaloCount'], ['logoHaloWidthRange','logoHaloWidth'], ['logoGlowRange','logoGlow'], ['visualizerShadowRange','visualizerShadow'],
@@ -2040,6 +2121,9 @@
       if (key === 'smoothing' && state.analyser) state.analyser.smoothingTimeConstant = 0.32 + state.smoothing / 100 * 0.46;
       updatePositionOutputs();
     });
+  });
+  $('#barRiseModeSelect').addEventListener('change', function (event) {
+    if (['left-right','right-left','both-edges','center-out','random','alternate','wave','uniform'].includes(event.target.value)) state.barRiseMode = event.target.value;
   });
 
     let canvasDrag = null;
