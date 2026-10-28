@@ -581,10 +581,10 @@ function initGroundShadowTexture(){
  shadowTexture=new THREE.CanvasTexture(c);shadowTexture.colorSpace=THREE.SRGBColorSpace;
  shadowMaterial=new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,depthWrite:false,opacity:.72,toneMapped:false});
 }
-function addGroundShadow(x,z,w,d,opacity=.72){
+function addGroundShadow(x,z,w,d,opacity=.72,y=.018){
  initGroundShadowTexture();
  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),shadowMaterial.clone());
- mesh.material.opacity=opacity;mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.018,z);mesh.renderOrder=1;scene.add(mesh);return mesh;
+ mesh.material.opacity=opacity;mesh.rotation.x=-Math.PI/2;mesh.position.set(x,y,z);mesh.renderOrder=1;scene.add(mesh);return mesh;
 }
 function addCloud(x,y,z,scale=1,speed=.16){
  const g=new THREE.Group(),material=addCloud.material||(addCloud.material=new THREE.MeshLambertMaterial({color:0xffffff}));
