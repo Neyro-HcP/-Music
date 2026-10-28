@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090b12">
+  <meta name="theme-color" content="#050308">
   <meta name="description" content="НсП Visual Lab — бесплатный конструктор музыкальных визуализаторов с собственным логотипом и фоном.">
   <title>НсП Visual Lab — визуализатор музыки</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -12,15 +12,13 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./app.css?v=nsp-luxe-20261027-1615">
   <script src="./app.js" defer></script>
+  <link rel="stylesheet" href="./brand-theme.css?v=nsp-brand-20261028">
 </head>
 <body>
   <div class="site-noise" aria-hidden="true"></div>
   <div class="site-weather-layer" id="siteWeatherLayer" aria-hidden="true"></div>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="НсП Visual Lab — главная">
-      <span class="brand-nsp">НсП</span>
-      <span class="brand-text"><b>НсП VISUAL LAB</b></span>
-    </a>
+    <a class="brand" href="./" aria-label="Главная"><span class="brand-mark" aria-hidden="true"></span></a>
 <div class="topbar-actions"><div class="site-weather-control"><label for="siteParticlesMode">Эффект</label><select id="siteParticlesMode" aria-label="Эффект частиц сайта"><option value="off">Выкл.</option><option value="snow">Снег</option><option value="leaves">Листья</option></select></div>
       <button class="quiet-button" id="savePresetButton" type="button" title="Сохранить настройки на этом устройстве">Сохранить</button>
       <button class="top-export" id="topExportButton" type="button"><span>↗</span> Экспорт видео</button>
