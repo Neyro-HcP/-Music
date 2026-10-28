@@ -172,47 +172,55 @@ function addPlatform(def){
  if(def.finish){block(g,def.x-2.5,def.top+1.5,def.z,1,3,1,'oak_log');block(g,def.x+2.5,def.top+1.5,def.z,1,3,1,'oak_log');block(g,def.x,def.top+3.5,def.z,6,1,1,'oak_planks');}
 }
 
-function labelSprite(name,color){const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.fillStyle='rgba(7,8,17,.78)';x.fillRect(40,22,432,84);x.strokeStyle=color;x.lineWidth=3;x.strokeRect(40,22,432,84);x.fillStyle='#fff';x.font='700 43px Manrope,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(String(name||'Игрок').slice(0,18),256,65,390);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sprite.scale.set(2.1,.52,1);sprite.position.y=2.2;return {sprite,tex};}
+function labelSprite(name,color){
+ const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
+ x.clearRect(0,0,c.width,c.height);x.font='700 42px Arial';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
+ x.strokeStyle='rgba(0,0,0,.96)';x.lineWidth=8;x.strokeText(String(name||'Игрок').slice(0,18),256,47,470);x.fillStyle='#ffffff';x.fillText(String(name||'Игрок').slice(0,18),256,47,470);
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.minFilter=THREE.LinearFilter;
+ const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sprite.scale.set(2.2,.42,1);sprite.position.y=2.25;sprite.userData.disposeOnDrop=true;return {sprite,tex};
+}
+
+const skinFaceUV={
+ head:[[0,8,8,8],[16,8,8,8],[8,0,8,8],[16,0,8,8],[8,8,8,8],[24,8,8,8]],
+ headOverlay:[[32,8,8,8],[48,8,8,8],[40,0,8,8],[48,0,8,8],[40,8,8,8],[56,8,8,8]],
+ body:[[28,20,4,12],[16,20,4,12],[20,16,8,4],[28,16,8,4],[20,20,8,12],[32,20,8,12]],
+ rightArm:[[40,20,4,12],[48,20,4,12],[44,16,4,4],[48,16,4,4],[44,20,4,12],[52,20,4,12]],
+ leftArm:[[40,52,4,12],[32,52,4,12],[36,48,4,4],[40,48,4,4],[36,52,4,12],[44,52,4,12]],
+ rightLeg:[[0,20,4,12],[8,20,4,12],[4,16,4,4],[8,16,4,4],[4,20,4,12],[12,20,4,12]],
+ leftLeg:[[24,52,4,12],[16,52,4,12],[20,48,4,4],[24,48,4,4],[20,52,4,12],[28,52,4,12]]
+};
+const steveMaterial=texturedMaterial(mcTextures.steve,{side:THREE.FrontSide});
+const steveOverlayMaterial=texturedMaterial(mcTextures.steve,{transparent:true,alphaTest:.05,depthWrite:true,side:THREE.FrontSide});
+function skinGeometry(part,w,h,d){
+ const geo=new THREE.BoxGeometry(w,h,d),uv=geo.attributes.uv,regions=skinFaceUV[part];
+ for(let i=0;i<uv.count;i++){
+  const face=Math.floor(i/4),[x,y,fw,fh]=regions[face],u=uv.getX(i),v=uv.getY(i);
+  uv.setXY(i,(x+u*fw)/64,1-(y+(1-v)*fh)/64);
+ }
+ uv.needsUpdate=true;return geo;
+}
+function skinCube(parent,part,w,h,d,x,y,z,overlay=false){
+ const mesh=new THREE.Mesh(skinGeometry(part,w,h,d),overlay?steveOverlayMaterial:steveMaterial);
+ mesh.position.set(x,y,z);mesh.castShadow=!overlay;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
 function avatar(name,color){
  const g=new THREE.Group();
- const shirt=mat(color,.82,0),pants=mat(0x344b82,.88,0),hair=mat(0x30251f,.9,0),skin=mat(0xd8ab8d,.92,0),skinShadow=mat(0x9e715b,.94,0),shoe=mat(0x20222d,.9,0),eye=mat(0xf1f3f8,.8,0),pupil=mat(0x293044,.85,0),acc=new THREE.MeshBasicMaterial({color:color});
- // Кубическая голова и волосы в стиле блочного персонажа.
- box(g,.42,.42,.42,skin,0,1.56,0);
- box(g,.44,.10,.44,hair,0,1.81,0);
- box(g,.42,.20,.07,hair,0,1.65,.19);
- box(g,.075,.22,.42,hair,-.18,1.64,0);
- box(g,.075,.22,.42,hair,.18,1.64,0);
- box(g,.34,.085,.035,hair,0,1.70,-.218);
- box(g,.07,.045,.027,eye,-.085,1.565,-.218);
- box(g,.07,.045,.027,eye,.085,1.565,-.218);
- box(g,.027,.04,.018,pupil,-.075,1.565,-.236);
- box(g,.027,.04,.018,pupil,.095,1.565,-.236);
- box(g,.055,.025,.025,skinShadow,0,1.485,-.224);
- box(g,.06,.12,.10,skin,-.235,1.55,0);
- box(g,.06,.12,.10,skin,.235,1.55,0);
- // Торс и небольшая пиксельная деталь на одежде.
- box(g,.52,.62,.28,shirt,0,1.05,0);
- box(g,.11,.13,.025,acc,0,1.08,-.153);
- // Руки и ноги вращаются вокруг плеч и бёдер, как у Minecraft-персонажа.
+ // Classic Steve proportions: square head, cyan shirt, blue trousers and wide arms.
+ skinCube(g,'body',.5,.75,.25,0,1.125,0);
+ skinCube(g,'head',.5,.5,.5,0,1.75,0);
+ skinCube(g,'headOverlay',.515,.515,.515,0,1.75,0,true);
  const la=new THREE.Group(),ra=new THREE.Group(),ll=new THREE.Group(),rl=new THREE.Group();
- la.position.set(-.32,1.33,0);ra.position.set(.32,1.33,0);
- ll.position.set(-.135,.74,0);rl.position.set(.135,.74,0);
+ la.position.set(-.375,1.5,0);ra.position.set(.375,1.5,0);ll.position.set(-.125,.75,0);rl.position.set(.125,.75,0);
  g.add(la,ra,ll,rl);
- for(const arm of [la,ra]){
-   box(arm,.18,.43,.28,shirt,0,-.215,0);
-   box(arm,.18,.18,.28,skin,0,-.52,0);
- }
- for(const leg of [ll,rl]){
-   box(leg,.22,.57,.28,pants,0,-.285,0);
-   box(leg,.22,.12,.31,shoe,0,-.625,-.018);
- }
- // Квадратный контур под ногами вместо круглого футуристического кольца.
- const foot=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(.78,.025,.78)),new THREE.LineBasicMaterial({color:color,transparent:true,opacity:.85}));
- foot.position.y=.035;g.add(foot);
+ skinCube(la,'leftArm',.25,.75,.25,0,-.375,0);
+ skinCube(ra,'rightArm',.25,.75,.25,0,-.375,0);
+ skinCube(ll,'leftLeg',.25,.75,.25,0,-.375,0);
+ skinCube(rl,'rightLeg',.25,.75,.25,0,-.375,0);
  const lab=labelSprite(name,color);g.add(lab.sprite);scene.add(g);
  return {group:g,la,ra,ll,rl,label:lab.sprite,tex:lab.tex,name:name,target:new THREE.Vector3(),yaw:0,moving:false};
 }
-function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});a.tex.dispose();}
+
+function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.userData&&o.userData.disposeOnDrop&&o.material)o.material.dispose();});if(a.tex)a.tex.dispose();}
 function platformAt(x,z,maxTop=Infinity){let found=null;for(let i=defs.length-1;i>=0;i--){const a=defs[i];if(a.top>maxTop)continue;if(Math.abs(x-a.x)<=a.w/2-.22&&Math.abs(z-a.z)<=a.d/2-.22&&(!found||a.top>found.top))found=a;}return found;}
 function updateProgress(a){if(!a)return;activePlatform=Math.max(activePlatform,a.id);if(activePlatform!==progress){progress=activePlatform;$('progressLabel').textContent=Math.min(10,progress)+' / 10';$('progressBar').style.width=Math.min(100,progress*10)+'%';}}
 function setCheckpoint(a){if(!a.checkpoint||a.id<=checkpointIndex)return;checkpointIndex=a.id;checkpoint={x:a.x,y:a.top,z:a.z+.35};toast(a.finish?'Паркур пройден!':'Контрольная точка сохранена');if(a.finish&&!finishShown){finishShown=true;const s=Math.floor(gameTime);toast('Финиш! Время: '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),5000);}}
