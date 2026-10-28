@@ -1127,7 +1127,7 @@
     const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
     const left = w * 0.045, right = w * 0.955, usable = right - left;
     const cell = usable / count;
-    const barW = Math.max(1, Math.min(cell * 0.94, cell * state.barWidth));
+    const barW = Math.max(1, Math.min(cell * 1.5, cell * state.barWidth));
     const baseline = h * 0.63, maxH = h * 0.37;
     const gradient = ctx.createLinearGradient(0, baseline - maxH, 0, baseline + maxH * 0.45);
     gradient.addColorStop(0, state.colorTwo);
@@ -1174,7 +1174,7 @@
   function drawMinimalWave(w,h,now,values) {
     const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
     const left = w * 0.055, usable = w * 0.89, cell = usable / count;
-    const barW = Math.max(1, Math.min(cell * 0.9, cell * state.barWidth * 0.72));
+    const barW = Math.max(1, Math.min(cell * 1.3, cell * state.barWidth * 0.85));
     const baseline = h * 0.69, maxH = h * 0.29;
     ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = state.colorOne; ctx.shadowColor = state.colorOne;
     ctx.shadowBlur = Math.min(16, state.glow * 0.72); ctx.lineWidth = Math.max(1, barW);
@@ -1199,7 +1199,7 @@
   function drawBeatLine(w,h,now,values) {
     const count = Math.max(16, Math.min(180, Math.round(state.barCount)));
     const left = w * 0.075, usable = w * 0.85, cell = usable / count;
-    const barW = Math.max(1, Math.min(cell * 0.96, cell * state.barWidth * 1.08));
+    const barW = Math.max(1, Math.min(cell * 1.5, cell * state.barWidth * 1.08));
     const baseline = h * 0.55, maxH = h * 0.31;
     const beat = clamp(Math.max(values.beat || 0, (values.bass || 0) * 3.2), 0, 1);
     ctx.save(); ctx.fillStyle = state.colorOne; ctx.shadowColor = state.colorOne;
@@ -1942,7 +1942,7 @@
         vignette: [0, 100], backgroundOpacity: [0, 100], logoSize: [6, 34], logoOpacity: [20, 100],
         logoX: [5, 95], logoY: [5, 95], visualX: [-35, 35], visualY: [-35, 35],
         visualScale: [35, 175], visualOpacity: [10, 100], visualLineWidth: [0.5, 3],
-        barCount: [16, 180], barWidth: [0.25, 2.5],
+        barCount: [16, 180], barWidth: [0.25, 1.5],
         titleX: [2, 90], titleY: [5, 92], titleSize: [40, 200], titleOpacity: [10, 100],
         artistX: [2, 90], artistY: [8, 96], artistSize: [40, 200], artistOpacity: [10, 100],
         particleCount: [0, 250], particleSize: [0.4, 3], particleSpeed: [0, 3], gradientAngle: [0, 345], gradientMidPosition: [10, 60],
