@@ -60,12 +60,22 @@
 </header>
 <main class="hub-stage" id="hubStage">
 <canvas id="hubCanvas" aria-label="Трёхмерный мир НсП Hub"></canvas>
-<div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">ПАРКУР / 01</div></div>
+<div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">МИР / ДЕРЕВНЯ</div></div>
 <div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
-<div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ПАРКУР</span><b id="progressLabel">0 / 10</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — движение · SPACE — прыжок · SHIFT — бег · зажми мышь и веди — обзор</p></div>
-<div class="touch-controls" id="touchControls"><div class="joystick" id="joystick"><div class="joy-ring" id="joyRing"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div><div class="touch-actions"><button class="touch-btn sprint-btn" id="sprintButton" type="button" aria-pressed="false">БЕГ</button><button class="touch-btn jump-btn" id="jumpButton" type="button">ПРЫЖОК</button></div><div class="look-hint">Проведи по миру, чтобы повернуть камеру</div></div>
+<div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ОБЫЧНЫЙ МИР</span><b id="progressLabel">ДЕРЕВНЯ</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — ходьба · SPACE — прыжок · SHIFT — бег · мышь — обзор · E — действие</p></div>
+<div class="crosshair" id="crosshair" aria-hidden="true"><i></i><b></b><i></i><b></b></div>
+<div class="touch-controls" id="touchControls">
+ <div class="joystick" id="joystick"><div class="joy-ring" id="joyRing"><div class="joy-knob" id="joyKnob"></div></div><span>ДВИЖЕНИЕ</span></div>
+ <div class="touch-actions">
+  <button class="touch-btn action-btn" id="interactButton" type="button">ДЕЙСТВИЕ</button>
+  <button class="touch-btn sneak-btn" id="sneakButton" type="button" aria-pressed="false">КРАСТЬСЯ</button>
+  <button class="touch-btn sprint-btn" id="sprintButton" type="button" aria-pressed="false">БЕГ</button>
+  <button class="touch-btn jump-btn" id="jumpButton" type="button">ПРЫЖОК</button>
+ </div>
+ <div class="look-hint">Проводи по экрану — обзор от первого лица</div>
+</div>
 <div class="hub-toast" id="toast" role="status" aria-live="polite"></div>
-<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">3D-МИР / ОНЛАЙН</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Бегай, прыгай по платформам и проходи паркур. Создай комнату и отправь ссылку друзьям.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
+<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">МИР / ВИД ОТ ПЕРВОГО ЛИЦА</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Исследуй деревню с домами и жителями. Управление как в мобильном Minecraft: джойстик, перекрестие, прыжок, бег и действие.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
 </main>
 <script type="module">
 import * as THREE from 'three';
@@ -73,27 +83,20 @@ const $ = id => document.getElementById(id);
 const canvas = $('hubCanvas'), stage = $('hubStage');
 const invitedRoom = new URLSearchParams(location.search).get('room');
 const palette = ['#b8a5ff','#6de8ff','#ff86bf','#a6ffb7','#ffd27b','#8fa7ff','#ff9a77'];
-const defs = [
-{id:0,x:0,z:-20,top:0,w:100,d:100,checkpoint:false,ground:true},
-{id:1,x:-2,z:-8,top:1,w:4,d:4,type:'grass'},
-{id:2,x:1.8,z:-12.5,top:2,w:3,d:3,checkpoint:true,type:'oak_planks'},
-{id:3,x:4.8,z:-16.5,top:3,w:3,d:3,type:'cobblestone'},
-{id:4,x:2.2,z:-20.5,top:4,w:3,d:3,checkpoint:true,type:'grass'},
-{id:5,x:-1.8,z:-24.5,top:5,w:3,d:3,type:'oak_planks'},
-{id:6,x:-4.2,z:-28.5,top:6,w:3,d:3,checkpoint:true,type:'cobblestone'},
-{id:7,x:-1,z:-32.5,top:7,w:3,d:3,type:'grass'},
-{id:8,x:3,z:-36.5,top:8,w:3,d:3,checkpoint:true,type:'oak_planks'},
-{id:9,x:4.7,z:-40.5,top:9,w:3,d:3,checkpoint:true,type:'cobblestone'},
-{id:10,x:.8,z:-45,top:10,w:5,d:5,checkpoint:true,finish:true,type:'oak_planks'}
+const defs = [];
+let renderer
 ];
 let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode='offline',toastTimer=0,gameTime=0,lastSync=0,finishShown=false;
 let nick='Игрок',localColor=palette[0],localAvatar=null,checkpointIndex=0,activePlatform=0;
-let checkpoint={x:0,y:0,z:4},progress=-1;
+let checkpoint={x:0,y:0,z:4};
 const connections=new Map(),hostStates=new Map(),remoteAvatars=new Map(),keys=new Set();
 const p={x:0,y:0,z:4,vy:0,yaw:0,pitch:.15,grounded:true,jump:false,jumpHeld:false,jumpBuffer:0,coyote:0,sprint:false};
 const joy={active:false,id:null,x:0,y:0};const look={active:false,id:null,x:0,y:0};
 const camTarget=new THREE.Vector3(),lookTarget=new THREE.Vector3();
 const rings=[];
+const worldColliders=[];
+const villagers=[];
+const villageBounds={minX:-48,maxX:48,minZ:-68,maxZ:28};
 function status(text,state){$('hubStatus').textContent=text;$('hubStatusDot').className='status-dot'+(state==='online'?' online':state==='warning'?' warning':'');}
 function toast(text,ms){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),ms||2300);}
 function safeName(value){return String(value||'Игрок').replace(/[<>]/g,'').trim().slice(0,18)||'Игрок';}
@@ -170,20 +173,87 @@ function block(parent,x,y,z,w,h,d,type='stone'){
  }
  return mesh;
 }
+function solidBlock(parent,x,y,z,w,h,d,type='stone'){
+ const mesh=block(parent,x,y,z,w,h,d,type);
+ worldColliders.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2,bottom:y-h/2,top:y+h/2});
+ return mesh;
+}
+function decoBlock(parent,x,y,z,w,h,d,type='stone'){return block(parent,x,y,z,w,h,d,type);}
+function glassPane(x,y,z,w,h,d=.08){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:0x99d5ed,roughness:.25,transparent:true,opacity:.78}));m.position.set(x,y,z);scene.add(m);return m;
+}
 function addTree(x,z,height=4){
- block(scene,x,height/2,z,1,height,1,'oak_log');
- for(let layer=0;layer<3;layer++){const y=height-.25+layer,radius=layer===0?2:1;for(let dx=-radius;dx<=radius;dx++)for(let dz=-radius;dz<=radius;dz++){if(layer===2&&Math.abs(dx)+Math.abs(dz)>2)continue;if(layer===1&&Math.abs(dx)===1&&Math.abs(dz)===1&&Math.random()>.5)continue;block(scene,x+dx,y,z+dz,1,1,1,'leaves');}}
+ solidBlock(scene,x,height/2,z,.9,height,.9,'oak_log');
+ decoBlock(scene,x,height+.25,z,3.3,1.2,3.3,'leaves');
+ decoBlock(scene,x,height+1.0,z,2.6,1.2,2.6,'leaves');
+ decoBlock(scene,x,height+1.75,z,1.5,1.15,1.5,'leaves');
 }
-function addMinecraftWorld(){
- block(scene,0,-1,-20,100,2,100,'grass');
- const trees=[[-13,-1,4],[-18,-13,5],[14,-8,4],[-14,-28,5],[14,-31,4],[-16,-45,5],[15,-51,4],[25,7,4],[-27,10,5],[28,-25,5],[-30,-49,4],[31,-54,4]];for(const t of trees)addTree(t[0],t[1],t[2]);
- const hills=[[-29,-4,2,2],[-30,-8,3,2],[28,-5,2,2],[30,-8,3,2],[-28,-36,2,3],[29,-39,3,2]];for(const h of hills){block(scene,h[0],.5,h[1],h[2],1,h[3],'grass');block(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
+function addPath(x,z,w,d){decoBlock(scene,x,.035,z,w,.07,d,'dirt');}
+function buildHouse(x,z){
+ const w=6,d=6,wallH=3,wallY=1.5,front=z+d/2,back=z-d/2;
+ decoBlock(scene,x,.12,z,w+.4,.24,d+.4,'cobblestone');
+ decoBlock(scene,x,.27,z,w,.08,d,'oak_planks');
+ solidBlock(scene,x,wallY,back,w,wallH,.5,'oak_planks');
+ solidBlock(scene,x-w/2+.25,wallY,z,.5,wallH,d-.5,'oak_planks');
+ solidBlock(scene,x+w/2-.25,wallY,z,.5,wallH,d-.5,'oak_planks');
+ solidBlock(scene,x-2,wallY,front,2,wallH,.5,'oak_planks');
+ solidBlock(scene,x+2,wallY,front,2,wallH,.5,'oak_planks');
+ solidBlock(scene,x,2.55,front,2,.9,.5,'oak_planks');
+ // The doorway stays open and walkable.
+ for(const sx of [-1,1])for(const sz of [-1,1])solidBlock(scene,x+sx*(w/2-.25),1.7,z+sz*(d/2-.25),.5,3.4,.5,'oak_log');
+ for(let i=0;i<3;i++){
+  const roofY=3.35+i*.55,roofZ=d/2-.45-i*1.05;
+  solidBlock(scene,x,roofY,z+roofZ,w+1.2,.65,1.15,'oak_planks');
+  solidBlock(scene,x,roofY,z-roofZ,w+1.2,.65,1.15,'oak_planks');
+ }
+ const glass=new THREE.MeshStandardMaterial({color:0x9fdcf0,roughness:.18,transparent:true,opacity:.82});
+ for(const side of [-1,1])for(const wz of [-.8,1.35]){
+  const win=new THREE.Mesh(new THREE.BoxGeometry(.07,1,1.1),glass);
+  win.position.set(x+side*(w/2+.01),1.8,z+wz);scene.add(win);
+ }
+ solidBlock(scene,x,.18,front+.65,2,.36,1,'cobblestone');
 }
-function addPlatform(def){
- if(def.ground)return;const g=new THREE.Group(),thick=1,type=def.type||'grass';block(g,def.x,def.top-thick/2,def.z,def.w,thick,def.d,type);scene.add(g);
- if(def.finish){block(g,def.x-2.5,def.top+1.5,def.z,1,3,1,'oak_log');block(g,def.x+2.5,def.top+1.5,def.z,1,3,1,'oak_log');block(g,def.x,def.top+3.5,def.z,6,1,1,'oak_planks');}
+function addFence(x,z,w,d){
+ for(let sx=-w/2;sx<=w/2;sx+=1.5){solidBlock(scene,x+sx,.55,z-d/2,.18,1.1,.18,'oak_log');solidBlock(scene,x+sx,.55,z+d/2,.18,1.1,.18,'oak_log');}
+ for(let sz=-d/2+1.5;sz<d/2;sz+=1.5){solidBlock(scene,x-w/2,.55,z+sz,.18,1.1,.18,'oak_log');solidBlock(scene,x+w/2,.55,z+sz,.18,1.1,.18,'oak_log');}
+ for(const y of [.38,.78]){decoBlock(scene,x,y,z-d/2,w,.12,.12,'oak_planks');decoBlock(scene,x,y,z+d/2,w,.12,.12,'oak_planks');decoBlock(scene,x-w/2,y,z,.12,.12,d,'oak_planks');decoBlock(scene,x+w/2,y,z,.12,.12,d,'oak_planks');}
 }
-
+function addFarm(){
+ decoBlock(scene,17,.045,-18,9,.09,12,'dirt');decoBlock(scene,17,.07,-18,1,.04,10,'cobblestone');
+ const cropMat=new THREE.MeshStandardMaterial({color:0x6caa36,roughness:1});
+ for(let row=0;row<4;row++)for(let col=0;col<5;col++){
+  const h=.35+(row+col)%3*.12,stem=new THREE.Mesh(new THREE.BoxGeometry(.13,h,.13),cropMat);
+  stem.position.set(14.5+col*1.1,.08+h/2,-22+row*1.1);scene.add(stem);
+ }
+ addFence(17,-18,10,13);
+}
+function addWell(){
+ for(const dx of [-.8,.8])for(const dz of [-.8,.8])solidBlock(scene,dx,.25,-18+dz,.35,.7,.35,'cobblestone');
+ decoBlock(scene,0,.35,-18,2.3,.18,2.3,'cobblestone');
+ decoBlock(scene,0,.46,-18,1.2,.05,1.2,'stone');
+ for(const dx of [-1,1])solidBlock(scene,dx,.95,-18,.22,1.9,.22,'oak_log');
+ decoBlock(scene,0,2,-18,2.8,.25,2.4,'oak_planks');
+ decoBlock(scene,0,2.23,-18,2.4,.2,2,'oak_planks');
+}
+function makeVillager(x,z,robeColor=0x786047){
+ const g=new THREE.Group(),robe=mat(robeColor,1,0),skin=mat(0xb99a78,1,0),nose=mat(0x9b7a5d,1,0),eye=mat(0x536b39,1,0),dark=mat(0x554333,1,0);
+ box(g,.58,.85,.36,robe,0,.82,0);box(g,.54,.48,.48,skin,0,1.52,0);box(g,.12,.19,.15,nose,0,1.47,-.30);
+ box(g,.08,.055,.025,eye,-.13,1.58,-.247);box(g,.08,.055,.025,eye,.13,1.58,-.247);
+ box(g,.45,.12,.39,dark,0,1.16,-.02);box(g,.18,.55,.22,robe,-.36,1.03,0);box(g,.18,.55,.22,robe,.36,1.03,0);
+ box(g,.16,.55,.24,robe,-.14,.25,0);box(g,.16,.55,.24,robe,.14,.25,0);
+ const head=new THREE.Group();head.position.y=1.52;g.add(head);g.position.set(x,0,z);scene.add(g);villagers.push({group:g,head,homeX:x,homeZ:z,phase:Math.random()*6.28});
+}
+function addMinecraftVillage(){
+ decoBlock(scene,0,-1,-20,100,2,100,'grass');
+ addPath(0,.5,4,54);addPath(-8,-13,15,2.8);addPath(8,-24,15,2.8);addPath(0,-35,4,16);
+ buildHouse(-10,-7);buildHouse(9,-9);buildHouse(-10,-25);buildHouse(10,-29);
+ addWell();addFarm();
+ const treeSpecs=[[-18,-2,4],[-18,-15,5],[17,-1,4],[18,-13,4],[-19,-31,5],[19,-36,5],[-27,-45,4],[28,-47,5],[29,8,4],[-28,7,4]];
+ for(const t of treeSpecs)addTree(t[0],t[1],t[2]);
+ for(const h of [[-27,-8,3,2],[27,-17,2,3],[-25,-38,3,2],[26,-36,2,3]]){decoBlock(scene,h[0],.5,h[1],h[2],1,h[3],'grass');decoBlock(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
+ makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);
+}
+function labelSprite
 function labelSprite(name,color){
  const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
  x.clearRect(0,0,c.width,c.height);x.font='700 42px Arial';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
@@ -234,8 +304,8 @@ function avatar(name,color){
 
 function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.userData&&o.userData.disposeOnDrop&&o.material)o.material.dispose();});if(a.tex)a.tex.dispose();}
 function platformAt(x,z,maxTop=Infinity){let found=null;for(let i=defs.length-1;i>=0;i--){const a=defs[i];if(a.top>maxTop)continue;if(Math.abs(x-a.x)<=a.w/2-.22&&Math.abs(z-a.z)<=a.d/2-.22&&(!found||a.top>found.top))found=a;}return found;}
-function updateProgress(a){if(!a)return;activePlatform=Math.max(activePlatform,a.id);if(activePlatform!==progress){progress=activePlatform;$('progressLabel').textContent=Math.min(10,progress)+' / 10';$('progressBar').style.width=Math.min(100,progress*10)+'%';}}
-function setCheckpoint(a){if(!a.checkpoint||a.id<=checkpointIndex)return;checkpointIndex=a.id;checkpoint={x:a.x,y:a.top,z:a.z+.35};toast(a.finish?'Паркур пройден!':'Контрольная точка сохранена');if(a.finish&&!finishShown){finishShown=true;const s=Math.floor(gameTime);toast('Финиш! Время: '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),5000);}}
+function updateProgress(){$('progressLabel').textContent=villagers.length+' жителей';$('progressBar').style.width='100%';}
+function setCheckpoint(){}
 function respawn(show=true){p.x=checkpoint.x;p.y=checkpoint.y;p.z=checkpoint.z;p.vy=0;p.grounded=true;p.jump=false;p.jumpHeld=false;p.jumpBuffer=0;p.coyote=.12;if(localAvatar)localAvatar.group.position.set(p.x,p.y,p.z);if(show)toast('Возврат к контрольной точке');}
 function moveInput(){let x=0,z=0;if(keys.has('KeyA')||keys.has('ArrowLeft'))x--;if(keys.has('KeyD')||keys.has('ArrowRight'))x++;if(keys.has('KeyW')||keys.has('ArrowUp'))z++;if(keys.has('KeyS')||keys.has('ArrowDown'))z--;x+=joy.x;z+=joy.y;const l=Math.hypot(x,z);if(l>1){x/=l;z/=l;}return{x,z,len:Math.min(1,l)};}
 function animateLimbs(a,t,s){const v=Math.sin(t*10.5)*Math.min(1,s)*.53;a.la.rotation.x=v;a.ra.rotation.x=-v;a.ll.rotation.x=-v;a.rl.rotation.x=v;}
@@ -295,7 +365,7 @@ function setupScene(){
  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!matchMedia('(max-width:760px)').matches,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,matchMedia('(max-width:760px)').matches?1.25:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=!matchMedia('(max-width:760px)').matches;
  scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.85));const sun=new THREE.DirectionalLight(0xfff2cf,2.25);sun.position.set(-30,55,18);sun.castShadow=renderer.shadowMap.enabled;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-55;sun.shadow.camera.right=55;sun.shadow.camera.top=55;sun.shadow.camera.bottom=-55;scene.add(sun);
- addMinecraftWorld();for(const d of defs)addPlatform(d);camera.position.set(0,4,10);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+ addMinecraftWorld();addMinecraftVillage();camera.position.set(0,4,10);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
 }
 
 function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
