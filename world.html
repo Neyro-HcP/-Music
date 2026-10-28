@@ -177,7 +177,7 @@ const canvas = $('hubCanvas'), stage = $('hubStage');
 const invitedRoom = new URLSearchParams(location.search).get('room');
 const palette = ['#b8a5ff','#6de8ff','#ff86bf','#a6ffb7','#ffd27b','#8fa7ff','#ff9a77'];
 const defs = [];
-let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode='offline',toastTimer=0,gameTime=0,lastSync=0,finishShown=false;
+let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode='offline',toastTimer=0,gameTime=0,lastSync=0,finishShown=false,firstPersonHand=null,handSwing=0;
 let nick='Игрок',localColor=palette[0],localAvatar=null,checkpointIndex=0,activePlatform=0;
 let checkpoint={x:0,y:0,z:4};
 const connections=new Map(),hostStates=new Map(),remoteAvatars=new Map(),keys=new Set();
@@ -493,6 +493,18 @@ function avatar(name,color){
  return {group:g,la,ra,ll,rl,label:lab.sprite,tex:lab.tex,name:name,target:new THREE.Vector3(),yaw:0,moving:false};
 }
 
+function createFirstPersonHand(){
+ firstPersonHand=new THREE.Group();
+ skinCube(firstPersonHand,'rightArm',.25,.75,.25,0,-.375,0);
+ firstPersonHand.position.set(Math.min(.48,.2+camera.aspect*.14),-.5,-.82);
+ firstPersonHand.rotation.set(-.18,.22,-.25);camera.add(firstPersonHand);firstPersonHand.visible=false;
+}
+function updateFirstPersonHand(dt){
+ if(!firstPersonHand)return;
+ if(handSwing>0)handSwing=Math.max(0,handSwing-dt*4.8);
+ const swing=handSwing>0?Math.sin((1-handSwing)*Math.PI)*.62:0;
+ firstPersonHand.rotation.set(-.18-swing,.22+swing*.28,-.25);
+}
 function dropAvatar(a){scene.remove(a.group);a.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.userData&&o.userData.disposeOnDrop&&o.material)o.material.dispose();});if(a.tex)a.tex.dispose();}
 function platformAt(x,z,maxTop=Infinity){
  if(maxTop<0)return null;
@@ -560,7 +572,7 @@ function setupOnline(){
  peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
 }
 function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
-function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;$('startOverlay').classList.add('hidden');stage.classList.add('playing');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
+function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;if(firstPersonHand)firstPersonHand.visible=true;$('startOverlay').classList.add('hidden');stage.classList.add('playing');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
 function setupScene(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd5ff);scene.fog=new THREE.Fog(0x9bd5ff,88,155);
  camera=new THREE.PerspectiveCamera(75,1,.1,180);
@@ -568,10 +580,10 @@ function setupScene(){
  renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!mobile,alpha:false,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.05:1.25));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=false;
  scene.add(new THREE.HemisphereLight(0xe1f4ff,0x7e8c54,1.8));const sun=new THREE.DirectionalLight(0xfff2cf,1.65);sun.position.set(-30,55,18);sun.castShadow=false;scene.add(sun);
- addMinecraftVillage();addClouds();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
+ addMinecraftVillage();addClouds();createFirstPersonHand();camera.position.set(0,1.62,4);resize();clock=new THREE.Clock();window.addEventListener('resize',resize,{passive:true});
 }
 
-function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+function resize(){if(!renderer||!camera)return;const w=Math.max(1,stage.clientWidth),h=Math.max(1,stage.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();if(firstPersonHand)firstPersonHand.position.x=Math.min(.48,.2+camera.aspect*.14);}
 function updateCamera(){
  const eye=p.sneak?1.34:1.62;
  camera.position.set(p.x,p.y+eye,p.z);
@@ -590,7 +602,7 @@ function interact(){
  else toast('Поблизости нет жителей',1300);
 }
 function attack(){
- const cross=$('crosshair');cross.classList.add('hit');setTimeout(()=>cross.classList.remove('hit'),120);
+ const cross=$('crosshair');cross.classList.add('hit');setTimeout(()=>cross.classList.remove('hit'),120);handSwing=1;
 }
 function updateVillageAnimations(dt){
  for(const v of villagers){v.phase+=dt;v.head.rotation.y=Math.sin(v.phase*.55)*.08;v.group.position.y=Math.sin(v.phase*1.15)*.025;}
@@ -601,7 +613,7 @@ function animate(){
  const dt=Math.min(.025,clock?clock.getDelta():.016);
  if(!renderer)return;
  if(started){
-  gameTime+=dt;updatePlayer(dt);updateCamera();updateVillageAnimations(dt);updateClouds(dt);
+  gameTime+=dt;updatePlayer(dt);updateCamera();updateVillageAnimations(dt);updateClouds(dt);updateFirstPersonHand(dt);
   for(const a of remoteAvatars.values()){
    a.group.position.lerp(a.target,Math.min(1,dt*12));
    let delta=a.yaw-a.group.rotation.y;while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;
