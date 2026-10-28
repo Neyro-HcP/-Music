@@ -138,8 +138,6 @@ const canvas = $('hubCanvas'), stage = $('hubStage');
 const invitedRoom = new URLSearchParams(location.search).get('room');
 const palette = ['#b8a5ff','#6de8ff','#ff86bf','#a6ffb7','#ffd27b','#8fa7ff','#ff9a77'];
 const defs = [];
-let renderer
-];
 let renderer,scene,camera,clock,started=false,peer=null,myId=null,conn=null,mode='offline',toastTimer=0,gameTime=0,lastSync=0,finishShown=false;
 let nick='Игрок',localColor=palette[0],localAvatar=null,checkpointIndex=0,activePlatform=0;
 let checkpoint={x:0,y:0,z:4};
