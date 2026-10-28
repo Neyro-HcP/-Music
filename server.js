@@ -181,7 +181,63 @@ function toPublicTrack(track) {
 }
 
 app.get('/api/config', (req, res) => {
-  res.json({ uploadEnabled: Boolean(ADMIN_PASSWORD), isAdmin: req.session.isAdmin === true, maxAudioSizeMB: 100 });
+  res.json({ uploadEnabled: Boolean(ADMIN_PASSWORD), isAdmin: req.session.isAdmin === true, maxAudioSizeMB: 100, aiGenerationEnabled: Boolean(process.env.AI_API_KEY && process.env.AI_API_URL && process.env.AI_MODEL) });
+});
+
+const nspGenerateLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 8, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Слишком много генераций подряд. Попробуй позже.' } });
+
+app.use('/api/nsp', (req, res, next) => {
+  const origin = req.get('origin');
+  const allowed = new Set([process.env.SITE_ORIGIN || 'https://neyro-hcp.github.io', ...(IS_PRODUCTION ? [] : ['http://localhost:3000', 'http://127.0.0.1:3000'])]);
+  if (origin && allowed.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+app.post('/api/nsp/generate', nspGenerateLimiter, async (req, res) => {
+  const { AI_API_KEY: apiKey, AI_API_URL: apiUrl, AI_MODEL: model } = process.env;
+  if (!apiKey || !apiUrl || !model) return sendError(res, 503, 'ИИ пока не настроен на сервере. Нужны AI_API_KEY, AI_API_URL и AI_MODEL.');
+  const b = req.body || {};
+  const topic = typeof b.topic === 'string' ? b.topic.trim().slice(0, 1200) : '';
+  if (!topic) return sendError(res, 400, 'Укажи тему или ситуацию для текста.');
+  const take = (v, n, fallback = '') => typeof v === 'string' ? v.trim().slice(0, n) : fallback;
+  const format = take(b.format, 100, 'Куплет на 16 строк');
+  const mood = take(b.mood, 100, 'Смешанное');
+  const flow = take(b.flow, 120, 'Разговорная подача');
+  const words = take(b.requiredWords, 500);
+  const examples = take(b.examples, 8000);
+  const rhyme = Number.isFinite(Number(b.rhymeDensity)) ? Math.max(20, Math.min(100, Number(b.rhymeDensity))) : 75;
+  const internal = Number.isFinite(Number(b.internalRhymes)) ? Math.max(0, Math.min(100, Number(b.internalRhymes))) : 80;
+  const systemPrompt = [
+    'Ты помогаешь автору НсП создавать новые русскоязычные рэп-тексты и фристайлы.',
+    'Строй стиль по настройкам и примерам, которые дал сам пользователь: разговорная подача, неожиданные точные рифмы, внутренние рифмы, естественный флоу, конкретные детали и авторская интонация.',
+    'Не копируй и не продолжай существующие песни, чужие куплеты или узнаваемые строки. Не выдумывай биографические факты об авторе.',
+    'Избегай пустых рифм ради рифм, шаблонного пафоса, одинаковых окончаний в каждой строке и пояснений вокруг текста.',
+    'Примеры пользователя — ориентир по его собственной манере; не повторяй целые строки из них без необходимости.',
+    'Верни только готовый текст с заголовками частей при необходимости, без анализа, вступления и заключения.'
+  ].join('\n');
+  const userPrompt = ['ТЕМА / СИТУАЦИЯ: ' + topic, 'ФОРМАТ: ' + format, 'НАСТРОЕНИЕ: ' + mood, 'ПОДАЧА / ФЛОУ: ' + flow, 'ПЛОТНОСТЬ РИФМ: ' + rhyme + '%', 'ВНУТРЕННИЕ РИФМЫ: ' + internal + '%', 'ОБЯЗАТЕЛЬНЫЕ СЛОВА И ДЕТАЛИ: ' + (words || 'не заданы'), 'СОБСТВЕННЫЕ ПРИМЕРЫ АВТОРА:\n' + (examples || 'не предоставлены'), 'Напиши оригинальный текст, который можно произнести вслух в устойчивом ритме. Не объясняй процесс написания.'].join('\n\n');
+  try {
+    const response = await fetch(apiUrl, { method: 'POST', headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0.9, max_tokens: 1800 }), signal: AbortSignal.timeout(45000) });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      console.error('AI generation provider returned HTTP', response.status);
+      return sendError(res, response.status === 429 ? 429 : 502, response.status === 429 ? 'У модели временный лимит запросов. Попробуй позже.' : 'Сервис ИИ отклонил запрос. Проверь настройки модели на сервере.');
+    }
+    const text = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (typeof text !== 'string' || !text.trim()) return sendError(res, 502, 'Модель не вернула текст. Попробуй ещё раз.');
+    res.set('Cache-Control', 'no-store');
+    return res.json({ text: text.trim().slice(0, 12000), model });
+  } catch (err) {
+    if (err && err.name === 'TimeoutError') return sendError(res, 504, 'Модель отвечает слишком долго. Попробуй ещё раз.');
+    console.error('AI generation request failed:', err.message);
+    return sendError(res, 502, 'Не удалось связаться с сервисом ИИ. Проверь настройки backend.');
+  }
 });
 
 app.get('/api/tracks', (_req, res) => {
