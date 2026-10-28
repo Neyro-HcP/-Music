@@ -23,9 +23,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const random = (min, max) => min + Math.random() * (max - min);
   const clock = new THREE.Clock();
-  const WATER_SURFACE_BASE = new THREE.Color(0x48caff);
-  const WATER_VOLUME_BASE = new THREE.Color(0x159bd7);
-  const WATER_FOAM_WHITE = new THREE.Color(0xf7feff);
 
   let renderer, scene, camera, world, pmrem;
   let floorMesh, backMesh;
@@ -39,20 +36,16 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   let lastWakeGravity = {x:0,y:-12,z:0}, lastWakeAt = 0, lastCollisionSweep = 0;
   let paintMode = false, selectedPaintColor = '#a78bfa', liquidMode = null;
   let liquidLevel = -2, liquidTargetLevel = -1, liquidPouring = false;
-  let liquidEnergy = 0, liquidSurfaceAccumulator = 0, liquidLayoutAccumulator = 0, nextPourWaveAt = 0;
-  let liquidFoamIntensity = 0, lastShakeAt = 0, lastHissAt = 0;
-  let motionBaseline = null;
+  let liquidEnergy = 0, liquidSurfaceAccumulator = 0, nextPourWaveAt = 0;
   let liquidSurfaceTilt = 0, targetLiquidSurfaceTilt = 0;
   let liquidAngle = 0, liquidAngularVelocity = 0, bubbleSpawnAccumulator = 0;
   let liquidCutoff = 0, liquidDownX = 0, liquidDownY = -1;
   let liquidTangentX = -1, liquidTangentY = 0;
   let liquidSurfaceAx = 0, liquidSurfaceAy = 0, liquidSurfaceBx = 0, liquidSurfaceBy = 0;
   let nextLiquidAsmrAt = 0, lastLiquidTiltImpulseAt = 0;
-  let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null, liquidBubbleMesh = null, liquidFoamMesh = null;
+  let liquidVolumeMesh = null, liquidSurfaceMesh = null, liquidPourMesh = null, liquidBubbleMesh = null;
   const liquidBubbles = [];
-  const liquidFoamPatches = [];
   const MAX_LIQUID_BUBBLES = coarsePointer ? 16 : 28;
-  const MAX_LIQUID_FOAM = coarsePointer ? 18 : 32;
   const bubbleDummy = new THREE.Object3D();
   const liquidWaveImpulses = [];
   let dragging = null, lastRender = 0, nextId = 1, soundClock = 0;
@@ -240,10 +233,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       clearcoat:1,clearcoatRoughness:.045,emissive:0x8ddfff,emissiveIntensity:.06,
       depthWrite:false
     });
-    materials.liquidFoam = new THREE.MeshPhysicalMaterial({
-      color:0xf7feff,roughness:.28,metalness:0,transparent:true,opacity:.84,
-      clearcoat:.55,clearcoatRoughness:.18,depthWrite:false,side:THREE.DoubleSide
-    });
   }
 
   function createRenderer() {
@@ -339,12 +328,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidBubbleMesh.frustumCulled = false;
     liquidBubbleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     scene.add(liquidBubbleMesh);
-    liquidFoamMesh = new THREE.InstancedMesh(geometries.liquidBubble,materials.liquidFoam,MAX_LIQUID_FOAM);
-    liquidFoamMesh.count = 0;
-    liquidFoamMesh.renderOrder = 7;
-    liquidFoamMesh.frustumCulled = false;
-    liquidFoamMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    scene.add(liquidFoamMesh);
 
     const stars = new THREE.BufferGeometry();
     const starCount = coarsePointer ? 65 : 100;
@@ -811,14 +794,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
   function clearLiquidVisuals(){
     liquidWaveImpulses.length=0;
     liquidBubbles.length=0;
-    liquidFoamPatches.length=0;
     if(liquidBubbleMesh)liquidBubbleMesh.count=0;
-    if(liquidFoamMesh)liquidFoamMesh.count=0;
     bubbleSpawnAccumulator=0;
-    liquidLayoutAccumulator=0;
-    liquidFoamIntensity=0;
-    materials.waterSurface?.color.copy(WATER_SURFACE_BASE);
-    materials.waterVolume?.color.copy(WATER_VOLUME_BASE);
     liquidEnergy=0;
     liquidPouring=false;
     if(liquidVolumeMesh)liquidVolumeMesh.visible=false;
@@ -892,7 +869,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     const fill=clamp((liquidLevel-floorY)/Math.max(.1,ceilY-floorY),.002,.998);
     const targetArea=width*(ceilY-floorY)*fill;
     let low=minimum,high=maximum;
-    for(let iteration=0;iteration<14;iteration++){
+    for(let iteration=0;iteration<19;iteration++){
       const mid=(low+high)*.5;
       const area=polygonArea(clipLiquidPolygon(corners,downX,downY,mid));
       if(area>targetArea)low=mid;
@@ -958,12 +935,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
 
   function updateLiquidLayout(){
     if(!liquidVolumeMesh||!liquidSurfaceMesh||!liquidPourMesh)return;
-    if(!liquidMode){
-      liquidVolumeMesh.visible=false;
-      liquidSurfaceMesh.visible=false;
-      liquidPourMesh.visible=false;
-      return;
-    }
     const shape=computeLiquidShape();
     liquidCutoff=shape.cutoff;
     liquidDownX=shape.downX;
@@ -1072,112 +1043,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidBubbleMesh.instanceMatrix.needsUpdate=true;
   }
 
-  function spawnLiquidFoam(count,intensity=0.6){
-    if(liquidMode!=='water'||!liquidSurfaceMesh?.visible||liquidFoamPatches.length>=MAX_LIQUID_FOAM)return;
-    const strength=clamp(intensity,.18,1);
-    for(let i=0;i<count&&liquidFoamPatches.length<MAX_LIQUID_FOAM;i++){
-      const t=random(.025,.975);
-      const edgeX=liquidSurfaceAx+(liquidSurfaceBx-liquidSurfaceAx)*t;
-      const edgeY=liquidSurfaceAy+(liquidSurfaceBy-liquidSurfaceAy)*t;
-      const inset=random(.018,.095);
-      const sizeX=random(.045,.105)*(.8+strength*.65);
-      const sizeY=random(.011,.022);
-      liquidFoamPatches.push({
-        x:edgeX+liquidDownX*inset,y:edgeY+liquidDownY*inset,z:random(.655,.7),
-        vx:liquidTangentX*random(-.28,.28)+liquidDownX*random(-.05,.09),
-        vy:liquidTangentY*random(-.28,.28)+liquidDownY*random(-.05,.09),
-        life:random(.55,1.05)+strength*.2,maxLife:1.25,
-        sizeX,sizeY,rotation:random(-.22,.22)
-      });
-    }
-  }
-
-  function updateLiquidFoam(dt){
-    if(!liquidFoamMesh)return;
-    liquidFoamIntensity*=Math.exp(-dt*1.65);
-    const waterActive=liquidMode==='water';
-    materials.waterSurface.color.copy(WATER_SURFACE_BASE).lerp(WATER_FOAM_WHITE,waterActive?liquidFoamIntensity*.48:0);
-    materials.waterVolume.color.copy(WATER_VOLUME_BASE).lerp(WATER_FOAM_WHITE,waterActive?liquidFoamIntensity*.16:0);
-    if(!waterActive){
-      liquidFoamPatches.length=0;
-      liquidFoamMesh.count=0;
-      return;
-    }
-    for(let i=liquidFoamPatches.length-1;i>=0;i--){
-      const patch=liquidFoamPatches[i];
-      patch.life-=dt;
-      patch.vx+=(liquidTangentX*.035-patch.vx*.22)*dt;
-      patch.vy+=(liquidTangentY*.035-patch.vy*.22)*dt;
-      patch.x+=patch.vx*dt;
-      patch.y+=patch.vy*dt;
-      if(liquidSignedDepthAt(patch.x,patch.y)<-.035)patch.life=Math.min(patch.life,.12);
-      if(patch.life<=0)liquidFoamPatches.splice(i,1);
-    }
-    liquidFoamMesh.count=liquidFoamPatches.length;
-    const tangentAngle=Math.atan2(liquidTangentY,liquidTangentX);
-    for(let i=0;i<liquidFoamPatches.length;i++){
-      const patch=liquidFoamPatches[i];
-      const fade=clamp(patch.life/.22,0,1);
-      bubbleDummy.position.set(patch.x,patch.y,patch.z);
-      bubbleDummy.scale.set(patch.sizeX*fade,patch.sizeY*fade,.006);
-      bubbleDummy.rotation.set(0,0,tangentAngle+patch.rotation);
-      bubbleDummy.updateMatrix();
-      liquidFoamMesh.setMatrixAt(i,bubbleDummy.matrix);
-    }
-    liquidFoamMesh.instanceMatrix.needsUpdate=true;
-  }
-
-  function triggerLiquidShake(intensity,accelX=0,accelY=0){
-    if(!liquidMode)return;
-    const strength=clamp(intensity,.12,1);
-    liquidEnergy=Math.min(1.6,liquidEnergy+(liquidMode==='water'?.72:.45)*strength);
-    const direction=accelX*liquidTangentX+accelY*liquidTangentY;
-    liquidAngularVelocity=clamp(liquidAngularVelocity+clamp(direction*.045,-.7,.7),-5.2,5.2);
-    addSurfaceWaveImpulse(clamp(direction*.25+random(-.25,.25),-.95,.95),random(-.52,.52),
-      (liquidMode==='water'?.085:.06)+strength*(liquidMode==='water'?.12:.07));
-    spawnLiquidBubbles(liquidMode==='water'?3+Math.round(strength*4):2+Math.round(strength*2));
-    if(liquidMode==='water'){
-      liquidFoamIntensity=Math.max(liquidFoamIntensity,.36+strength*.64);
-      spawnLiquidFoam(5+Math.round(strength*12),strength);
-      const now=performance.now();
-      if(soundEnabled&&now-lastHissAt>240){
-        noiseBurst(.17,.008+strength*.014,'crack',random(3000,4200),0);
-        noiseBurst(.12,.004+strength*.008,'soft',random(1450,2050),0);
-        lastHissAt=now;
-      }
-    }
-  }
-
-  function updateDeviceMotion(event){
-    if(!tiltEnabled||!liquidMode)return;
-    let ax=0,ay=0,az=0;
-    const linear=event.acceleration;
-    if(linear&&Number.isFinite(linear.x)&&Number.isFinite(linear.y)&&Number.isFinite(linear.z)){
-      ax=linear.x;ay=linear.y;az=linear.z;
-    }else{
-      const total=event.accelerationIncludingGravity;
-      if(!total||!Number.isFinite(total.x)||!Number.isFinite(total.y)||!Number.isFinite(total.z))return;
-      if(!motionBaseline){
-        motionBaseline={x:total.x,y:total.y,z:total.z};
-        return;
-      }
-      const baselineBlend=.12;
-      motionBaseline.x+=(total.x-motionBaseline.x)*baselineBlend;
-      motionBaseline.y+=(total.y-motionBaseline.y)*baselineBlend;
-      motionBaseline.z+=(total.z-motionBaseline.z)*baselineBlend;
-      ax=total.x-motionBaseline.x;
-      ay=total.y-motionBaseline.y;
-      az=total.z-motionBaseline.z;
-    }
-    const magnitude=Math.hypot(ax,ay,az);
-    if(magnitude<3.05)return;
-    const now=performance.now();
-    if(now-lastShakeAt<165)return;
-    lastShakeAt=now;
-    const strength=clamp((magnitude-2.5)/7.5,.12,1);
-    triggerLiquidShake(strength,ax,ay);
-  }
-
   function setLiquidMode(mode){
     if(liquidMode===mode){
       liquidMode=null;
@@ -1208,8 +1073,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     liquidSurfaceMesh.visible=true;
     liquidPourMesh.visible=true;
     if(liquidBubbleMesh)liquidBubbleMesh.visible=true;
-    if(liquidFoamMesh){liquidFoamMesh.visible=mode==='water';liquidFoamMesh.count=0;}
-    liquidFoamIntensity=0;
     for(const button of document.querySelectorAll('[data-liquid]')){
       button.setAttribute('aria-pressed',String(button.dataset.liquid===mode));
     }
@@ -1279,14 +1142,9 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       }
     }
     liquidEnergy*=Math.exp(-step*(liquidMode==='water'?1.5:.9));
-    liquidLayoutAccumulator+=step;
-    const layoutInterval=coarsePointer?1/24:1/30;
-    if(liquidLayoutAccumulator>=layoutInterval){
-      liquidLayoutAccumulator%=layoutInterval;
-      updateLiquidLayout();
-    }
+    updateLiquidLayout();
+
     updateLiquidBubbles(step);
-    updateLiquidFoam(step);
     liquidSurfaceAccumulator+=step;
     if(liquidSurfaceAccumulator<1/30)return;
     liquidSurfaceAccumulator=0;
@@ -1610,10 +1468,8 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     let gy=-sensorX*Math.sin(screenAngle)+sensorY*Math.cos(screenAngle);
     const length=Math.hypot(gx,gy);
     if(length>g){gx*=g/length;gy*=g/length;}
-    const desiredX=clamp(gx,-g,g);
-    const desiredY=clamp(gy,-g,g);
-    targetGravityX+=(desiredX-targetGravityX)*.42;
-    targetGravityY+=(desiredY-targetGravityY)*.42;
+    targetGravityX=clamp(gx,-g,g);
+    targetGravityY=clamp(gy,-g,g);
     gravityZ=0;
   }
 
@@ -1621,7 +1477,6 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     if(tiltEnabled){
       tiltEnabled=false;
       window.removeEventListener('deviceorientation',updateTilt,true);
-      window.removeEventListener('devicemotion',updateDeviceMotion);
       gravityX=0;gravityY=-12;gravityZ=0;
       targetGravityX=0;targetGravityY=-12;
       lastWakeGravity={x:0,y:-12,z:0};
@@ -1632,29 +1487,17 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     }
     if(!('DeviceOrientationEvent'in window)){status('Датчик наклона недоступен');return;}
     try{
-      createSound();
-      const orientationPermission=typeof DeviceOrientationEvent.requestPermission==='function'
-        ?DeviceOrientationEvent.requestPermission():Promise.resolve('granted');
-      const Motion=window.DeviceMotionEvent;
-      let shakePermissionRequest=Promise.resolve('granted');
-      if(Motion&&typeof Motion.requestPermission==='function'){
-        try{shakePermissionRequest=Motion.requestPermission();}
-        catch(_){shakePermissionRequest=Promise.resolve('denied');}
+      if(typeof DeviceOrientationEvent.requestPermission==='function'){
+            const result=await DeviceOrientationEvent.requestPermission();
+        if(result!=='granted'){status('Разреши доступ к датчику в браузере');return;}
       }
-      const orientationResult=await orientationPermission;
-      if(orientationResult!=='granted'){status('Разреши доступ к датчику в браузере');return;}
-      let shakePermission=true;
-      try{shakePermission=(await shakePermissionRequest)==='granted';}
-      catch(_){shakePermission=false;}
       tiltEnabled=true;
       gravityX=0;gravityY=-12;gravityZ=0;
       lastWakeGravity={x:0,y:-12,z:0};
       world.gravity.set(gravityX,gravityY,gravityZ);
       window.addEventListener('deviceorientation',updateTilt,true);
-      motionBaseline=null;
-      if(shakePermission&&('DeviceMotionEvent'in window))window.addEventListener('devicemotion',updateDeviceMotion,{passive:true});
       tiltButton.setAttribute('aria-pressed','true');tiltLabel.textContent='Наклон включён';
-      status(shakePermission?'Наклон включён — встряхни телефон, чтобы поднять пену':'Наклон включён, но датчик встряхивания недоступен');
+      status('Наклоняй телефон — предметы реагируют по X и Y');
     }catch(_){status('Не удалось включить датчик наклона');}
   }
 
@@ -1741,7 +1584,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
         resize();
       }
     }
-    const gravityBlend=1-Math.exp(-delta*7.2);
+    const gravityBlend=1-Math.exp(-delta*10);
     gravityX+= (targetGravityX-gravityX)*gravityBlend;
     gravityY+= (targetGravityY-gravityY)*gravityBlend;
     const previousLiquidTilt=liquidSurfaceTilt;
@@ -1756,7 +1599,7 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
     }
     world.gravity.set(gravityX,gravityY,gravityZ);
     const gravityChange=Math.hypot(gravityX-lastWakeGravity.x,gravityY-lastWakeGravity.y);
-    if(tiltEnabled&&gravityChange>1.35&&frameNow-lastWakeAt>180){
+    if(tiltEnabled&&gravityChange>.8&&frameNow-lastWakeAt>120){
       lastWakeGravity={x:gravityX,y:gravityY,z:0};
       lastWakeAt=frameNow;
       for(const item of items)item.body.wakeUp();
