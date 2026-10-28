@@ -305,7 +305,6 @@ function addMinecraftVillage(){
  for(const h of [[-27,-8,3,2],[27,-17,2,3],[-25,-38,3,2],[26,-36,2,3]]){decoBlock(scene,h[0],.5,h[1],h[2],1,h[3],'grass');decoBlock(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
  makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);
 }
-function labelSprite
 function labelSprite(name,color){
  const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
  x.clearRect(0,0,c.width,c.height);x.font='700 42px Arial';x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
