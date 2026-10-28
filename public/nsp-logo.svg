@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="НсП">
+  <defs>
+    <linearGradient id="nsp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f400dc"/>
+      <stop offset=".48" stop-color="#c000f7"/>
+      <stop offset="1" stop-color="#7100f2"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="16" fill="#050308"/>
+  <g fill="none" stroke="url(#nsp)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 12 64 29 85 12"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(30 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(60 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(90 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(120 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(150 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(180 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(210 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(240 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(270 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(300 64 64)"/>
+    <path d="M43 12 64 29 85 12" transform="rotate(330 64 64)"/>
+  </g>
+  <text x="64" y="76" fill="#fff" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="800" text-anchor="middle" letter-spacing=".5">НсП</text>
+</svg>
