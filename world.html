@@ -146,7 +146,7 @@ function avatar(name,color){
    box(leg,.22,.12,.31,shoe,0,-.625,-.018);
  }
  // Квадратный контур под ногами вместо круглого футуристического кольца.
- const foot=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(.78,.025,.78)),acc);
+ const foot=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(.78,.025,.78)),new THREE.LineBasicMaterial({color:color,transparent:true,opacity:.85}));
  foot.position.y=.035;g.add(foot);
  const lab=labelSprite(name,color);g.add(lab.sprite);scene.add(g);
  return {group:g,la,ra,ll,rl,label:lab.sprite,tex:lab.tex,name:name,target:new THREE.Vector3(),yaw:0,moving:false};
