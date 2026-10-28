@@ -988,15 +988,15 @@ import * as CANNON from 'https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cann
       const t=random(.06,.94);
       const edgeX=liquidSurfaceAx+(liquidSurfaceBx-liquidSurfaceAx)*t;
       const edgeY=liquidSurfaceAy+(liquidSurfaceBy-liquidSurfaceAy)*t;
-      const inset=random(.045,.14);
+      const inset=random(.12,.35);
       const x=edgeX+liquidDownX*inset;
       const y=edgeY+liquidDownY*inset;
-      const buoyancy=random(.32,.68);
+      const buoyancy=random(.12,.32);
       liquidBubbles.push({
         x,y,z:random(.49,.62),
         vx:-liquidDownX*buoyancy+liquidTangentX*liquidAngularVelocity*.07+random(-.09,.09),
         vy:-liquidDownY*buoyancy+liquidTangentY*liquidAngularVelocity*.07+random(-.09,.09),
-        vz:random(-.045,.045),life:random(.7,1.55),size:random(.018,.039)
+        vz:random(-.045,.045),life:random(1.1,2.1),size:random(.018,.039)
       });
     }
   }
