@@ -194,7 +194,7 @@ function safeName(value){return String(value||'Игрок').replace(/[<>]/g,'').
 function colorFor(id){let h=0;for(const c of String(id||''))h=((h<<5)-h+c.charCodeAt(0))|0;return palette[Math.abs(h)%palette.length];}
 function mat(color,roughness=.58,metalness=.2){return new THREE.MeshStandardMaterial({color,roughness,metalness});}
 function box(parent,w,h,d,material,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-const vanillaAssetBase='https://mcasset.cloud/1.21.11/assets/minecraft/textures/';
+const vanillaAssetBase='https://assets.mcasset.cloud/1.21.11/assets/minecraft/textures/';
 function pixelBlockTexture(kind){
  const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');
  const colors={grassTop:['#79b84d','#71ad45','#8ac65a','#659f3e'],grassSide:['#805533','#70472c','#93643b','#69442b'],dirt:['#805533','#70472c','#93643b','#69442b'],stone:['#777777','#686868','#878787','#5f5f5f'],cobblestone:['#777777','#696969','#898989','#585858'],oak_planks:['#b28a55','#9c7548','#c19a63','#87623c'],oak_log:['#81562e','#674322','#9a6d3a','#4e351e'],oak_log_top:['#976e40','#b58a56','#79542f','#d0a06a'],oak_leaves:['#4d8b35','#427a2c','#659b3d','#376d2a']};
@@ -221,6 +221,26 @@ function pixelSteveSkin(){
  f(pants,0,16,16,16);f(shoe,4,30,4,2);f(pants,16,48,16,16);f(shoe,20,62,4,2);
  f(shirt,32,48,16,12);f(shirtDark,32,52,4,8);f(shirtDark,40,52,4,8);f(skin,32,60,16,4);f(hair,32,8,8,3);f(hair,40,0,8,3);f(hair,40,8,8,2);f(hair,48,8,8,3);f(hair,56,8,8,3);return c;
 }
+function pixelWheatTexture(){
+ const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');x.clearRect(0,0,16,16);
+ const px=(col,a,b,w=1,h=1)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
+ for(let y=5;y<16;y++)px(y<9?'#8da83b':'#5d9636',7,y,2,1);
+ px('#d8b54d',7,1,2,5);px('#e9cf69',5,2,2,3);px('#eed677',9,2,2,3);px('#cda642',6,5,2,3);px('#e7c85d',9,5,2,3);
+ px('#5f9636',4,7,4,1);px('#75a83e',3,6,2,1);px('#6a9d38',8,9,3,1);px('#57892f',5,11,3,1);px('#8eaa40',9,13,3,1);
+ return c;
+}
+function pixelFlowerTexture(kind){
+ const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');x.clearRect(0,0,16,16);
+ const px=(col,a,b,w=1,h=1)=>{x.fillStyle=col;x.fillRect(a,b,w,h);};
+ for(let y=5;y<16;y++)px(y%3?'#4f9034':'#68a940',7,y,1,1);
+ px('#70a840',5,8,3,1);px('#5a9635',8,10,3,1);
+ if(kind==='poppy'){
+  px('#b72b2e',6,1,4,2);px('#d63b3e',5,3,6,2);px('#a91f28',7,5,3,1);px('#f1d34f',7,3,2,1);
+ }else{
+  px('#e9ce39',6,1,4,2);px('#f7e65a',5,3,6,2);px('#d5ad25',7,5,3,1);px('#fff19c',7,3,2,1);
+ }
+ return c;
+}
 function makeVanillaTexture(path,fallback,repeat=true){
  const tex=new THREE.CanvasTexture(fallback);tex.colorSpace=THREE.SRGBColorSpace;tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;tex.generateMipmaps=false;tex.wrapS=repeat?THREE.RepeatWrapping:THREE.ClampToEdgeWrapping;tex.wrapT=repeat?THREE.RepeatWrapping:THREE.ClampToEdgeWrapping;tex.needsUpdate=true;
  const img=new Image();img.crossOrigin='anonymous';img.onload=()=>{tex.image=img;tex.needsUpdate=true;};img.onerror=()=>{};img.src=vanillaAssetBase+path+'.png';return tex;
@@ -236,16 +256,34 @@ const mcTextures={
  oakLog:makeVanillaTexture('block/oak_log',pixelBlockTexture('oak_log')),
  oakLogTop:makeVanillaTexture('block/oak_log_top',pixelBlockTexture('oak_log_top')),
  oakLeaves:makeVanillaTexture('block/oak_leaves',pixelBlockTexture('oak_leaves')),
+ sprucePlanks:makeVanillaTexture('block/spruce_planks',pixelBlockTexture('oak_planks')),
+ dirtPathTop:makeVanillaTexture('block/dirt_path_top',pixelBlockTexture('dirt')),
+ wheat:makeVanillaTexture('block/wheat_stage7',pixelWheatTexture(),false),
+ poppy:makeVanillaTexture('block/poppy',pixelFlowerTexture('poppy'),false),
+ dandelion:makeVanillaTexture('block/dandelion',pixelFlowerTexture('dandelion'),false),
  steve:makeVanillaTexture('entity/player/wide/steve',pixelSteveSkin(),false)
 };
 function texturedMaterial(texture,extra={}){return new THREE.MeshStandardMaterial({map:texture,color:0xffffff,roughness:1,metalness:0,...extra});}
-const mcMaterials={grassSide:texturedMaterial(mcTextures.grassSide),grassSideOverlay:texturedMaterial(mcTextures.grassSideOverlay,{color:0x79b84d,transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:false}),grassTop:texturedMaterial(mcTextures.grassTop),dirt:texturedMaterial(mcTextures.dirt),stone:texturedMaterial(mcTextures.stone),cobblestone:texturedMaterial(mcTextures.cobblestone),oakPlanks:texturedMaterial(mcTextures.oakPlanks),oakLog:texturedMaterial(mcTextures.oakLog),oakLogTop:texturedMaterial(mcTextures.oakLogTop),oakLeaves:texturedMaterial(mcTextures.oakLeaves,{transparent:true,alphaTest:.18,side:THREE.DoubleSide})};
+const mcMaterials={
+ grassSide:texturedMaterial(mcTextures.grassSide),
+ grassSideOverlay:texturedMaterial(mcTextures.grassSideOverlay,{color:0x79b84d,transparent:true,alphaTest:.08,side:THREE.DoubleSide,depthWrite:false}),
+ grassTop:texturedMaterial(mcTextures.grassTop),dirt:texturedMaterial(mcTextures.dirt),dirtPathTop:texturedMaterial(mcTextures.dirtPathTop),
+ stone:texturedMaterial(mcTextures.stone),cobblestone:texturedMaterial(mcTextures.cobblestone),
+ oakPlanks:texturedMaterial(mcTextures.oakPlanks),sprucePlanks:texturedMaterial(mcTextures.sprucePlanks),
+ oakLog:texturedMaterial(mcTextures.oakLog),oakLogTop:texturedMaterial(mcTextures.oakLogTop),
+ oakLeaves:texturedMaterial(mcTextures.oakLeaves,{transparent:true,alphaTest:.18,side:THREE.DoubleSide}),
+ wheat:texturedMaterial(mcTextures.wheat,{transparent:true,alphaTest:.12,side:THREE.DoubleSide,depthWrite:false}),
+ poppy:texturedMaterial(mcTextures.poppy,{transparent:true,alphaTest:.12,side:THREE.DoubleSide,depthWrite:false}),
+ dandelion:texturedMaterial(mcTextures.dandelion,{transparent:true,alphaTest:.12,side:THREE.DoubleSide,depthWrite:false})
+};
 const blockMaterials={
  grass:[mcMaterials.grassSide,mcMaterials.grassSide,mcMaterials.grassTop,mcMaterials.dirt,mcMaterials.grassSide,mcMaterials.grassSide],
  dirt:[mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt],
+ path:[mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirtPathTop,mcMaterials.dirt,mcMaterials.dirt,mcMaterials.dirt],
  stone:[mcMaterials.stone,mcMaterials.stone,mcMaterials.stone,mcMaterials.stone,mcMaterials.stone,mcMaterials.stone],
  cobblestone:[mcMaterials.cobblestone,mcMaterials.cobblestone,mcMaterials.cobblestone,mcMaterials.cobblestone,mcMaterials.cobblestone,mcMaterials.cobblestone],
  oak_planks:[mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks,mcMaterials.oakPlanks],
+ spruce_planks:[mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks,mcMaterials.sprucePlanks],
  oak_log:[mcMaterials.oakLog,mcMaterials.oakLog,mcMaterials.oakLogTop,mcMaterials.oakLogTop,mcMaterials.oakLog,mcMaterials.oakLog],
  leaves:[mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves,mcMaterials.oakLeaves]
 };
@@ -280,7 +318,7 @@ function addTree(x,z,height=4){
  decoBlock(scene,x,height+1.0,z,2.6,1.2,2.6,'leaves');
  decoBlock(scene,x,height+1.75,z,1.5,1.15,1.5,'leaves');
 }
-function addPath(x,z,w,d){decoBlock(scene,x,.035,z,w,.07,d,'dirt');}
+function addPath(x,z,w,d){decoBlock(scene,x,.035,z,w,.07,d,'path');}
 function buildHouse(x,z){
  addGroundShadow(x,z,8.6,8.4,.72);
  const w=6,d=6,wallH=3,wallY=1.5,front=z+d/2,back=z-d/2;
@@ -296,8 +334,8 @@ function buildHouse(x,z){
  for(const sx of [-1,1])for(const sz of [-1,1])solidBlock(scene,x+sx*(w/2-.25),1.7,z+sz*(d/2-.25),.5,3.4,.5,'oak_log');
  for(let i=0;i<3;i++){
   const roofY=3.35+i*.55,roofZ=d/2-.45-i*1.05;
-  solidBlock(scene,x,roofY,z+roofZ,w+1.2,.65,1.15,'oak_planks');
-  solidBlock(scene,x,roofY,z-roofZ,w+1.2,.65,1.15,'oak_planks');
+  solidBlock(scene,x,roofY,z+roofZ,w+1.2,.65,1.15,'spruce_planks');
+  solidBlock(scene,x,roofY,z-roofZ,w+1.2,.65,1.15,'spruce_planks');
  }
  const glass=new THREE.MeshStandardMaterial({color:0x9fdcf0,roughness:.18,transparent:true,opacity:.82});
  for(const side of [-1,1])for(const wz of [-.8,1.35]){
@@ -314,11 +352,15 @@ function addFence(x,z,w,d){
 function addFarm(){
  addGroundShadow(17,-18,11.7,14,.72);
  decoBlock(scene,17,.045,-18,9,.09,12,'dirt');decoBlock(scene,17,.07,-18,1,.04,10,'cobblestone');
- const cropMat=new THREE.MeshStandardMaterial({color:0x6caa36,roughness:1});
- for(let row=0;row<3;row++)for(let col=0;col<4;col++){
-  const h=.35+(row+col)%3*.12,stem=new THREE.Mesh(new THREE.BoxGeometry(.13,h,.13),cropMat);
-  stem.position.set(14.5+col*1.1,.08+h/2,-22+row*1.1);scene.add(stem);
+ const crops=[];
+ for(let row=0;row<3;row++)for(let col=0;col<4;col++)crops.push({x:14.5+col*1.1,z:-22+row*1.1,h:.52+((row+col)%3)*.12});
+ const cropGeo=new THREE.PlaneGeometry(.78,1),cropA=new THREE.InstancedMesh(cropGeo,mcMaterials.wheat,crops.length),cropB=new THREE.InstancedMesh(cropGeo,mcMaterials.wheat,crops.length),dummy=new THREE.Object3D();
+ cropA.frustumCulled=false;cropB.frustumCulled=false;
+ for(let i=0;i<crops.length;i++){
+  const c=crops[i];dummy.position.set(c.x,.08+c.h/2,c.z);dummy.scale.set(1,c.h,1);dummy.rotation.set(0,(i%2)*.12,0);dummy.updateMatrix();cropA.setMatrixAt(i,dummy.matrix);
+  dummy.rotation.y=Math.PI/2+(i%2)*.12;dummy.updateMatrix();cropB.setMatrixAt(i,dummy.matrix);
  }
+ cropA.instanceMatrix.needsUpdate=true;cropB.instanceMatrix.needsUpdate=true;scene.add(cropA,cropB);
  addFence(17,-18,10,13);
 }
 function addWell(){
@@ -358,7 +400,7 @@ function addMinecraftVillage(){
  const treeSpecs=[[-18,-2,4],[-18,-15,5],[17,-1,4],[18,-13,4],[-19,-31,5],[19,-36,5]];
  for(const t of treeSpecs)addTree(t[0],t[1],t[2]);
  for(const h of [[-27,-8,3,2],[27,-17,2,3],[-25,-38,3,2],[26,-36,2,3]]){decoBlock(scene,h[0],.5,h[1],h[2],1,h[3],'grass');decoBlock(scene,h[0],-.5,h[1],h[2],1,h[3],'dirt');}
- makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);
+ makeVillager(-3,-4,0x786047);makeVillager(5,-14,0x655a70);makeVillager(-4,-23,0x786047);makeVillager(13,-27,0x6c6450);addFlowerPatches();
 }
 
 let shadowTexture=null,shadowMaterial=null;
@@ -390,6 +432,18 @@ function addClouds(){
  const sun=new THREE.Mesh(new THREE.SphereGeometry(2.3,12,10),sunMat);sun.position.set(38,29,-78);scene.add(sun);
 }
 function updateClouds(dt){for(const c of clouds){c.group.position.x+=c.speed*dt;if(c.group.position.x>66)c.group.position.x=-66;}}
+
+
+function addPlantInstances(points,material,width=.42,height=.62){
+ const geo=new THREE.PlaneGeometry(width,height),a=new THREE.InstancedMesh(geo,material,points.length),b=new THREE.InstancedMesh(geo,material,points.length),dummy=new THREE.Object3D();
+ a.frustumCulled=false;b.frustumCulled=false;
+ for(let i=0;i<points.length;i++){const [x,z,scale=1]=points[i];dummy.position.set(x,.045+height*scale/2,z);dummy.scale.set(1,scale,1);dummy.rotation.set(0,(i%3)*.16,0);dummy.updateMatrix();a.setMatrixAt(i,dummy.matrix);dummy.rotation.y=Math.PI/2+(i%3)*.16;dummy.updateMatrix();b.setMatrixAt(i,dummy.matrix);}
+ a.instanceMatrix.needsUpdate=true;b.instanceMatrix.needsUpdate=true;scene.add(a,b);
+}
+function addFlowerPatches(){
+ addPlantInstances([[-15,-5,1],[-15,-9,.9],[-6,-11,.85],[-16,-19,1],[-16,-28,.92],[-22,-22,.8],[14,-7,.9],[24,-26,1]],mcMaterials.poppy,.4,.62);
+ addPlantInstances([[-13,-5,.9],[-14,-12,1],[2,-6,.85],[14,-17,.9],[-15,-24,.9],[5,-32,.8],[24,-32,1],[22,-39,.9]],mcMaterials.dandelion,.4,.62);
+}
 
 function labelSprite(name,color){
  const c=document.createElement('canvas');c.width=512;c.height=96;const x=c.getContext('2d');
