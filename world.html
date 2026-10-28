@@ -474,7 +474,6 @@ function animate(){
  }
  renderer.render(scene,camera);
 }
-function setJoy
 function setJoy(e){const r=$('joyRing').getBoundingClientRect(),knob=$('joyKnob'),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=Math.max(18,(r.width-knob.offsetWidth)/2-3),len=Math.hypot(dx,dy),s=len>max?max/len:1,nx=dx*s,ny=dy*s;knob.style.transform='translate('+nx+'px,'+ny+'px)';let ax=nx/max,ay=-ny/max;const mag=Math.hypot(ax,ay),dead=.12;if(mag<dead){ax=0;ay=0;}else{const adjusted=Math.min(1,(mag-dead)/(1-dead)),scale=adjusted/(mag||1);ax*=scale;ay*=scale;}joy.x=ax;joy.y=ay;}
 function resetJoy(){joy.active=false;joy.id=null;joy.x=0;joy.y=0;$('joystick').classList.remove('active');$('joyKnob').style.transform='translate(0,0)';}
 function controls(){
