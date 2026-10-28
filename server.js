@@ -199,6 +199,8 @@ app.use('/api/nsp', (req, res, next) => {
   next();
 });
 
+app.get('/api/nsp/status', (_req, res) => { res.set('Cache-Control', 'no-store'); res.json({ aiGenerationEnabled: Boolean(process.env.AI_API_KEY && process.env.AI_API_URL && process.env.AI_MODEL) }); });
+
 app.post('/api/nsp/generate', nspGenerateLimiter, async (req, res) => {
   const { AI_API_KEY: apiKey, AI_API_URL: apiUrl, AI_MODEL: model } = process.env;
   if (!apiKey || !apiUrl || !model) return sendError(res, 503, 'ИИ пока не настроен на сервере. Нужны AI_API_KEY, AI_API_URL и AI_MODEL.');
