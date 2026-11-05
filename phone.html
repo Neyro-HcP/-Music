@@ -26,7 +26,7 @@
       if (/module|webgl|three|cannon|failed to fetch/i.test(String(event.message || ''))) {
         var status = document.getElementById('phoneEngineStatus');
         var mode = document.getElementById('phoneRenderMode');
-        if (status) status.textContent = 'Проверь соединение: не удалось загрузить 3D-движок.';
+        if (status) status.textContent = '3D-движок не загружен.';
         if (mode) mode.textContent = 'НЕ УДАЛОСЬ ЗАПУСТИТЬ';
       }
     });
