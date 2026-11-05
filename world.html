@@ -741,10 +741,10 @@ function addHostConnection(c){
 function setupOnline(){
  if(!window.Peer){status('Онлайн-модуль недоступен','warning');return;}
  mode=invitedRoom?'guest':'host';status(mode==='host'?'Создаём комнату…':'Подключаемся…');$('inviteButton').disabled=true;peer=new window.Peer(undefined,{debug:0});
- peer.on('open',id=>{myId=id;$('inviteButton').disabled=false;if(mode==='host'){status('Комната создана','online');toast('Комната создана.',2400);}else{conn=peer.connect(invitedRoom,{reliable:true,serialization:'json'});conn.on('open',()=>{status('Ты в комнате','online');sendSafe(conn,{type:'hello',name:nick});sendSafe(conn,{type:'state',...snapshot()});});conn.on('data',d=>{if(d&&(d.type==='welcome'||d.type==='snapshot')){status('Ты в комнате','online');updateRemote(d.players);}});conn.on('close',()=>{status('Связь потеряна','warning');toast('Связь с комнатой потеряна.');});conn.on('error',()=>{status('Не удалось войти','warning');toast('Комната недоступна. Попроси владельца открыть мир заново.',4000);});}});
- peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
+ peer.on('open',id=>{myId=id;$('inviteButton').disabled=false;if(mode==='host'){status('Комната создана','online');toast('Комната создана.',2400);}else{conn=peer.connect(invitedRoom,{reliable:true,serialization:'json'});conn.on('open',()=>{status('Ты в комнате','online');sendSafe(conn,{type:'hello',name:nick});sendSafe(conn,{type:'state',...snapshot()});});conn.on('data',d=>{if(d&&(d.type==='welcome'||d.type==='snapshot')){status('Ты в комнате','online');updateRemote(d.players);}});conn.on('close',()=>{status('Связь потеряна','warning');toast('Связь с комнатой потеряна.');});conn.on('error',()=>{status('Не удалось войти','warning');toast('Комната недоступна.',4000);});}});
+ peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться.',4000);});
 }
-function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
+function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Комната ещё не создана.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
 function start(online){if(started)return;nick=safeName($('playerName').value);$('playerName').value=nick;try{localStorage.setItem('nspHubNick',nick);}catch(e){}if(localAvatar)dropAvatar(localAvatar);localAvatar=avatar(nick,localColor);localAvatar.group.position.set(p.x,p.y,p.z);localAvatar.group.visible=false;started=true;if(firstPersonHand)firstPersonHand.visible=true;$('startOverlay').classList.add('hidden');stage.classList.add('playing');if(online)setupOnline();else{mode='offline';status('Деревня');$('inviteButton').disabled=true;}updateProgress();}
 function setupScene(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd5ff);scene.fog=new THREE.Fog(0x9bd5ff,88,155);
@@ -851,7 +851,7 @@ function saveEditorMap(){
  editorMap=clean;if(!saveStoredMap(clean))return false;toast('Карта сохранена на этом устройстве');return true;
 }
 function exportEditorMap(){
- const clean=validateMapData(editorMap);if(!clean){toast('Сначала проверь карту');return;}
+ const clean=validateMapData(editorMap);if(!clean){toast('Карта некорректна.');return;}
  const blob=new Blob([JSON.stringify(clean,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='nsp-hub-map.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);toast('JSON карты скачан');
 }
@@ -903,7 +903,7 @@ function init(){try{const s=localStorage.getItem('nspHubNick');if(s)$('playerNam
   const file=musicFile.files&&musicFile.files[0];if(!file)return;
   if(musicObjectUrl)URL.revokeObjectURL(musicObjectUrl);
   musicObjectUrl=URL.createObjectURL(file);musicAudio.src=musicObjectUrl;$('musicFileName').textContent=file.name;musicAudio.load();
-  musicAudio.play().catch(()=>toast('Нажми ▶ на плеере, чтобы включить звук'));
+  musicAudio.play().catch(()=>toast('Аудио не запущено.'));
  });
  bindMapEditor();controls();setupScene();updateProgress();animate();}
 init();
