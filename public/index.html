@@ -60,7 +60,7 @@
         <div class="track-transport">
           <div class="transport-file">
             <div class="file-art"><span>♫</span><i></i></div>
-            <div class="file-copy"><b id="loadedTrackName">Добавь аудио</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
+            <div class="file-copy"><b id="loadedTrackName">Аудио не выбрано</b><small id="loadedTrackInfo">MP3 · WAV · M4A · OGG и другие</small></div>
           </div>
           <div class="transport-controls">
             <button class="round-control" id="rewindButton" type="button" aria-label="В начало" title="В начало">↺</button>
@@ -71,10 +71,10 @@
         </div>
         <div class="seek-row"><input id="seekRange" type="range" min="0" max="1000" value="0" aria-label="Позиция воспроизведения" disabled></div>
         <div class="preview-bottom">
-          <div class="preview-hint"><span class="hint-spark">✳</span><span id="previewHint">Загрузи аудио</span></div>
+          <div class="preview-hint" hidden><span class="hint-spark">✳</span><span id="previewHint"></span></div>
           <div class="preview-actions"><button class="outline-button" id="pngButton" type="button">↓ PNG кадр</button><select id="exportFormatSelect" class="select-field export-format-select" aria-label="Формат видео"><option value="mp4" selected>MP4</option><option value="webm">WebM</option></select><button class="primary-button" id="exportButton" type="button" disabled><span class="export-icon">●</span> Экспорт MP4</button></div>
         </div>
-        <div class="export-progress-wrap" id="exportProgressWrap" hidden><div class="export-progress-label"><span id="exportStatus">Идёт запись...</span><span id="exportElapsed">00:00</span></div><div class="export-progress-track"><i id="exportProgress"></i></div><p>Видео записывается в реальном времени. Не закрывай вкладку до завершения трека.</p></div>
+        <div class="export-progress-wrap" id="exportProgressWrap" hidden><div class="export-progress-label"><span id="exportStatus">Идёт запись...</span><span id="exportElapsed">00:00</span></div><div class="export-progress-track"><i id="exportProgress"></i></div></div>
       </section>
 
       <aside class="controls-panel panel">
