@@ -1305,7 +1305,7 @@
   function ensureAudioGraph() {
     if (!state.file) return false;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) throw new Error('Этот браузер не поддерживает аудиоанализ. Попробуй Chrome.');
+    if (!AudioContextClass) throw new Error('Аудиоанализ недоступен в этом браузере.');
     if (!state.audioContext) state.audioContext = new AudioContextClass();
     if (!state.source) {
       state.source = state.audioContext.createMediaElementSource(audio);
@@ -1368,17 +1368,17 @@
     $('#topExportButton').classList.add('ready');
     $('#exportButton').classList.add('ready');
     updateTransport();
-    toast('Аудио готово. Файл не загружался в интернет.', false);
+    toast('Аудио готово.', false);
   }
 
   function selectAudio(file) {
     if (!file) return;
     if (file.type && !file.type.startsWith('audio/') && !/\.(mp3|wav|m4a|aac|ogg|flac|opus|webm|aif|aiff)$/i.test(file.name)) {
-      toast('Выбери аудиофайл: MP3, WAV, M4A, AAC, OGG, FLAC или WEBM.', true);
+      toast('Неподдерживаемый формат аудио.', true);
       return;
     }
     if (state.recorder && state.recorder.state !== 'inactive') {
-      toast('Сначала останови текущий экспорт.', true);
+      toast('Экспорт уже выполняется.', true);
       return;
     }
     if (state.file) audio.pause();
@@ -1395,7 +1395,7 @@
 
   async function togglePlay() {
     if (!state.file) {
-      toast('Сначала добавь аудиофайл в панели справа.', true);
+      toast('Нет аудиофайла.', true);
       return;
     }
     try {
@@ -1447,7 +1447,7 @@
       script.src = src;
       script.async = true;
       script.onload = resolve;
-      script.onerror = function () { reject(new Error('Не удалось загрузить конвертер MP4. Проверь интернет и повтори экспорт.')); };
+      script.onerror = function () { reject(new Error('Не удалось загрузить конвертер MP4.')); };
       document.head.appendChild(script);
     });
   }
@@ -1516,17 +1516,17 @@
       return;
     }
     if (!state.file) {
-      toast('Сначала добавь аудио — затем экспортируй визуализатор.', true);
+      toast('Нет аудиофайла для экспорта.', true);
       return;
     }
     if (!window.MediaRecorder || !canvas.captureStream) {
-      toast('Экспорт видео недоступен в этом браузере. Попробуй Chrome или Edge.', true);
+      toast('Экспорт видео недоступен в этом браузере.', true);
       return;
     }
     const wantsMp4 = $('#exportFormatSelect').value === 'mp4';
     const nativeMp4Type = wantsMp4 ? supportedRecorderType(true) : '';
     const mimeType = nativeMp4Type || supportedRecorderType(false);
-    if (!mimeType) { toast('Браузер не поддерживает запись видео. Попробуй обновить Chrome.', true); return; }
+    if (!mimeType) { toast('Браузер не поддерживает запись видео.', true); return; }
     state.currentExportFormat = wantsMp4 ? 'mp4' : 'webm';
     state.currentRecorderMimeType = mimeType;
 
@@ -1547,7 +1547,7 @@
       state.recorder.ondataavailable = function (event) {
         if (event.data && event.data.size > 0) state.chunks.push(event.data);
       };
-      state.recorder.onerror = function () { toast('Ошибка записи видео. Попробуй записать ещё раз.', true); };
+      state.recorder.onerror = function () { toast('Ошибка записи видео.', true); };
       state.recorder.onstop = async function () {
         window.clearInterval(state.recordingTimer);
         state.recordingTimer = null;
@@ -1562,7 +1562,7 @@
         const filenameBase = 'nsp-visualizer-' + new Date().toISOString().slice(0, 10);
         if (blob.size <= 0) {
           setExportUI(false);
-          toast('Запись пустая. Запусти трек и попробуй ещё раз.', true);
+          toast('Запись пуста.', true);
         } else if (wantsMp4Now && !recordedMp4) {
           state.converting = true;
           setExportUI(true);
