@@ -195,7 +195,7 @@
 <canvas id="hubCanvas" aria-label="Трёхмерный мир НсП Hub"></canvas>
 <div class="hud hud-left"><div class="hub-mark"><span>НсП</span><i>HUB</i></div><div class="hub-status"><span class="status-dot" id="hubStatusDot"></span><span id="hubStatus" aria-live="polite">Загрузка 3D-мира</span></div><div class="hub-stage-label">МИР / ДЕРЕВНЯ</div></div>
 <div class="hud hud-right"><div class="player-count"><span class="online-dot"></span><span id="playerCount">1 игрок</span></div><button class="hub-small-btn" id="musicToggleButton" type="button" aria-expanded="false">Музыка</button><button class="hub-small-btn" id="editorOpenButton" type="button">Редактор карты</button><button class="hub-small-btn" id="inviteButton" type="button" disabled>Скопировать ссылку</button><button class="hub-small-btn" id="respawnButton" type="button">На точку</button></div>
-<div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ОБЫЧНЫЙ МИР</span><b id="progressLabel">ДЕРЕВНЯ</b></div><div class="progress-track"><span id="progressBar"></span></div></div><p class="desktop-hint">W A S D — ходьба · SPACE — прыжок · SHIFT — бег · мышь — обзор · E — действие</p></div>
+<div class="hub-bottom-left"><div class="hub-progress"><div class="progress-head"><span>ОБЫЧНЫЙ МИР</span><b id="progressLabel">ДЕРЕВНЯ</b></div><div class="progress-track"><span id="progressBar"></span></div></div></div>
 <div class="crosshair" id="crosshair" aria-hidden="true"><i></i><b></b><i></i><b></b></div>
 <div class="music-panel" id="musicPanel" hidden>
  <div class="music-panel-head"><span>Музыка</span><button type="button" id="musicCloseButton" aria-label="Закрыть музыку">×</button></div>
@@ -206,7 +206,7 @@
 </div>
 <div class="map-editor-overlay" id="mapEditorOverlay" hidden>
  <section class="map-editor-card" aria-label="Редактор карты">
-  <div class="map-editor-heading"><div><h2>Редактор карты</h2><p>Клетка — один блок. Выбери блок и слой, затем нажимай на карту.</p></div><button class="map-close" id="mapEditorClose" type="button" aria-label="Закрыть редактор">×</button></div>
+  <div class="map-editor-heading"><div><h2>Редактор карты</h2></div><button class="map-close" id="mapEditorClose" type="button" aria-label="Закрыть редактор">×</button></div>
   <div class="map-editor-main">
    <div class="map-grid-wrap"><canvas id="mapEditorCanvas" width="600" height="600" aria-label="Сетка карты 15 на 15"></canvas><div class="map-editor-legend"><span id="mapEditorStatus">225 блоков</span><span id="mapEditorCoordinates">Слой 0</span></div></div>
    <div class="map-editor-tools">
@@ -232,7 +232,7 @@
     <div class="map-file-actions"><button class="map-action secondary" id="mapExportButton" type="button">Скачать JSON</button><button class="map-action secondary" id="mapImportButton" type="button">Загрузить JSON</button><input type="file" id="mapImportFile" accept="application/json,.json" hidden></div>
     <button class="map-action secondary" id="mapClearLayerButton" type="button">Очистить слой</button>
     <button class="map-action apply" id="mapApplyButton" type="button">Применить и играть</button>
-    <p class="map-editor-note">Сохранение на этом устройстве. Чтобы сделать карту основой проекта, скачай JSON и пришли его сюда.</p>
+    
    </div>
   </div>
  </section>
@@ -246,10 +246,10 @@
   <button class="touch-btn sprint-btn" id="sprintButton" type="button" aria-pressed="false">БЕГ</button>
   <button class="touch-btn jump-btn" id="jumpButton" type="button">ПРЫЖОК</button>
  </div>
- <div class="look-hint">Проводи по экрану — обзор от первого лица</div>
+ 
 </div>
 <div class="hub-toast" id="toast" role="status" aria-live="polite"></div>
-<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">МИР / ВИД ОТ ПЕРВОГО ЛИЦА</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription">Исследуй деревню с домами и жителями. Управление как в мобильном Minecraft: джойстик, перекрестие, прыжок, бег и действие.</p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="practice-btn" id="editorStartButton" type="button">Редактор карты</button><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote">Для совместной игры один игрок создаёт комнату и делится ссылкой.</p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок. Проверь подключение к интернету и обнови страницу.</div></section></div>
+<div class="start-overlay" id="startOverlay"><section class="start-card" aria-labelledby="startTitle"><div class="start-logo"><span>НсП</span><i>HUB</i></div><div class="start-kicker">МИР / ВИД ОТ ПЕРВОГО ЛИЦА</div><h1 id="startTitle">НсП Hub</h1><p class="start-description" id="startDescription" hidden></p><label class="name-label" for="playerName">Имя игрока<input id="playerName" maxlength="18" autocomplete="nickname" placeholder="Введи ник"></label><button class="practice-btn" id="editorStartButton" type="button">Редактор карты</button><button class="start-btn" id="startButton" type="button">Создать комнату и играть</button><button class="practice-btn" id="practiceButton" type="button">Одиночная тренировка</button><p class="start-note" id="startNote" hidden></p><div class="error-note" id="errorNote" hidden>Не удалось загрузить 3D-движок.</div></section></div>
 </main>
 <script type="module">
 import * as THREE from 'three';
@@ -739,9 +739,9 @@ function addHostConnection(c){
  c.on('close',()=>{connections.delete(c.peer);hostStates.delete(c.peer);broadcast();});c.on('error',()=>{connections.delete(c.peer);hostStates.delete(c.peer);broadcast();});
 }
 function setupOnline(){
- if(!window.Peer){status('Онлайн-модуль недоступен','warning');toast('Можно продолжить в одиночном режиме.');return;}
+ if(!window.Peer){status('Онлайн-модуль недоступен','warning');return;}
  mode=invitedRoom?'guest':'host';status(mode==='host'?'Создаём комнату…':'Подключаемся…');$('inviteButton').disabled=true;peer=new window.Peer(undefined,{debug:0});
- peer.on('open',id=>{myId=id;$('inviteButton').disabled=false;if(mode==='host'){status('Комната создана','online');toast('Мир создан. Скопируй ссылку и отправь друзьям.',3400);}else{conn=peer.connect(invitedRoom,{reliable:true,serialization:'json'});conn.on('open',()=>{status('Ты в комнате','online');sendSafe(conn,{type:'hello',name:nick});sendSafe(conn,{type:'state',...snapshot()});});conn.on('data',d=>{if(d&&(d.type==='welcome'||d.type==='snapshot')){status('Ты в комнате','online');updateRemote(d.players);}});conn.on('close',()=>{status('Связь потеряна','warning');toast('Связь с комнатой потеряна.');});conn.on('error',()=>{status('Не удалось войти','warning');toast('Комната недоступна. Попроси владельца открыть мир заново.',4000);});}});
+ peer.on('open',id=>{myId=id;$('inviteButton').disabled=false;if(mode==='host'){status('Комната создана','online');toast('Комната создана.',2400);}else{conn=peer.connect(invitedRoom,{reliable:true,serialization:'json'});conn.on('open',()=>{status('Ты в комнате','online');sendSafe(conn,{type:'hello',name:nick});sendSafe(conn,{type:'state',...snapshot()});});conn.on('data',d=>{if(d&&(d.type==='welcome'||d.type==='snapshot')){status('Ты в комнате','online');updateRemote(d.players);}});conn.on('close',()=>{status('Связь потеряна','warning');toast('Связь с комнатой потеряна.');});conn.on('error',()=>{status('Не удалось войти','warning');toast('Комната недоступна. Попроси владельца открыть мир заново.',4000);});}});
  peer.on('connection',c=>{if(mode==='host')addHostConnection(c);else c.close();});peer.on('error',e=>{status('Онлайн-соединение недоступно','warning');if(mode==='guest')toast('Не удалось подключиться. Проверь приглашение.',4000);});
 }
 function invite(){const id=mode==='host'?myId:invitedRoom;if(!id){toast('Ссылка появится после создания комнаты.');return;}const u=new URL(location.href);u.searchParams.set('room',id);const value=u.toString();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(value).then(()=>toast('Ссылка на комнату скопирована')).catch(()=>prompt('Скопируй ссылку:',value));else prompt('Скопируй ссылку:',value);}
