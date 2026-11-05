@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./app.css?v=nsp-luxe-20261027-1615">
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=copy-clean-20261105" defer></script>
   <link rel="stylesheet" href="./brand-theme.css?v=nsp-brand-20261028">
 </head>
 <body>
@@ -129,7 +129,7 @@
             <label class="color-control"><input id="artistOpacityRange" type="range" min="10" max="100" step="1" value="100"><span><b>ALPHA</b><small id="artistOpacityOutput">100%</small></span></label>
           </div>
         </div>
-          <div class="toggle-list"><label class="toggle-row"><span><b>Название в кадре</b><small>Трек и исполнитель</small></span><input id="showTitle" type="checkbox" checked><i></i></label></div>
+          <div class="toggle-list"><label class="toggle-row"><span><b>Название в кадре</b></span><input id="showTitle" type="checkbox" checked><i></i></label></div>
         </div>
         <div class="settings-tab-panel" id="settings-panel-background" role="tabpanel" data-settings-panel="background" hidden>
           <div class="control-section media-section">
@@ -142,11 +142,11 @@
           <input id="vignetteRange" class="range-input" type="range" min="0" max="100" step="1" value="65">
         </div>
           <label class="background-color-row"><span><i></i>Цвет фона</span><input id="backgroundColor" type="color" value="#0b0915"></label>
-          <div class="toggle-list"><label class="toggle-row"><span><b>Виньетка</b><small>Затемнение по краям</small></span><input id="showVignette" type="checkbox" checked><i></i></label></div>
+          <div class="toggle-list"><label class="toggle-row"><span><b>Виньетка</b></span><input id="showVignette" type="checkbox" checked><i></i></label></div>
         </div>
         <div class="settings-tab-panel" id="settings-panel-logo" role="tabpanel" data-settings-panel="logo" hidden><div class="control-section media-section">
           <div class="control-heading"><span>Логотип в центре</span></div>
-          <label class="toggle-row standalone-toggle"><span><b>Показывать логотип на холсте</b><small>Выключен по умолчанию, чтобы не перекрывать визуализатор</small></span><input id="showLogo" type="checkbox"><i></i></label>
+          <label class="toggle-row standalone-toggle"><span><b>Показывать логотип на холсте</b></span><input id="showLogo" type="checkbox"><i></i></label>
           <div class="media-picker-row">
             <div class="logo-preview" id="logoPreview"><span>НсП</span></div>
             <div class="media-picker-copy"><b id="logoFileName">Логотип НсП</b><small>Круглая маска · PNG / JPG / WEBP</small><button class="mini-action" id="logoPickButton" type="button">Выбрать логотип</button></div>
@@ -166,14 +166,14 @@
           <select id="logoShapeSelect" class="select-field"><option value="circle">Круг</option><option value="square">Квадрат</option><option value="diamond">Ромб</option><option value="hexagon">Шестиугольник</option></select>
           <div class="panel-divider"></div>
           <div class="control-heading"><span>Реакция на музыку</span></div>
-          <label class="toggle-row standalone-toggle"><span><b>Пульсация</b><small>Размер меняется от звука</small></span><input id="logoPulseEnabled" type="checkbox" checked><i></i></label>
+          <label class="toggle-row standalone-toggle"><span><b>Пульсация</b></span><input id="logoPulseEnabled" type="checkbox" checked><i></i></label>
           <div class="control-heading compact-heading"><label for="logoPulseModeSelect">Источник пульсации</label></div>
           <select id="logoPulseModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
           <div class="control-heading compact-heading"><label for="logoHaloStyleSelect">Режим кольца</label></div>
           <select id="logoHaloStyleSelect" class="select-field"><option value="radial">Радиальные лучи</option><option value="spectrum">Кольцевой спектр</option><option value="rings">Реактивные кольца</option><option value="wave">Волна по кругу</option></select>
           <div class="control-heading compact-heading"><label for="logoPulseAmountRange">Сила пульсации</label><output id="logoPulseAmountOutput">45%</output></div>
           <input id="logoPulseAmountRange" class="range-input" type="range" min="0" max="100" step="1" value="45">
-          <label class="toggle-row standalone-toggle"><span><b>Аудио-кольца вокруг логотипа</b><small>Мини-визуализатор эмблемы</small></span><input id="logoHaloEnabled" type="checkbox" checked><i></i></label>
+          <label class="toggle-row standalone-toggle"><span><b>Аудио-кольца вокруг логотипа</b></span><input id="logoHaloEnabled" type="checkbox" checked><i></i></label>
           <div class="two-range-grid">
             <label><span>Кольца <output id="logoHaloCountOutput">3</output></span><input id="logoHaloCountRange" class="range-input" type="range" min="0" max="6" step="1" value="3"></label>
             <label><span>Толщина <output id="logoHaloWidthOutput">2</output></span><input id="logoHaloWidthRange" class="range-input" type="range" min="1" max="8" step="1" value="2"></label>
@@ -188,7 +188,7 @@
           <div class="control-heading"><label for="audioFile">Аудиофайл</label><span class="required-tag">ЛОКАЛЬНО</span></div>
           <button class="dropzone" id="dropzone" type="button">
             <input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.webm" hidden>
-            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b><small>Аудио из файлов устройства</small>
+            <span class="upload-symbol">↑</span><b>Выбрать или перетащить трек</b>
           </button>
         </div></div>
         <div class="settings-tab-panel" id="settings-panel-dynamics" role="tabpanel" data-settings-panel="dynamics" hidden>
@@ -206,7 +206,7 @@
         </div>
           <div class="control-section impact-settings">
           <div class="control-heading"><span>Камера и ударные эффекты</span></div>
-          <label class="toggle-row standalone-toggle"><span><b>Дёргать камеру</b><small>Реакция на бас и ударные биты</small></span><input id="cameraShakeEnabled" type="checkbox"><i></i></label>
+          <label class="toggle-row standalone-toggle"><span><b>Дёргать камеру</b></span><input id="cameraShakeEnabled" type="checkbox"><i></i></label>
           <div class="control-heading compact-heading"><label for="cameraShakeModeSelect">Источник тряски</label></div>
           <select id="cameraShakeModeSelect" class="select-field"><option value="beat">Биты</option><option value="bass">Бас</option><option value="both" selected>Биты + бас</option></select>
           <div class="control-heading compact-heading"><label for="cameraShakeRange">Сила тряски</label><output id="cameraShakeOutput">12 px</output></div>
@@ -221,7 +221,7 @@
         </div>
         <div class="settings-tab-panel" id="settings-panel-particles" role="tabpanel" data-settings-panel="particles" hidden><div class="control-section">
           <div class="control-heading"><span>Частицы</span></div>
-          <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b><small>Движение на фоне</small></span><input id="showParticles" type="checkbox" checked><i></i></label>
+          <label class="toggle-row standalone-toggle"><span><b>Включить частицы</b></span><input id="showParticles" type="checkbox" checked><i></i></label>
           <div class="control-heading compact-heading"><label for="particleDirectionSelect">Направление</label></div>
           <select id="particleDirectionSelect" class="select-field">
             <option value="up">Вверх</option><option value="down">Вниз</option><option value="left">Влево</option><option value="right">Вправо</option><option value="out">От центра</option><option value="in">К центру</option><option value="float" selected>Плавающее</option>
@@ -246,7 +246,7 @@
         <div class="settings-tab-panel" id="settings-panel-effects" role="tabpanel" data-settings-panel="effects" hidden>
           <div class="control-section">
             <div class="control-heading"><span>Основной визуализатор</span></div>
-            <label class="toggle-row standalone-toggle"><span><b>Показывать визуализатор</b><small>Логотип и текст останутся видимы</small></span><input id="showVisualizer" type="checkbox" checked><i></i></label>
+            <label class="toggle-row standalone-toggle"><span><b>Показывать визуализатор</b></span><input id="showVisualizer" type="checkbox" checked><i></i></label>
           </div>
           <div class="control-section">
           <div class="control-heading"><span>Цветовая палитра</span></div>
@@ -255,9 +255,9 @@
           <div class="control-section gradient-editor">
             <div class="control-heading"><span>Редактор градиента</span></div>
             <div id="gradientPreview" class="gradient-preview" aria-label="Предпросмотр градиента"></div>
-            <label class="toggle-row standalone-toggle"><span><b>Средний цвет градиента</b><small>Третья точка между основными цветами</small></span><input id="gradientMidEnabled" type="checkbox" checked><i></i></label>
+            <label class="toggle-row standalone-toggle"><span><b>Средний цвет градиента</b></span><input id="gradientMidEnabled" type="checkbox" checked><i></i></label>
             <div class="color-row gradient-mid-row">
-              <label class="color-control"><input id="gradientMidColorInput" type="color" value="#8c79df"><span><b>СРЕДНИЙ ЦВЕТ</b><small>Промежуточная точка</small></span></label>
+              <label class="color-control"><input id="gradientMidColorInput" type="color" value="#8c79df"><span><b>СРЕДНИЙ ЦВЕТ</b></span></label>
             </div>
             <div class="control-heading compact-heading"><label for="gradientAngleRange">Угол градиента</label><output id="gradientAngleOutput">90°</output></div>
             <input id="gradientAngleRange" class="range-input" type="range" min="0" max="345" step="15" value="90">
@@ -299,7 +299,7 @@
         </div>
           <div class="control-section">
             <div class="control-heading"><span>Рендер основного слоя</span></div>
-            <label class="toggle-row standalone-toggle"><span><b>Градиент</b><small>Переход между двумя цветами</small></span><input id="visualizerGradientEnabled" type="checkbox" checked><i></i></label>
+            <label class="toggle-row standalone-toggle"><span><b>Градиент</b></span><input id="visualizerGradientEnabled" type="checkbox" checked><i></i></label>
             <div class="control-heading compact-heading"><label for="visualizerShadowRange">Тень слоя</label><output id="visualizerShadowOutput">12</output></div>
             <input id="visualizerShadowRange" class="range-input" type="range" min="0" max="40" step="1" value="12">
             <div class="control-heading compact-heading"><label for="visualizerFilterSelect">Фильтр визуализатора</label></div>
