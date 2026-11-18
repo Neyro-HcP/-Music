@@ -465,3 +465,107 @@ body.philosophy-body::before {
   .ph-intro h1 span { animation: none; background-position: 50% 50%; }
   .ph-entry, .ph-entry-arrow { transition: none; }
 }
+
+
+/* Brighter icy-blue glow and continuous color flow across the page copy. */
+body.philosophy-body::before {
+  background:
+    radial-gradient(ellipse 76% 48% at 50% -12%, rgba(42, 166, 255, .29), transparent 74%),
+    radial-gradient(ellipse 40% 32% at 100% 52%, rgba(46, 130, 255, .11), transparent 78%),
+    radial-gradient(ellipse 42% 25% at 0% 80%, rgba(73, 112, 221, .07), transparent 80%);
+}
+.ph-header {
+  box-shadow: 0 10px 34px rgba(17, 103, 182, .08);
+}
+.ph-brand img {
+  filter: drop-shadow(0 0 11px rgba(73, 181, 255, .32));
+}
+.ph-entry:hover,
+.ph-entry:focus-visible {
+  background-color: rgba(39, 124, 196, .045);
+}
+.ph-entry:hover .ph-entry-number,
+.ph-entry:focus-visible .ph-entry-number {
+  color: #d9f4ff;
+  text-shadow: 0 0 20px rgba(64, 184, 255, .65);
+}
+
+/* Animated white -> ice blue -> electric blue -> violet, with only a trace of pink/red. */
+.ph-eyebrow,
+.ph-intro h1,
+.ph-intro h1 span,
+.ph-intro-row > div:first-child > p,
+.ph-count strong,
+.ph-count span,
+.ph-hint,
+.ph-entry-number,
+.ph-entry-meta,
+.ph-entry-title,
+.ph-entry-preview,
+.ph-entry-arrow,
+.ph-footer,
+.ph-dialog-kicker,
+.ph-dialog-top h2,
+.ph-dialog-date,
+.ph-dialog-quote,
+.ph-section-label,
+.ph-dialog-section p,
+.ph-dialog-takeaway span,
+.ph-dialog-takeaway strong {
+  background-image: linear-gradient(
+    105deg,
+    #ffffff 0%,
+    #e5f8ff 14%,
+    #a8e5ff 28%,
+    #66caff 43%,
+    #478dfb 56%,
+    #9b96ff 70%,
+    #d58cf0 84%,
+    #e6d5ff 94%,
+    #d99ab6 100%
+  ) !important;
+  background-size: 320% 100% !important;
+  background-position: 0% 50%;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  animation: ph-text-flow 9s ease-in-out infinite alternate !important;
+}
+.ph-intro h1 {
+  text-shadow: 0 0 28px rgba(78, 184, 255, .10);
+}
+.ph-entry-title {
+  font-weight: 800;
+}
+.ph-dialog-quote {
+  text-shadow: 0 0 22px rgba(71, 175, 255, .18);
+}
+.ph-dialog-section p {
+  line-height: 1.9;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ph-eyebrow,
+  .ph-intro h1,
+  .ph-intro h1 span,
+  .ph-intro-row > div:first-child > p,
+  .ph-count strong,
+  .ph-count span,
+  .ph-hint,
+  .ph-entry-number,
+  .ph-entry-meta,
+  .ph-entry-title,
+  .ph-entry-preview,
+  .ph-entry-arrow,
+  .ph-footer,
+  .ph-dialog-kicker,
+  .ph-dialog-top h2,
+  .ph-dialog-date,
+  .ph-dialog-quote,
+  .ph-section-label,
+  .ph-dialog-section p,
+  .ph-dialog-takeaway span,
+  .ph-dialog-takeaway strong {
+    animation-duration: 12s !important;
+  }
+}
