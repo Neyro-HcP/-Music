@@ -1,0 +1,227 @@
+/* NSP Philosophy — white, violet and restrained magenta shimmer. */
+.philosophy-body {
+  --ph-bg: #08050f;
+  --ph-panel: rgba(18, 12, 31, .92);
+  --ph-violet: #a78bfa;
+  --ph-purple: #7c3aed;
+  --ph-magenta: #d66bfa;
+  --ph-red: #d85b79;
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #f8f5ff;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(125, 78, 220, .17), transparent 34rem),
+    radial-gradient(ellipse at 88% 24%, rgba(189, 76, 225, .09), transparent 30rem),
+    radial-gradient(ellipse at 48% 82%, rgba(95, 57, 173, .07), transparent 38rem),
+    #08050f;
+}
+.philosophy-body::before {
+  opacity: .16;
+  background-image:
+    linear-gradient(rgba(185, 161, 255, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(185, 161, 255, .035) 1px, transparent 1px);
+}
+.philosophy-body .site-tab[aria-current="page"] {
+  color: #fff;
+  border-color: rgba(176, 145, 255, .48);
+  background: linear-gradient(120deg, rgba(138, 92, 246, .28), rgba(178, 76, 221, .17));
+  box-shadow: 0 0 20px rgba(144, 105, 255, .15), inset 0 1px rgba(255,255,255,.07);
+}
+.philosophy-body .site-tab[aria-current="page"]::after {
+  background: linear-gradient(90deg, #fff, #a78bfa 58%, #d66bfa 92%, #d85b79);
+  box-shadow: 0 0 10px rgba(174, 139, 255, .65);
+}
+.philosophy-body .site-tab[aria-current="page"] .nav-icon { color: #e5d9ff; }
+.philosophy-body .site-tab:focus-visible { outline-color: #b8a5ff; }
+.philosophy-body .top-export {
+  color: #10091d !important;
+  border-color: rgba(198, 167, 255, .8) !important;
+  background: linear-gradient(110deg, #fff, #c4b5fd 58%, #d98cff) !important;
+  box-shadow: 0 6px 24px rgba(145, 105, 255, .2);
+}
+.philosophy-body .top-export:hover {
+  background: linear-gradient(110deg, #fff, #d8caff 58%, #e6a6fa) !important;
+}
+.philosophy-body .lore-particles span {
+  background: #c4b5fd;
+  box-shadow: 0 0 8px #a78bfa, 0 0 19px rgba(167, 139, 250, .58);
+}
+.philosophy-body .lore-particles span:nth-child(6n) {
+  background: #e0b4ff;
+  box-shadow: 0 0 8px #d66bfa, 0 0 18px rgba(214, 107, 250, .42);
+}
+.philosophy-body .lore-particles span:nth-child(20) {
+  background: #d85b79;
+  box-shadow: 0 0 7px rgba(216, 91, 121, .55);
+}
+.philosophy-page { padding-top: 34px; }
+.philosophy-hero {
+  min-height: 330px;
+  border-color: rgba(167, 139, 250, .24);
+  background:
+    radial-gradient(ellipse at 81% 46%, rgba(137, 92, 246, .2), transparent 37%),
+    radial-gradient(ellipse at 20% 100%, rgba(196, 132, 255, .075), transparent 43%),
+    linear-gradient(122deg, rgba(24, 17, 42, .97), rgba(10, 8, 18, .97));
+  box-shadow: 0 18px 70px rgba(0,0,0,.3), 0 0 54px rgba(130, 89, 230, .07), inset 0 1px rgba(255,255,255,.045);
+}
+.philosophy-hero::after {
+  opacity: .24;
+  background: repeating-linear-gradient(135deg, transparent 0 21px, rgba(196, 168, 255, .035) 22px 23px);
+}
+.philosophy-kicker { color: #c4b5fd !important; }
+.philosophy-kicker > span { background: #a78bfa !important; box-shadow: 0 0 10px #a78bfa !important; }
+.philosophy-hero h1,
+.philosophy-entry-meta,
+.philosophy-quote,
+.philosophy-explanation p,
+.philosophy-label,
+.philosophy-footer,
+.philosophy-metrics {
+  background: linear-gradient(112deg, #fff 0%, #e8e1ff 20%, #b8a5ff 43%, #8b5cf6 62%, #d68bfa 81%, #e4a0e8 94%, #d85b79 100%);
+  background-size: 230% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: philosophy-shimmer 16s ease-in-out infinite alternate;
+}
+.philosophy-hero h1 {
+  text-shadow: 0 0 24px rgba(167, 139, 250, .1);
+  font-size: clamp(35px, 6.8vw, 70px);
+  letter-spacing: -.07em;
+}
+.philosophy-hero h1 > span {
+  color: transparent;
+  background: linear-gradient(110deg, #a78bfa, #d66bfa, #d85b79);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.philosophy-hero-copy > p {
+  max-width: 630px;
+  color: #d4c9ee;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.philosophy-metrics { gap: 10px 22px; color: #c9bced; }
+.philosophy-metrics b { color: #f1eaff; }
+.philosophy-mark .lore-orbit {
+  border-color: rgba(174, 145, 255, .35);
+  box-shadow: 0 0 26px rgba(149, 112, 255, .13);
+}
+.philosophy-mark .lore-core {
+  color: #fff;
+  border-color: rgba(204, 180, 255, .68);
+  background: radial-gradient(circle, #38245d, #120c20 73%);
+  box-shadow: 0 0 38px rgba(145, 105, 255, .32), inset 0 0 23px rgba(199, 165, 255, .16);
+}
+.philosophy-mark .lore-core span { color: #d66bfa; }
+.philosophy-mark > i {
+  background: #d8caff;
+  box-shadow: 0 0 12px #a78bfa;
+}
+.philosophy-list { display: grid; gap: 15px; margin-top: 26px; }
+.philosophy-entry {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid rgba(167, 139, 250, .2);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(144, 96, 235, .11), transparent 42%),
+    linear-gradient(145deg, rgba(23, 16, 39, .96), rgba(10, 8, 18, .97));
+  box-shadow: 0 12px 36px rgba(0,0,0,.17), inset 0 1px rgba(255,255,255,.035);
+  transition: border-color .22s ease, transform .22s ease, box-shadow .22s ease;
+}
+.philosophy-entry::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 165, 255, .55), rgba(214, 107, 250, .22), transparent);
+}
+.philosophy-entry:hover {
+  transform: translateY(-2px);
+  border-color: rgba(178, 148, 255, .42);
+  box-shadow: 0 16px 42px rgba(0,0,0,.24), 0 0 24px rgba(139, 92, 246, .08);
+}
+.philosophy-entry-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(167, 139, 250, .13);
+  font: 500 9px/1.5 "DM Mono", monospace;
+  letter-spacing: .11em;
+}
+.philosophy-index { color: #c4b5fd; }
+.philosophy-entry-meta time { text-align: right; white-space: nowrap; }
+.philosophy-quote {
+  display: block;
+  margin: 20px 0 19px;
+  padding-left: 18px;
+  border-left: 2px solid rgba(173, 145, 255, .68);
+  font-size: clamp(17px, 2.25vw, 23px);
+  line-height: 1.62;
+  font-weight: 750;
+  letter-spacing: -.035em;
+}
+.philosophy-explanation {
+  display: grid;
+  grid-template-columns: 112px minmax(0,1fr);
+  align-items: start;
+  gap: 15px;
+  padding: 15px 17px;
+  border: 1px solid rgba(167, 139, 250, .13);
+  border-radius: 10px;
+  background: rgba(135, 91, 220, .055);
+}
+.philosophy-label {
+  padding-top: 2px;
+  font: 500 9px/1.5 "DM Mono", monospace;
+  letter-spacing: .14em;
+}
+.philosophy-explanation p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.85;
+  font-weight: 550;
+}
+.philosophy-footer {
+  border-top-color: rgba(167, 139, 250, .2) !important;
+  color: #c4b5fd !important;
+}
+.philosophy-footer b { color: #d66bfa; }
+@keyframes philosophy-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+@media (max-width: 700px) {
+  .philosophy-page { width: min(100% - 28px, 1220px); padding-top: 20px; }
+  .philosophy-hero { min-height: 270px; padding: 30px 23px; }
+  .philosophy-mark { flex-basis: 155px; width: 155px; height: 155px; opacity: .76; margin-right: -18px; }
+  .philosophy-mark .orbit-one { width: 145px; height: 145px; }
+  .philosophy-mark .orbit-two { width: 110px; height: 110px; }
+  .philosophy-mark .lore-core { width: 76px; height: 76px; font-size: 19px; }
+  .philosophy-entry-meta { font-size: 8px; }
+  .philosophy-quote { padding-left: 13px; }
+}
+@media (max-width: 520px) {
+  .philosophy-hero { display: block; min-height: 0; padding: 26px 21px 31px; }
+  .philosophy-mark { position: absolute; right: 0; bottom: -27px; opacity: .22; pointer-events: none; }
+  .philosophy-entry-meta { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .philosophy-entry-meta time { text-align: left; }
+  .philosophy-explanation { grid-template-columns: 1fr; gap: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .philosophy-body .lore-particles span { animation: none; opacity: .18; }
+  .philosophy-body .philosophy-hero h1,
+  .philosophy-body .philosophy-entry-meta,
+  .philosophy-body .philosophy-quote,
+  .philosophy-body .philosophy-explanation p,
+  .philosophy-body .philosophy-label,
+  .philosophy-body .philosophy-footer,
+  .philosophy-body .philosophy-metrics { animation: none; background-position: 50% 50%; }
+  .philosophy-entry { transition: none; }
+}
